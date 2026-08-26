@@ -1,0 +1,148 @@
+name: Cinnamon Bistro CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+
+  repository-check:
+    name: Repository Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Display repository structure
+        run: |
+          echo "Cinnamon Bistro CI Pipeline"
+          echo "Validating repository structure..."
+
+          test -d frontend
+          test -d backend
+          test -d database
+          test -d tests
+          test -d docs
+          test -d monitoring
+
+          echo "Repository structure validated successfully."
+
+
+  frontend:
+    name: React Frontend
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend/restaurant-web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check frontend implementation
+        id: frontend-check
+        shell: bash
+        run: |
+          if [ -f "index.html" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "React application detected."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Frontend implementation is not available yet."
+            echo "Build will be enabled when the React application is implemented."
+          fi
+
+      - name: Install frontend dependencies
+        if: steps.frontend-check.outputs.ready == 'true'
+        run: npm install
+
+      - name: Build React frontend
+        if: steps.frontend-check.outputs.ready == 'true'
+        run: npm run build
+
+
+  backend:
+    name: ASP.NET Core Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Detect ASP.NET projects
+        id: backend-check
+        shell: bash
+        run: |
+          if find backend -name "*.csproj" -print -quit | grep -q .; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "ASP.NET project files detected."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "ASP.NET projects have not been implemented yet."
+          fi
+
+      - name: Restore backend dependencies
+        if: steps.backend-check.outputs.ready == 'true'
+        run: |
+          find backend -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
+            dotnet restore "$project"
+          done
+
+      - name: Build backend projects
+        if: steps.backend-check.outputs.ready == 'true'
+        run: |
+          find backend -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
+            dotnet build "$project" --configuration Release --no-restore
+          done
+
+
+  tests:
+    name: xUnit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Detect test projects
+        id: test-check
+        shell: bash
+        run: |
+          if find tests -name "*.csproj" -print -quit | grep -q .; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Test projects detected."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "xUnit test projects have not been implemented yet."
+          fi
+
+      - name: Run xUnit tests
+        if: steps.test-check.outputs.ready == 'true'
+        run: |
+          find tests -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
+            dotnet test "$project" --configuration Release
+          done
