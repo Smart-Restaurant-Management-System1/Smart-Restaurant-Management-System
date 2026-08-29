@@ -13,6 +13,7 @@ public class AuthServiceTests
 {
     private readonly Mock<IUserRepository> _userRepoMock;
     private readonly Mock<IPasswordHasher> _passwordHasherMock;
+    private readonly Mock<IJwtTokenGenerator> _jwtTokenGeneratorMock;
     private readonly Mock<IConfiguration> _configMock;
     private readonly Mock<ILogger<AuthService>> _loggerMock;
     private readonly AuthService _authService;
@@ -21,11 +22,20 @@ public class AuthServiceTests
     {
         _userRepoMock = new Mock<IUserRepository>();
         _passwordHasherMock = new Mock<IPasswordHasher>();
+        _jwtTokenGeneratorMock = new Mock<IJwtTokenGenerator>();
         _configMock = new Mock<IConfiguration>();
         _configMock.Setup(c => c["Staff:AuthorizationCode"]).Returns("BISTRO2026");
         _loggerMock = new Mock<ILogger<AuthService>>();
-        _authService = new AuthService(_userRepoMock.Object, _passwordHasherMock.Object, _configMock.Object, _loggerMock.Object);
+
+        _authService = new AuthService(
+            _userRepoMock.Object,
+            _passwordHasherMock.Object,
+            _jwtTokenGeneratorMock.Object,
+            _configMock.Object,
+            _loggerMock.Object);
     }
+
+    #region Registration Tests
 
     [Fact]
     public async Task RegisterAsync_DuplicateEmail_ThrowsInvalidOperationException()
@@ -150,4 +160,128 @@ public class AuthServiceTests
         Assert.Equal(10, result.UserId);
         Assert.Contains("Admin", result.Roles);
     }
+
+    #endregion
+
+    #region Login Tests
+
+    [Fact]
+    public async Task LoginAsync_ValidCredentials_ReturnsLoginResponseWithJwtToken()
+    {
+        // Arrange
+        var request = new LoginRequestDto
+        {
+            Email = "alexander@bistro.com",
+            Password = "Password123"
+        };
+
+        var user = new User
+        {
+            UserId = 1,
+            FullName = "Alexander Vance",
+            Email = "alexander@bistro.com",
+            PasswordHash = "$2a$11$hashedpassword",
+            IsActive = true,
+            Roles = new List<string> { "Customer" }
+        };
+
+        _userRepoMock.Setup(r => r.GetByEmailAsync(request.Email))
+            .ReturnsAsync(user);
+
+        _passwordHasherMock.Setup(p => p.VerifyPassword(request.Password, user.PasswordHash))
+            .Returns(true);
+
+        _jwtTokenGeneratorMock.Setup(j => j.GenerateToken(user, user.Roles))
+            .Returns(("mock.jwt.token.string", DateTime.UtcNow.AddMinutes(60)));
+
+        // Act
+        var result = await _authService.LoginAsync(request);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("mock.jwt.token.string", result.Token);
+        Assert.Equal(1, result.UserId);
+        Assert.Equal("Alexander Vance", result.FullName);
+        Assert.Equal("alexander@bistro.com", result.Email);
+        Assert.Contains("Customer", result.Roles);
+    }
+
+    [Fact]
+    public async Task LoginAsync_NonExistentEmail_ThrowsUnauthorizedAccessException()
+    {
+        // Arrange
+        var request = new LoginRequestDto
+        {
+            Email = "nonexistent@bistro.com",
+            Password = "Password123"
+        };
+
+        _userRepoMock.Setup(r => r.GetByEmailAsync(request.Email))
+            .ReturnsAsync((User?)null);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Invalid email or password.", exception.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_IncorrectPassword_ThrowsUnauthorizedAccessException()
+    {
+        // Arrange
+        var request = new LoginRequestDto
+        {
+            Email = "alexander@bistro.com",
+            Password = "WrongPassword!"
+        };
+
+        var user = new User
+        {
+            UserId = 1,
+            FullName = "Alexander Vance",
+            Email = "alexander@bistro.com",
+            PasswordHash = "$2a$11$hashedpassword",
+            IsActive = true,
+            Roles = new List<string> { "Customer" }
+        };
+
+        _userRepoMock.Setup(r => r.GetByEmailAsync(request.Email))
+            .ReturnsAsync(user);
+
+        _passwordHasherMock.Setup(p => p.VerifyPassword(request.Password, user.PasswordHash))
+            .Returns(false);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Invalid email or password.", exception.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_InactiveUser_ThrowsUnauthorizedAccessException()
+    {
+        // Arrange
+        var request = new LoginRequestDto
+        {
+            Email = "banned@bistro.com",
+            Password = "Password123"
+        };
+
+        var user = new User
+        {
+            UserId = 5,
+            FullName = "Banned User",
+            Email = "banned@bistro.com",
+            PasswordHash = "$2a$11$hashedpassword",
+            IsActive = false,
+            Roles = new List<string> { "Customer" }
+        };
+
+        _userRepoMock.Setup(r => r.GetByEmailAsync(request.Email))
+            .ReturnsAsync(user);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Invalid email or password.", exception.Message);
+    }
+
+    #endregion
 }

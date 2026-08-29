@@ -9,17 +9,20 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
 
     public AuthService(
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
+        IJwtTokenGenerator jwtTokenGenerator,
         IConfiguration configuration,
         ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
+        _jwtTokenGenerator = jwtTokenGenerator;
         _configuration = configuration;
         _logger = logger;
     }
@@ -81,6 +84,42 @@ public class AuthService : IAuthService
             IsActive = createdUser.IsActive,
             Roles = createdUser.Roles,
             CreatedAt = createdUser.CreatedAt
+        };
+    }
+
+    public async Task<LoginResponseDto> LoginAsync(LoginRequestDto request)
+    {
+        // 1. Fetch user by email
+        var user = await _userRepository.GetByEmailAsync(request.Email.Trim());
+        if (user == null || !user.IsActive)
+        {
+            _logger.LogWarning("Login failed: User {Email} not found or inactive.", request.Email);
+            throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        // 2. Verify password with BCrypt
+        var isPasswordValid = _passwordHasher.VerifyPassword(request.Password, user.PasswordHash);
+        if (!isPasswordValid)
+        {
+            _logger.LogWarning("Login failed: Password mismatch for user {Email}.", request.Email);
+            throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        // 3. Generate signed JWT token
+        var (token, expiresAt) = _jwtTokenGenerator.GenerateToken(user, user.Roles);
+
+        _logger.LogInformation("User {Email} logged in successfully.", user.Email);
+
+        // 4. Return login response DTO
+        return new LoginResponseDto
+        {
+            Token = token,
+            UserId = user.UserId,
+            FullName = user.FullName,
+            Email = user.Email,
+            PhoneNumber = user.PhoneNumber,
+            Roles = user.Roles,
+            ExpiresAt = expiresAt
         };
     }
 }

@@ -18,12 +18,11 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Register a new user (Customer by default, or Admin/KitchenStaff)
+    /// Register a new user (Customer by default, or Admin/KitchenStaff with authorization code)
     /// </summary>
     [HttpPost("register")]
     [ProducesResponseType(typeof(UserResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
     {
         if (!ModelState.IsValid)
@@ -44,6 +43,36 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Unexpected error occurred during registration for email {Email}", request.Email);
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while creating the account. Please try again later." });
+        }
+    }
+
+    /// <summary>
+    /// Authenticate user credentials and issue signed JWT token
+    /// </summary>
+    [HttpPost("login")]
+    [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var result = await _authService.LoginAsync(request);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized(new { message = "Invalid email or password" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error occurred during login for email {Email}", request.Email);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing your login. Please try again later." });
         }
     }
 }

@@ -1,17 +1,60 @@
 version: '3.8'
 
 services:
+  # 1. MySQL Database
   mysql:
     image: mysql:8.0
     container_name: smart_restaurant_mysql
     restart: always
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: restaurant_identity_db
     ports:
       - '3306:3306'
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/identity-db/01_init_identity.sql:/docker-entrypoint-initdb.d/01_init_identity.sql
+    networks:
+      - restaurant-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 2. Identity Microservice (.NET)
+  identity-service:
+    build:
+      context: ./backend/identity-service
+      dockerfile: Dockerfile
+    container_name: smart_restaurant_identity_service
+    restart: always
+    ports:
+      - '5001:5001'
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=restaurant_identity_db;User=root;Password=root;AllowPublicKeyRetrieval=True;SslMode=None;
+      - Jwt__Key=SmartRestaurant_Super_Secret_Key_For_Jwt_Token_Validation_2026!
+      - Jwt__Issuer=SmartRestaurant
+      - Jwt__Audience=SmartRestaurantUsers
+      - Staff__AuthorizationCode=BISTRO2026
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - restaurant-network
+
+  # 3. Web Frontend (React + Nginx)
+  frontend:
+    build:
+      context: ./frontend/restaurant-web
+      dockerfile: Dockerfile
+    container_name: smart_restaurant_frontend
+    restart: always
+    ports:
+      - '80:80'
+    depends_on:
+      - identity-service
     networks:
       - restaurant-network
 
