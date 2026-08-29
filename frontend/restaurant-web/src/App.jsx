@@ -1,13 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { AuthProvider } from './context/AuthContext';
+import LoginPage from './pages/customer/LoginPage';
 import RegisterPage from './pages/customer/RegisterPage';
 
 function App() {
+  const [currentPage, setCurrentPage] = useState('login');
+
   return (
-    <div className="page-wrapper">
-      <main style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
-        <RegisterPage />
-      </main>
-    </div>
+    <AuthProvider>
+      {currentPage === 'login' ? (
+        <LoginPage onNavigateToRegister={() => setCurrentPage('register')} />
+      ) : (
+        <RegisterPage onNavigateToLogin={() => setCurrentPage('login')} />
+      )}
+    </AuthProvider>
   );
 }
 
