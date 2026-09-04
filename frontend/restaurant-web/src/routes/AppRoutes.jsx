@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import Navbar from '../components/common/Navbar';
 import LoginPage from '../pages/customer/LoginPage';
 import RegisterPage from '../pages/customer/RegisterPage';
 import CustomerPortalPage from '../pages/customer/CustomerPortalPage';
@@ -21,7 +22,9 @@ export default function AppRoutes() {
   };
 
   return (
-    <Routes>
+    <>
+      <Navbar />
+      <Routes>
       {/* Public Routes */}
       <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to={getDefaultRedirect()} replace />} />
       <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to={getDefaultRedirect()} replace />} />
@@ -61,5 +64,6 @@ export default function AppRoutes() {
       <Route path="/" element={<Navigate to={getDefaultRedirect()} replace />} />
       <Route path="*" element={<Navigate to={getDefaultRedirect()} replace />} />
     </Routes>
+    </>
   );
 }
