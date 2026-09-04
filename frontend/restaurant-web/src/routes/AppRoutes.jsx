@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '../pages/customer/LoginPage';
 import RegisterPage from '../pages/customer/RegisterPage';
 import CustomerPortalPage from '../pages/customer/CustomerPortalPage';
+import ProfilePage from '../pages/customer/ProfilePage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
 import UnauthorizedPage from '../pages/common/UnauthorizedPage';
@@ -33,6 +34,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}>
             <CustomerPortalPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}>
+            <ProfilePage />
           </ProtectedRoute>
         }
       />
