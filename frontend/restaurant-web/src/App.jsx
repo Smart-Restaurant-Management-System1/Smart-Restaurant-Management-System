@@ -1,19 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import LoginPage from './pages/customer/LoginPage';
-import RegisterPage from './pages/customer/RegisterPage';
+import AppRoutes from './routes/AppRoutes';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('login');
-
   return (
-    <AuthProvider>
-      {currentPage === 'login' ? (
-        <LoginPage onNavigateToRegister={() => setCurrentPage('register')} />
-      ) : (
-        <RegisterPage onNavigateToLogin={() => setCurrentPage('login')} />
-      )}
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 
