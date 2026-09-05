@@ -1,9 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import loginIllustration from '../../assets/images/login.png';
 
 export default function Login({ onNavigateToRegister }) {
   const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -67,7 +70,7 @@ export default function Login({ onNavigateToRegister }) {
     setSuccess(false);
 
     try {
-      await login({
+      const result = await login({
         email: formData.email.trim(),
         password: formData.password
       });
@@ -75,10 +78,13 @@ export default function Login({ onNavigateToRegister }) {
       setSuccess(true);
       setIsSubmitted(false);
 
-      // Smooth redirect to portal
+      const targetPath = location.state?.from?.pathname ||
+        (result?.roles?.includes('Admin') ? '/admin' :
+         result?.roles?.includes('KitchenStaff') ? '/kitchen' : '/portal');
+
       setTimeout(() => {
-        window.location.href = '/portal';
-      }, 1200);
+        navigate(targetPath, { replace: true });
+      }, 1000);
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
         setError(err.response.data.message);

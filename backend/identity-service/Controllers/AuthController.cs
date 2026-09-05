@@ -75,4 +75,55 @@ public class AuthController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while processing your login. Please try again later." });
         }
     }
+
+    /// <summary>
+    /// Get current authenticated user profile and claims (accessible to any authenticated role)
+    /// </summary>
+    [Microsoft.AspNetCore.Authorization.Authorize]
+    [HttpGet("profile")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult GetProfile()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst("sub")?.Value;
+        var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                    ?? User.FindFirst("email")?.Value;
+        var fullName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+        var roles = User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value).ToList();
+
+        return Ok(new
+        {
+            userId,
+            email,
+            fullName,
+            roles
+        });
+    }
+
+    /// <summary>
+    /// Admin-only management endpoint
+    /// </summary>
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = IdentityService.Models.AppRoles.Admin)]
+    [HttpGet("admin/users")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public IActionResult GetAdminUsers()
+    {
+        return Ok(new { message = "Admin authorized access granted to user directory." });
+    }
+
+    /// <summary>
+    /// Staff-only endpoint (accessible to Admin and KitchenStaff)
+    /// </summary>
+    [Microsoft.AspNetCore.Authorization.Authorize(Policy = IdentityService.Models.AppPolicies.RequireStaff)]
+    [HttpGet("staff/summary")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public IActionResult GetStaffSummary()
+    {
+        return Ok(new { message = "Staff authorized access granted to operational summary." });
+    }
 }
