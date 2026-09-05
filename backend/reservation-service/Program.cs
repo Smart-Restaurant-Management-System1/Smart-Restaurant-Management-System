@@ -1,18 +1,15 @@
 using System.Text;
-using IdentityService.Data;
-using IdentityService.Repositories;
-using IdentityService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Prometheus;
+using ReservationService.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Controllers
 builder.Services.AddControllers();
 
-// Configure JWT Authentication
+// Configure JWT Authentication matching Identity Service contract
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "SmartRestaurant_Super_Secret_Key_For_Jwt_Token_Validation_2026!";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SmartRestaurant";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SmartRestaurantUsers";
@@ -43,21 +40,21 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy(IdentityService.Models.AppPolicies.RequireAdmin, policy => policy.RequireRole(IdentityService.Models.AppRoles.Admin));
-    options.AddPolicy(IdentityService.Models.AppPolicies.RequireCustomer, policy => policy.RequireRole(IdentityService.Models.AppRoles.Customer));
-    options.AddPolicy(IdentityService.Models.AppPolicies.RequireKitchenStaff, policy => policy.RequireRole(IdentityService.Models.AppRoles.KitchenStaff));
-    options.AddPolicy(IdentityService.Models.AppPolicies.RequireStaff, policy => policy.RequireRole(IdentityService.Models.AppRoles.Admin, IdentityService.Models.AppRoles.KitchenStaff));
+    options.AddPolicy(AppPolicies.RequireAdmin, policy => policy.RequireRole(AppRoles.Admin));
+    options.AddPolicy(AppPolicies.RequireCustomer, policy => policy.RequireRole(AppRoles.Customer));
+    options.AddPolicy(AppPolicies.RequireKitchenStaff, policy => policy.RequireRole(AppRoles.KitchenStaff));
+    options.AddPolicy(AppPolicies.RequireStaff, policy => policy.RequireRole(AppRoles.Admin, AppRoles.KitchenStaff));
 });
 
-// Add Swagger / OpenAPI with JWT Support
+// Swagger with Bearer authorization support
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "Smart Restaurant - Identity Service API",
+        Title = "Smart Restaurant - Reservation Service API",
         Version = "v1",
-        Description = "Microservice managing user authentication, registration, roles, and profiles."
+        Description = "Microservice managing tables, availability, and reservations."
     });
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -86,7 +83,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Configure CORS for Frontend
+// Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
@@ -98,28 +95,19 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Dependency Injection (Clean Architecture)
-builder.Services.AddSingleton<DatabaseHelper>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
-builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
-builder.Services.AddScoped<IAuthService, AuthService>();
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Identity Service V1");
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Reservation Service V1");
     });
 }
 
 app.UseCors("AllowFrontend");
 
-// Prometheus metrics endpoint
 app.UseMetricServer();
 app.UseHttpMetrics();
 

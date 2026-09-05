@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../backend/identity-service/identity-service.csproj" />
+    <ProjectReference Include="../../../backend/reservation-service/reservation-service.csproj" />
   </ItemGroup>
 
 </Project>
