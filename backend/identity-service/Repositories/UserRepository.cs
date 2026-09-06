@@ -130,6 +130,27 @@ public class UserRepository : IUserRepository
         return roles;
     }
 
+    public async Task<bool> UpdateUserProfileAsync(int userId, string fullName, string email, string? phoneNumber)
+    {
+        using var connection = await _dbHelper.CreateConnectionAsync();
+        const string query = @"UPDATE Users 
+                               SET FullName = @FullName, 
+                                   Email = @Email, 
+                                   PhoneNumber = @PhoneNumber, 
+                                   UpdatedAt = @UpdatedAt 
+                               WHERE UserId = @UserId;";
+
+        using var cmd = new MySqlCommand(query, connection);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@FullName", fullName.Trim());
+        cmd.Parameters.AddWithValue("@Email", email.Trim().ToLowerInvariant());
+        cmd.Parameters.AddWithValue("@PhoneNumber", string.IsNullOrWhiteSpace(phoneNumber) ? (object)DBNull.Value : phoneNumber.Trim());
+        cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
+
     private static User MapUser(MySqlDataReader reader)
     {
         return new User
