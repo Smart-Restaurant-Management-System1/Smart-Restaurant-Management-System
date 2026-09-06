@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ReservationService.DTOs;
+using ReservationService.Exceptions;
 using ReservationService.Models;
+using ReservationService.Repositories;
 
 namespace ReservationService.Controllers;
 
@@ -8,6 +11,15 @@ namespace ReservationService.Controllers;
 [Route("api/[controller]")]
 public class TablesController : ControllerBase
 {
+    private readonly ITableRepository _tableRepository;
+    private readonly ILogger<TablesController> _logger;
+
+    public TablesController(ITableRepository tableRepository, ILogger<TablesController> logger)
+    {
+        _tableRepository = tableRepository ?? throw new ArgumentNullException(nameof(tableRepository));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
     /// <summary>
     /// Public endpoint to check general table availability without requiring login
     /// </summary>
@@ -28,15 +40,49 @@ public class TablesController : ControllerBase
     /// </summary>
     [Authorize]
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<TableResponseDto>))]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public IActionResult GetTables()
+    public async Task<IActionResult> GetTables([FromQuery] bool? activeOnly = null, CancellationToken cancellationToken = default)
     {
-        return Ok(new[]
+        var tables = await _tableRepository.GetAllTablesAsync(activeOnly, cancellationToken);
+
+        var response = tables.Select(t => new TableResponseDto
         {
-            new { tableId = 1, tableNumber = "T-01", capacity = 2, location = "Window" },
-            new { tableId = 2, tableNumber = "T-02", capacity = 4, location = "Main Dining" },
-            new { tableId = 3, tableNumber = "T-03", capacity = 6, location = "Private Booth" }
+            Id = t.Id,
+            TableNumber = t.TableNumber,
+            Capacity = t.Capacity,
+            Location = t.Location,
+            Status = t.IsActive ? "Available" : "Inactive",
+            CreatedAt = t.CreatedAt
+        });
+
+        return Ok(response);
+    }
+
+    /// <summary>
+    /// Authenticated endpoint to get details of a specific table by ID
+    /// </summary>
+    [Authorize]
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TableResponseDto))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetTableById(int id, CancellationToken cancellationToken = default)
+    {
+        var table = await _tableRepository.GetByIdAsync(id, cancellationToken);
+        if (table == null)
+        {
+            return NotFound(new { message = $"Table with ID {id} was not found." });
+        }
+
+        return Ok(new TableResponseDto
+        {
+            Id = table.Id,
+            TableNumber = table.TableNumber,
+            Capacity = table.Capacity,
+            Location = table.Location,
+            Status = table.IsActive ? "Available" : "Inactive",
+            CreatedAt = table.CreatedAt
         });
     }
 
@@ -45,24 +91,76 @@ public class TablesController : ControllerBase
     /// </summary>
     [Authorize(Roles = AppRoles.Admin)]
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(TableResponseDto))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public IActionResult CreateTable([FromBody] CreateTableRequest request)
+    public async Task<IActionResult> CreateTable([FromBody] CreateTableRequestDto request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.TableNumber))
+        if (request == null)
         {
-            return BadRequest(new { message = "TableNumber is required" });
+            return BadRequest(new { message = "Table data is required." });
         }
 
-        return StatusCode(StatusCodes.Status201Created, new
+        if (string.IsNullOrWhiteSpace(request.TableNumber))
         {
-            tableId = 4,
-            tableNumber = request.TableNumber,
-            capacity = request.Capacity,
-            location = request.Location
-        });
+            return BadRequest(new { message = "Table number is required." });
+        }
+
+        if (request.Capacity <= 0)
+        {
+            return BadRequest(new { message = "Capacity must be greater than 0." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Location))
+        {
+            return BadRequest(new { message = "Location is required." });
+        }
+
+        string statusTrimmed = string.IsNullOrWhiteSpace(request.Status) ? "Available" : request.Status.Trim();
+        bool isAvailable = string.Equals(statusTrimmed, "Available", StringComparison.OrdinalIgnoreCase);
+        bool isInactive = string.Equals(statusTrimmed, "Inactive", StringComparison.OrdinalIgnoreCase);
+
+        if (!isAvailable && !isInactive)
+        {
+            return BadRequest(new { message = "Status must be either 'Available' or 'Inactive'." });
+        }
+
+        var table = new RestaurantTable
+        {
+            TableNumber = request.TableNumber.Trim(),
+            Capacity = request.Capacity,
+            Location = request.Location.Trim(),
+            IsActive = isAvailable,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        try
+        {
+            var created = await _tableRepository.CreateTableAsync(table, cancellationToken);
+
+            var response = new TableResponseDto
+            {
+                Id = created.Id,
+                TableNumber = created.TableNumber,
+                Capacity = created.Capacity,
+                Location = created.Location,
+                Status = created.IsActive ? "Available" : "Inactive",
+                CreatedAt = created.CreatedAt
+            };
+
+            return CreatedAtAction(nameof(GetTableById), new { id = created.Id }, response);
+        }
+        catch (DuplicateTableNumberException ex)
+        {
+            _logger.LogWarning(ex, "Duplicate table number: {TableNumber}", request.TableNumber);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Validation error creating table: {Message}", ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }
-
-public record CreateTableRequest(string TableNumber, int Capacity, string Location);
