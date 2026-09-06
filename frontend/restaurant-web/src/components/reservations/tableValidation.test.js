@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateTableForm, sanitizeTablePayload } from './tableValidation.js';
+import {
+  validateTableForm,
+  sanitizeTablePayload,
+  validateTableEditForm,
+  sanitizeTableEditPayload,
+} from './tableValidation.js';
 
 test('validateTableForm succeeds with valid table data', () => {
   const data = {
@@ -83,4 +88,51 @@ test('sanitizeTablePayload trims, uppercases table number, and normalizes fields
     location: 'Private Dining',
     status: 'Occupied',
   });
+});
+
+test('validateTableEditForm succeeds with valid capacity and location', () => {
+  const data = {
+    capacity: '8',
+    location: 'Garden Terrace',
+  };
+
+  const result = validateTableEditForm(data);
+  assert.equal(result.isValid, true);
+  assert.deepEqual(result.errors, {});
+});
+
+test('validateTableEditForm flags missing capacity and missing location', () => {
+  const result = validateTableEditForm({ capacity: '', location: '   ' });
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.capacity, 'Capacity is required');
+  assert.equal(result.errors.location, 'Location / Section is required');
+});
+
+test('validateTableEditForm flags capacity bounds (<= 0 or > 100)', () => {
+  const zeroResult = validateTableEditForm({ capacity: 0, location: 'Bar' });
+  assert.equal(zeroResult.isValid, false);
+  assert.equal(zeroResult.errors.capacity, 'Capacity must be at least 1 person');
+
+  const overResult = validateTableEditForm({ capacity: 101, location: 'Bar' });
+  assert.equal(overResult.isValid, false);
+  assert.equal(overResult.errors.capacity, 'Capacity cannot exceed 100 persons');
+});
+
+test('sanitizeTableEditPayload preserves only editable fields and ignores tableNumber/id', () => {
+  const rawData = {
+    id: 99,
+    tableNumber: 'T-999-OVERWRITE',
+    capacity: '12',
+    location: '  VIP Room  ',
+    status: 'available',
+  };
+
+  const sanitized = sanitizeTableEditPayload(rawData);
+  assert.deepEqual(sanitized, {
+    capacity: 12,
+    location: 'VIP Room',
+    status: 'Available',
+  });
+  assert.equal(sanitized.tableNumber, undefined);
+  assert.equal(sanitized.id, undefined);
 });

@@ -15,12 +15,12 @@ export default function AdminDashboardPage() {
   const [successBanner, setSuccessBanner] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  // Edit and Delete states
+  // Edit and Deactivate states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedTableForEdit, setSelectedTableForEdit] = useState(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [tableToDelete, setTableToDelete] = useState(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
+  const [tableToDeactivate, setTableToDeactivate] = useState(null);
+  const [isDeactivating, setIsDeactivating] = useState(false);
 
   const handleConfirmLogout = () => {
     logout();
@@ -63,38 +63,48 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleOpenDeleteModal = (table) => {
+  const handleOpenDeactivateModal = (table) => {
     if (table.status === 'Occupied') {
-      alert(`Table '${table.tableNumber}' is currently occupied and cannot be deleted until it becomes available again.`);
+      alert(`Table '${table.tableNumber}' is currently occupied and cannot be deactivated until it becomes available again.`);
       return;
     }
-    setTableToDelete(table);
-    setIsDeleteModalOpen(true);
+    if (table.status === 'Inactive' || table.isActive === false) {
+      alert(`Table '${table.tableNumber}' is already inactive.`);
+      return;
+    }
+    setTableToDeactivate(table);
+    setIsDeactivateModalOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!tableToDelete) return;
-    if (tableToDelete.status === 'Occupied') {
-      alert(`Table '${tableToDelete.tableNumber}' is currently occupied and cannot be deleted until it becomes available again.`);
-      setIsDeleteModalOpen(false);
-      setTableToDelete(null);
+  const handleConfirmDeactivate = async () => {
+    if (!tableToDeactivate || isDeactivating) return;
+    if (tableToDeactivate.status === 'Occupied') {
+      alert(`Table '${tableToDeactivate.tableNumber}' is currently occupied and cannot be deactivated until it becomes available again.`);
+      setIsDeactivateModalOpen(false);
+      setTableToDeactivate(null);
       return;
     }
-    setIsDeleting(true);
+    setIsDeactivating(true);
     try {
-      await deleteTable(tableToDelete.id);
-      setTables((prev) => prev.filter((t) => t.id !== tableToDelete.id));
-      setSuccessBanner(`Table ${tableToDelete.tableNumber} was deleted successfully!`);
+      await deleteTable(tableToDeactivate.id);
+      setTables((prev) =>
+        prev.map((t) =>
+          t.id === tableToDeactivate.id
+            ? { ...t, status: 'Inactive', isActive: false }
+            : t
+        )
+      );
+      setSuccessBanner(`Table ${tableToDeactivate.tableNumber} was deactivated successfully and marked Inactive.`);
       setTimeout(() => {
         setSuccessBanner(null);
       }, 4000);
-      setIsDeleteModalOpen(false);
-      setTableToDelete(null);
+      setIsDeactivateModalOpen(false);
+      setTableToDeactivate(null);
     } catch (err) {
-      console.error('Failed to delete table:', err);
-      alert(err.response?.data?.message || 'Failed to delete table. Please try again.');
+      console.error('Failed to deactivate table:', err);
+      alert(err.response?.data?.message || 'Failed to deactivate table. Please try again.');
     } finally {
-      setIsDeleting(false);
+      setIsDeactivating(false);
     }
   };
 
@@ -662,31 +672,43 @@ export default function AdminDashboardPage() {
                               </svg>
                               Edit
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => !isOccupied && handleOpenDeleteModal(tbl)}
-                              disabled={isOccupied}
-                              className="btn-jelly-secondary"
-                              title={isOccupied ? `Table ${tbl.tableNumber} is occupied and cannot be deleted until made available` : `Delete table ${tbl.tableNumber}`}
-                              style={{
-                                padding: '0.42rem 0.75rem',
-                                fontSize: '0.82rem',
-                                color: isOccupied ? '#9ca3af' : '#dc2626',
-                                borderColor: isOccupied ? '#e5e7eb' : '#fca5a5',
-                                backgroundColor: isOccupied ? '#f9fafb' : '#ffffff',
-                                cursor: isOccupied ? 'not-allowed' : 'pointer',
-                                opacity: isOccupied ? 0.6 : 1,
-                                gap: '0.35rem',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isOccupied ? '#9ca3af' : '#dc2626'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              </svg>
-                              Delete
-                            </button>
+                            {(() => {
+                              const isAlreadyInactive = tbl.status === 'Inactive' || tbl.isActive === false;
+                              const isDeactivateDisabled = isOccupied || isAlreadyInactive;
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => !isDeactivateDisabled && handleOpenDeactivateModal(tbl)}
+                                  disabled={isDeactivateDisabled}
+                                  className="btn-jelly-secondary"
+                                  title={
+                                    isOccupied
+                                      ? `Table ${tbl.tableNumber} is occupied and cannot be deactivated until made available`
+                                      : isAlreadyInactive
+                                      ? `Table ${tbl.tableNumber} is already inactive`
+                                      : `Deactivate table ${tbl.tableNumber}`
+                                  }
+                                  style={{
+                                    padding: '0.42rem 0.75rem',
+                                    fontSize: '0.82rem',
+                                    color: isDeactivateDisabled ? '#9ca3af' : '#b45309',
+                                    borderColor: isDeactivateDisabled ? '#e5e7eb' : '#fcd34d',
+                                    backgroundColor: isDeactivateDisabled ? '#f9fafb' : '#fffbeb',
+                                    cursor: isDeactivateDisabled ? 'not-allowed' : 'pointer',
+                                    opacity: isDeactivateDisabled ? 0.6 : 1,
+                                    gap: '0.35rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                  }}
+                                >
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isDeactivateDisabled ? '#9ca3af' : '#b45309'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                  </svg>
+                                  Deactivate
+                                </button>
+                              );
+                            })()}
                           </div>
                         </td>
                       </tr>
@@ -717,13 +739,13 @@ export default function AdminDashboardPage() {
         onTableUpdated={handleTableUpdated}
       />
 
-      {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && tableToDelete && (
+      {/* Deactivate Confirmation Modal */}
+      {isDeactivateModalOpen && tableToDeactivate && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="deleteModalTitle"
-          onClick={() => !isDeleting && setIsDeleteModalOpen(false)}
+          aria-labelledby="deactivateModalTitle"
+          onClick={() => !isDeactivating && setIsDeactivateModalOpen(false)}
           style={{
             position: 'fixed',
             top: 0,
@@ -745,7 +767,7 @@ export default function AdminDashboardPage() {
               backgroundColor: '#ffffff',
               borderRadius: '16px',
               padding: '2rem',
-              maxWidth: '420px',
+              maxWidth: '440px',
               width: '100%',
               boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
               textAlign: 'center',
@@ -757,8 +779,8 @@ export default function AdminDashboardPage() {
                 width: '50px',
                 height: '50px',
                 borderRadius: '50%',
-                backgroundColor: '#fee2e2',
-                color: '#dc2626',
+                backgroundColor: '#fef3c7',
+                color: '#d97706',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -766,14 +788,12 @@ export default function AdminDashboardPage() {
               }}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                <line x1="10" y1="11" x2="10" y2="17" />
-                <line x1="14" y1="11" x2="14" y2="17" />
+                <circle cx="12" cy="12" r="10" />
+                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
               </svg>
             </div>
             <h2
-              id="deleteModalTitle"
+              id="deactivateModalTitle"
               style={{
                 fontSize: '1.25rem',
                 fontWeight: '700',
@@ -781,7 +801,7 @@ export default function AdminDashboardPage() {
                 marginBottom: '0.5rem',
               }}
             >
-              Delete Table {tableToDelete.tableNumber}
+              Deactivate Table {tableToDeactivate.tableNumber}
             </h2>
             <p
               style={{
@@ -791,7 +811,7 @@ export default function AdminDashboardPage() {
                 lineHeight: '1.5',
               }}
             >
-              Are you sure you want to permanently delete table <strong>{tableToDelete.tableNumber}</strong> ({tableToDelete.capacity} seats, {tableToDelete.location})? This cannot be undone.
+              Are you sure you want to deactivate table <strong>{tableToDeactivate.tableNumber}</strong> ({tableToDeactivate.capacity} seats, {tableToDeactivate.location})? This will mark the table as <strong>Inactive</strong> and prevent new reservations while preserving all historical dining records.
             </p>
 
             <div
@@ -803,8 +823,8 @@ export default function AdminDashboardPage() {
             >
               <button
                 type="button"
-                onClick={() => setIsDeleteModalOpen(false)}
-                disabled={isDeleting}
+                onClick={() => setIsDeactivateModalOpen(false)}
+                disabled={isDeactivating}
                 className="btn-jelly-secondary"
                 style={{
                   padding: '0.65rem 1.25rem',
@@ -816,16 +836,16 @@ export default function AdminDashboardPage() {
               </button>
               <button
                 type="button"
-                onClick={handleConfirmDelete}
-                disabled={isDeleting}
+                onClick={handleConfirmDeactivate}
+                disabled={isDeactivating}
                 className="btn-jelly-primary"
                 style={{
                   padding: '0.65rem 1.25rem',
                   fontSize: '0.88rem',
-                  backgroundColor: '#dc2626',
+                  backgroundColor: '#d97706',
                   color: '#ffffff',
-                  background: '#dc2626',
-                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
+                  background: '#d97706',
+                  boxShadow: '0 4px 12px rgba(217, 119, 6, 0.25)',
                   flex: 1,
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -833,7 +853,7 @@ export default function AdminDashboardPage() {
                   gap: '0.4rem',
                 }}
               >
-                {isDeleting ? (
+                {isDeactivating ? (
                   <>
                     <svg
                       style={{ animation: 'spin 1s linear infinite', width: '15px', height: '15px' }}
@@ -843,10 +863,10 @@ export default function AdminDashboardPage() {
                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
                       <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    <span>Deleting...</span>
+                    <span>Deactivating...</span>
                   </>
                 ) : (
-                  'Yes, Delete'
+                  'Deactivate Table'
                 )}
               </button>
             </div>

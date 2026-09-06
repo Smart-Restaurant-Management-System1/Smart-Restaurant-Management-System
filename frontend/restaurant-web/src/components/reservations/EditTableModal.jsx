@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { updateTable } from '../../services/tableService';
-import { validateTableForm, sanitizeTablePayload } from './tableValidation';
+import { validateTableEditForm, sanitizeTableEditPayload } from './tableValidation';
 
 const LOCATION_OPTIONS = [
   'Main Dining',
@@ -98,13 +98,12 @@ export default function EditTableModal({ isOpen, table, onClose, onTableUpdated 
         : formData.location;
 
     const dataToValidate = {
-      tableNumber: formData.tableNumber,
       capacity: formData.capacity,
       location: resolvedLocation,
       status: formData.status,
     };
 
-    const validation = validateTableForm(dataToValidate);
+    const validation = validateTableEditForm(dataToValidate);
     if (!validation.isValid) {
       if (formData.location === 'Other' && validation.errors.location) {
         setFieldErrors({
@@ -121,7 +120,7 @@ export default function EditTableModal({ isOpen, table, onClose, onTableUpdated 
     setIsSubmitting(true);
 
     try {
-      const payload = sanitizeTablePayload(dataToValidate);
+      const payload = sanitizeTableEditPayload(dataToValidate);
       const updated = await updateTable(table.id, payload);
 
       if (onTableUpdated) {
@@ -330,7 +329,7 @@ export default function EditTableModal({ isOpen, table, onClose, onTableUpdated 
 
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
-          {/* Table Number */}
+          {/* Table Identifier (Immutable) */}
           <div style={{ marginBottom: '0.9rem' }}>
             <label
               htmlFor="editTableNumber"
@@ -342,33 +341,29 @@ export default function EditTableModal({ isOpen, table, onClose, onTableUpdated 
                 marginBottom: '0.3rem',
               }}
             >
-              Table Number <span style={{ color: '#ef4444' }}>*</span>
+              Table Identifier <span style={{ fontSize: '0.75rem', fontWeight: '400', color: '#6b7280' }}>(Immutable)</span>
             </label>
             <input
               id="editTableNumber"
               name="tableNumber"
               type="text"
-              placeholder="e.g., T-06 or VIP-01"
-              value={formData.tableNumber}
-              onChange={handleChange}
-              disabled={isSubmitting}
+              value={table.tableNumber}
+              disabled
+              readOnly
               style={{
                 width: '100%',
                 padding: '0.65rem 0.85rem',
                 fontSize: '0.9rem',
                 borderRadius: '8px',
-                border: fieldErrors.tableNumber ? '1px solid #ef4444' : '1px solid #d1d5db',
+                border: '1px solid #e5e7eb',
                 outline: 'none',
-                color: '#111827',
-                backgroundColor: '#ffffff',
+                color: '#6b7280',
+                backgroundColor: '#f9fafb',
                 boxSizing: 'border-box',
+                cursor: 'not-allowed',
+                fontWeight: '600',
               }}
             />
-            {fieldErrors.tableNumber && (
-              <p style={{ color: '#ef4444', fontSize: '0.78rem', marginTop: '0.25rem', margin: '0.25rem 0 0' }}>
-                {fieldErrors.tableNumber}
-              </p>
-            )}
           </div>
 
           {/* Seating Capacity */}
