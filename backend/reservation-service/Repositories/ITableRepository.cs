@@ -2,6 +2,13 @@ using ReservationService.Models;
 
 namespace ReservationService.Repositories;
 
+public enum TableDeactivationResult
+{
+    Success,
+    NotFound,
+    AlreadyInactive
+}
+
 public interface ITableRepository
 {
     Task<RestaurantTable> CreateTableAsync(RestaurantTable table, CancellationToken cancellationToken = default);
@@ -9,6 +16,8 @@ public interface ITableRepository
     Task<IEnumerable<RestaurantTable>> GetAllTablesAsync(bool? activeOnly = null, CancellationToken cancellationToken = default);
     Task<RestaurantTable?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<RestaurantTable?> GetByTableNumberAsync(string tableNumber, CancellationToken cancellationToken = default);
+    Task<RestaurantTable?> UpdateTableCapacityAndLocationAsync(int id, int capacity, string location, CancellationToken cancellationToken = default);
     Task<RestaurantTable?> UpdateTableAsync(RestaurantTable table, CancellationToken cancellationToken = default);
+    Task<TableDeactivationResult> SoftDeleteTableAsync(int id, CancellationToken cancellationToken = default);
     Task<bool> DeleteTableAsync(int id, CancellationToken cancellationToken = default);
 }

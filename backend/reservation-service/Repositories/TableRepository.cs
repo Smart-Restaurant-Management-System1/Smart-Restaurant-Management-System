@@ -176,16 +176,68 @@ public class TableRepository : ITableRepository
         }
     }
 
-    public async Task<bool> DeleteTableAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<RestaurantTable?> UpdateTableCapacityAndLocationAsync(int id, int capacity, string location, CancellationToken cancellationToken = default)
     {
-        using var connection = await _dbHelper.CreateConnectionAsync(cancellationToken);
-        const string deleteSql = @"DELETE FROM RestaurantTables WHERE Id = @Id;";
+        var existing = await GetByIdAsync(id, cancellationToken);
+        if (existing == null)
+        {
+            return null;
+        }
 
-        using var cmd = new MySqlCommand(deleteSql, connection);
+        using var connection = await _dbHelper.CreateConnectionAsync(cancellationToken);
+        const string updateSql = @"UPDATE RestaurantTables 
+                                  SET Capacity = @Capacity, 
+                                      Location = @Location, 
+                                      UpdatedAt = @UpdatedAt 
+                                  WHERE Id = @Id;";
+
+        using var cmd = new MySqlCommand(updateSql, connection);
         cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@Capacity", capacity);
+        cmd.Parameters.AddWithValue("@Location", location.Trim());
+        cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
 
         var rowsAffected = await cmd.ExecuteNonQueryAsync(cancellationToken);
-        return rowsAffected > 0;
+        if (rowsAffected == 0)
+        {
+            return null;
+        }
+
+        return await GetByIdAsync(id, cancellationToken);
+    }
+
+    public async Task<TableDeactivationResult> SoftDeleteTableAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var existing = await GetByIdAsync(id, cancellationToken);
+        if (existing == null)
+        {
+            return TableDeactivationResult.NotFound;
+        }
+
+        if (!existing.IsActive)
+        {
+            return TableDeactivationResult.AlreadyInactive;
+        }
+
+        using var connection = await _dbHelper.CreateConnectionAsync(cancellationToken);
+        const string softDeleteSql = @"UPDATE RestaurantTables 
+                                       SET IsActive = 0, 
+                                           Status = 'Inactive', 
+                                           UpdatedAt = @UpdatedAt 
+                                       WHERE Id = @Id;";
+
+        using var cmd = new MySqlCommand(softDeleteSql, connection);
+        cmd.Parameters.AddWithValue("@Id", id);
+        cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return rowsAffected > 0 ? TableDeactivationResult.Success : TableDeactivationResult.NotFound;
+    }
+
+    public async Task<bool> DeleteTableAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var result = await SoftDeleteTableAsync(id, cancellationToken);
+        return result == TableDeactivationResult.Success || result == TableDeactivationResult.AlreadyInactive;
     }
 
     private static RestaurantTable MapTable(MySqlDataReader reader)
@@ -205,16 +257,25 @@ public class TableRepository : ITableRepository
             status = isActive ? "Available" : "Inactive";
         }
 
+        var locOrdinal = reader.GetOrdinal("Location");
+        string location = reader.IsDBNull(locOrdinal) ? string.Empty : reader.GetString(locOrdinal);
+
+        var createdOrdinal = reader.GetOrdinal("CreatedAt");
+        DateTime createdAt = reader.IsDBNull(createdOrdinal) ? DateTime.UtcNow : reader.GetDateTime(createdOrdinal);
+
+        var updatedOrdinal = reader.GetOrdinal("UpdatedAt");
+        DateTime updatedAt = reader.IsDBNull(updatedOrdinal) ? DateTime.UtcNow : reader.GetDateTime(updatedOrdinal);
+
         return new RestaurantTable
         {
             Id = reader.GetInt32("Id"),
             TableNumber = reader.GetString("TableNumber"),
             Capacity = reader.GetInt32("Capacity"),
-            Location = reader.GetString("Location"),
+            Location = location,
             Status = status,
             IsActive = reader.GetBoolean("IsActive"),
-            CreatedAt = reader.GetDateTime("CreatedAt"),
-            UpdatedAt = reader.GetDateTime("UpdatedAt")
+            CreatedAt = createdAt,
+            UpdatedAt = updatedAt
         };
     }
 }
