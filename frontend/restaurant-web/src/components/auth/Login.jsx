@@ -78,9 +78,19 @@ export default function Login({ onNavigateToRegister }) {
       setSuccess(true);
       setIsSubmitted(false);
 
-      const targetPath = location.state?.from?.pathname ||
-        (result?.roles?.includes('Admin') ? '/admin' :
-         result?.roles?.includes('KitchenStaff') ? '/kitchen' : '/portal');
+      const roles = result?.roles || [];
+      const isAdmin = roles.includes('Admin');
+      const isKitchenStaff = roles.includes('KitchenStaff');
+      const fromPath = location.state?.from?.pathname;
+
+      let targetPath = '/portal';
+      if (isAdmin) {
+        targetPath = (fromPath && fromPath.startsWith('/admin')) ? fromPath : '/admin';
+      } else if (isKitchenStaff) {
+        targetPath = (fromPath && fromPath.startsWith('/kitchen')) ? fromPath : '/kitchen';
+      } else {
+        targetPath = fromPath || '/portal';
+      }
 
       setTimeout(() => {
         navigate(targetPath, { replace: true });

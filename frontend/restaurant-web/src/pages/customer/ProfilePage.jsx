@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getUserProfile, updateUserProfile } from '../../services/userService';
@@ -192,18 +192,7 @@ export default function ProfilePage() {
         <div style={{ marginBottom: '1.75rem' }}>
           <Link
             to="/portal"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              color: '#6b7280',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              transition: 'color 0.2s ease',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#111827')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#6b7280')}
+            className="link-jelly-back"
           >
             <svg
               width="16"
@@ -473,26 +462,11 @@ export default function ProfilePage() {
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
             <button
               type="submit"
               disabled={isSaving}
-              style={{
-                padding: '0.85rem 1.75rem',
-                background: 'var(--gold-gradient)',
-                color: '#11141a',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '0.95rem',
-                fontWeight: '700',
-                cursor: isSaving ? 'not-allowed' : 'pointer',
-                opacity: isSaving ? 0.7 : 1,
-                boxShadow: '0 4px 14px rgba(212, 175, 55, 0.35)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                transition: 'all 0.2s ease',
-              }}
+              className="btn-jelly-primary"
             >
               {isSaving ? (
                 <>
@@ -515,19 +489,9 @@ export default function ProfilePage() {
 
             <button
               type="button"
-              onClick={handleReset}
+              onClick={() => navigate('/portal')}
               disabled={isSaving}
-              style={{
-                padding: '0.85rem 1.5rem',
-                background: '#ffffff',
-                color: '#4b5563',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '0.95rem',
-                fontWeight: '600',
-                cursor: isSaving ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-              }}
+              className="btn-jelly-secondary"
             >
               Cancel
             </button>
