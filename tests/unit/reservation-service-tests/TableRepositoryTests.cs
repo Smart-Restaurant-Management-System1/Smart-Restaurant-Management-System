@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -75,16 +75,79 @@ public class TableRepositoryTests
         Assert.Contains(nameof(ITableRepository.GetAllTablesAsync), methods);
         Assert.Contains(nameof(ITableRepository.GetByIdAsync), methods);
         Assert.Contains(nameof(ITableRepository.GetByTableNumberAsync), methods);
+        Assert.Contains(nameof(ITableRepository.UpdateTableCapacityAndLocationAsync), methods);
+        Assert.Contains(nameof(ITableRepository.SoftDeleteTableAsync), methods);
+        Assert.Contains(nameof(ITableRepository.DeleteTableAsync), methods);
+    }
+
+    [Fact]
+    public void TableDeactivationResult_DefinesRequiredOutcomes()
+    {
+        var enumNames = Enum.GetNames<TableDeactivationResult>();
+
+        Assert.Contains("Success", enumNames);
+        Assert.Contains("NotFound", enumNames);
+        Assert.Contains("AlreadyInactive", enumNames);
     }
 
     [Fact]
     public void TableRepository_Implementation_UsesOnlyParameterizedQueries()
     {
-        // Inspect TableRepository implementation via reflection/metadata to confirm parameter usage
         var repoType = typeof(TableRepository);
         var createMethod = repoType.GetMethod(nameof(TableRepository.CreateTableAsync));
+        var updateCapMethod = repoType.GetMethod(nameof(TableRepository.UpdateTableCapacityAndLocationAsync));
+        var softDeleteMethod = repoType.GetMethod(nameof(TableRepository.SoftDeleteTableAsync));
 
         Assert.NotNull(createMethod);
+        Assert.NotNull(updateCapMethod);
+        Assert.NotNull(softDeleteMethod);
         Assert.True(typeof(ITableRepository).IsAssignableFrom(repoType));
+    }
+
+    [Fact]
+    public void UpdateTableCapacityAndLocation_AcceptsOnlyCapacityAndLocation()
+    {
+        var method = typeof(ITableRepository).GetMethod(nameof(ITableRepository.UpdateTableCapacityAndLocationAsync));
+        Assert.NotNull(method);
+
+        var parameters = method.GetParameters();
+        Assert.Equal(4, parameters.Length); // id, capacity, location, cancellationToken
+        Assert.Equal("id", parameters[0].Name);
+        Assert.Equal(typeof(int), parameters[0].ParameterType);
+        Assert.Equal("capacity", parameters[1].Name);
+        Assert.Equal(typeof(int), parameters[1].ParameterType);
+        Assert.Equal("location", parameters[2].Name);
+        Assert.Equal(typeof(string), parameters[2].ParameterType);
+        Assert.Equal("cancellationToken", parameters[3].Name);
+    }
+
+    [Fact]
+    public void SoftDeleteTableAsync_ReturnsTaskOfTableDeactivationResult()
+    {
+        var method = typeof(ITableRepository).GetMethod(nameof(ITableRepository.SoftDeleteTableAsync));
+        Assert.NotNull(method);
+        Assert.Equal(typeof(Task<TableDeactivationResult>), method.ReturnType);
+
+        var parameters = method.GetParameters();
+        Assert.Equal(2, parameters.Length);
+        Assert.Equal("id", parameters[0].Name);
+        Assert.Equal(typeof(int), parameters[0].ParameterType);
+    }
+
+    [Fact]
+    public void TableRepository_SourceCode_NeverContainsPhysicalSqlDelete()
+    {
+        // Read the TableRepository.cs file to verify absolutely NO physical "DELETE FROM RestaurantTables" exists
+        var assemblyLocation = typeof(TableRepository).Assembly.Location;
+        var projectDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(assemblyLocation)!, "..", "..", "..", "..", "..", "backend", "reservation-service"));
+        var repoFilePath = Path.Combine(projectDir, "Repositories", "TableRepository.cs");
+
+        if (File.Exists(repoFilePath))
+        {
+            var content = File.ReadAllText(repoFilePath);
+            Assert.DoesNotContain("DELETE FROM RestaurantTables", content, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("UPDATE RestaurantTables", content);
+            Assert.Contains("SET IsActive = 0", content);
+        }
     }
 }

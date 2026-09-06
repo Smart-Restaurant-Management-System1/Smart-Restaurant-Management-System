@@ -36,12 +36,13 @@ public class TablesController : ControllerBase
     }
 
     /// <summary>
-    /// Authenticated endpoint to list all dining tables
+    /// Admin-only endpoint to list all dining tables
     /// </summary>
-    [Authorize]
+    [Authorize(Roles = AppRoles.Admin)]
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<TableResponseDto>))]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> GetTables([FromQuery] bool? activeOnly = null, CancellationToken cancellationToken = default)
     {
         var tables = await _tableRepository.GetAllTablesAsync(activeOnly, cancellationToken);
@@ -53,6 +54,7 @@ public class TablesController : ControllerBase
             Capacity = t.Capacity,
             Location = t.Location,
             Status = ResolveStatus(t),
+            IsActive = t.IsActive,
             CreatedAt = t.CreatedAt
         });
 
@@ -60,15 +62,22 @@ public class TablesController : ControllerBase
     }
 
     /// <summary>
-    /// Authenticated endpoint to get details of a specific table by ID
+    /// Admin-only endpoint to get details of a specific table by ID
     /// </summary>
-    [Authorize]
+    [Authorize(Roles = AppRoles.Admin)]
     [HttpGet("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TableResponseDto))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTableById(int id, CancellationToken cancellationToken = default)
     {
+        if (id <= 0)
+        {
+            return BadRequest(new { message = "Invalid table ID." });
+        }
+
         var table = await _tableRepository.GetByIdAsync(id, cancellationToken);
         if (table == null)
         {
@@ -82,6 +91,7 @@ public class TablesController : ControllerBase
             Capacity = table.Capacity,
             Location = table.Location,
             Status = ResolveStatus(table),
+            IsActive = table.IsActive,
             CreatedAt = table.CreatedAt
         });
     }
@@ -151,6 +161,7 @@ public class TablesController : ControllerBase
                 Capacity = created.Capacity,
                 Location = created.Location,
                 Status = ResolveStatus(created),
+                IsActive = created.IsActive,
                 CreatedAt = created.CreatedAt
             };
 
@@ -169,8 +180,11 @@ public class TablesController : ControllerBase
     }
 
     /// <summary>
-    /// Admin-only endpoint to update an existing dining table
+    /// Admin-only endpoint to update an existing dining table's capacity and location
     /// </summary>
+    /// <remarks>
+    /// Updates only Capacity and Location. Table number, ID, and creation date cannot be overwritten.
+    /// </remarks>
     [Authorize(Roles = AppRoles.Admin)]
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TableResponseDto))]
@@ -180,37 +194,25 @@ public class TablesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateTable(int id, [FromBody] UpdateTableRequestDto request, CancellationToken cancellationToken = default)
     {
+        if (id <= 0)
+        {
+            return BadRequest(new { message = "Invalid table ID." });
+        }
+
         if (request == null)
         {
             return BadRequest(new { message = "Table data is required." });
         }
 
-        if (string.IsNullOrWhiteSpace(request.TableNumber))
+        if (request.Capacity <= 0 || request.Capacity > 100)
         {
-            return BadRequest(new { message = "Table number is required." });
+            return BadRequest(new { message = "Capacity must be between 1 and 100." });
         }
 
-        if (request.Capacity <= 0)
+        if (string.IsNullOrWhiteSpace(request.Location) || request.Location.Trim().Length > 100)
         {
-            return BadRequest(new { message = "Capacity must be greater than 0." });
+            return BadRequest(new { message = "Location is required and must not exceed 100 characters." });
         }
-
-        if (string.IsNullOrWhiteSpace(request.Location))
-        {
-            return BadRequest(new { message = "Location is required." });
-        }
-
-        string statusTrimmed = string.IsNullOrWhiteSpace(request.Status) ? "Available" : request.Status.Trim();
-        bool isAvailable = string.Equals(statusTrimmed, "Available", StringComparison.OrdinalIgnoreCase);
-        bool isOccupied = string.Equals(statusTrimmed, "Occupied", StringComparison.OrdinalIgnoreCase);
-        bool isInactive = string.Equals(statusTrimmed, "Inactive", StringComparison.OrdinalIgnoreCase);
-
-        if (!isAvailable && !isOccupied && !isInactive)
-        {
-            return BadRequest(new { message = "Status must be 'Available', 'Occupied', or 'Inactive'." });
-        }
-
-        string resolvedStatus = isAvailable ? "Available" : (isOccupied ? "Occupied" : "Inactive");
 
         var existingTable = await _tableRepository.GetByIdAsync(id, cancellationToken);
         if (existingTable == null)
@@ -219,25 +221,28 @@ public class TablesController : ControllerBase
         }
 
         // Occupied rule: Table that is occupied cannot be edited until its status is set to Available
-        if (string.Equals(existingTable.Status, "Occupied", StringComparison.OrdinalIgnoreCase) && !isAvailable)
+        bool isReleasing = string.Equals(request.Status?.Trim(), "Available", StringComparison.OrdinalIgnoreCase);
+        if (string.Equals(existingTable.Status, "Occupied", StringComparison.OrdinalIgnoreCase) && !isReleasing)
         {
             return BadRequest(new { message = $"Table '{existingTable.TableNumber}' is currently occupied and cannot be edited. It must be set to 'Available' first." });
         }
 
-        var tableToUpdate = new RestaurantTable
-        {
-            Id = id,
-            TableNumber = request.TableNumber.Trim(),
-            Capacity = request.Capacity,
-            Location = request.Location.Trim(),
-            Status = resolvedStatus,
-            IsActive = !isInactive,
-            UpdatedAt = DateTime.UtcNow
-        };
-
         try
         {
-            var updated = await _tableRepository.UpdateTableAsync(tableToUpdate, cancellationToken);
+            RestaurantTable? updated;
+            if (string.Equals(existingTable.Status, "Occupied", StringComparison.OrdinalIgnoreCase) && isReleasing)
+            {
+                existingTable.Capacity = request.Capacity;
+                existingTable.Location = request.Location.Trim();
+                existingTable.Status = "Available";
+                existingTable.IsActive = true;
+                updated = await _tableRepository.UpdateTableAsync(existingTable, cancellationToken);
+            }
+            else
+            {
+                updated = await _tableRepository.UpdateTableCapacityAndLocationAsync(id, request.Capacity, request.Location.Trim(), cancellationToken);
+            }
+
             if (updated == null)
             {
                 return NotFound(new { message = $"Table with ID {id} was not found." });
@@ -250,15 +255,11 @@ public class TablesController : ControllerBase
                 Capacity = updated.Capacity,
                 Location = updated.Location,
                 Status = ResolveStatus(updated),
+                IsActive = updated.IsActive,
                 CreatedAt = updated.CreatedAt
             };
 
             return Ok(response);
-        }
-        catch (DuplicateTableNumberException ex)
-        {
-            _logger.LogWarning(ex, "Duplicate table number on update: {TableNumber}", request.TableNumber);
-            return BadRequest(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
@@ -268,16 +269,26 @@ public class TablesController : ControllerBase
     }
 
     /// <summary>
-    /// Admin-only endpoint to delete a dining table
+    /// Admin-only endpoint to soft-deactivate a dining table
     /// </summary>
+    /// <remarks>
+    /// Performs a soft deactivation by setting IsActive = false and Status = 'Inactive'.
+    /// Preserves table identity and historical reservation records, and never physically deletes the database row.
+    /// </remarks>
     [Authorize(Roles = AppRoles.Admin)]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteTable(int id, CancellationToken cancellationToken = default)
     {
+        if (id <= 0)
+        {
+            return BadRequest(new { message = "Invalid table ID." });
+        }
+
         var existingTable = await _tableRepository.GetByIdAsync(id, cancellationToken);
         if (existingTable == null)
         {
@@ -290,8 +301,8 @@ public class TablesController : ControllerBase
             return BadRequest(new { message = $"Table '{existingTable.TableNumber}' is currently occupied and cannot be deleted until it becomes available again." });
         }
 
-        var deleted = await _tableRepository.DeleteTableAsync(id, cancellationToken);
-        if (!deleted)
+        var result = await _tableRepository.SoftDeleteTableAsync(id, cancellationToken);
+        if (result == TableDeactivationResult.NotFound)
         {
             return NotFound(new { message = $"Table with ID {id} was not found." });
         }

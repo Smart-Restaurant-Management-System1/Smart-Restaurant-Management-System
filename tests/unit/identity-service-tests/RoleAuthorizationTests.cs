@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ReservationService.Controllers;
+using ReservationService.DTOs;
+using ReservationService.Repositories;
+using RestaurantTable = ReservationService.Models.RestaurantTable;
 using Xunit;
 
 namespace IdentityServiceTests;
@@ -16,6 +19,8 @@ public class RoleAuthorizationTests
 {
     private readonly Mock<IAuthService> _authServiceMock;
     private readonly Mock<ILogger<AuthController>> _loggerMock;
+    private readonly Mock<ITableRepository> _tableRepoMock;
+    private readonly Mock<ILogger<TablesController>> _tablesLoggerMock;
     private readonly AuthController _authController;
     private readonly TablesController _tablesController;
 
@@ -23,8 +28,11 @@ public class RoleAuthorizationTests
     {
         _authServiceMock = new Mock<IAuthService>();
         _loggerMock = new Mock<ILogger<AuthController>>();
+        _tableRepoMock = new Mock<ITableRepository>();
+        _tablesLoggerMock = new Mock<ILogger<TablesController>>();
+
         _authController = new AuthController(_authServiceMock.Object, _loggerMock.Object);
-        _tablesController = new TablesController();
+        _tablesController = new TablesController(_tableRepoMock.Object, _tablesLoggerMock.Object);
     }
 
     private void SetUserContext(ControllerBase controller, string userId, string email, string role)
@@ -132,12 +140,34 @@ public class RoleAuthorizationTests
     }
 
     [Fact]
-    public void TablesController_CreateTable_AdminRole_ReturnsCreated()
+    public async Task TablesController_CreateTable_AdminRole_ReturnsCreated()
     {
         SetUserContext(_tablesController, "1", "admin@bistro.com", ReservationService.Models.AppRoles.Admin);
 
-        var request = new CreateTableRequest("T-10", 4, "Patio");
-        var result = _tablesController.CreateTable(request) as ObjectResult;
+        var createdTable = new RestaurantTable
+        {
+            Id = 10,
+            TableNumber = "T-10",
+            Capacity = 4,
+            Location = "Patio",
+            Status = "Available",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _tableRepoMock
+            .Setup(r => r.CreateTableAsync(It.IsAny<RestaurantTable>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(createdTable);
+
+        var request = new CreateTableRequestDto
+        {
+            TableNumber = "T-10",
+            Capacity = 4,
+            Location = "Patio",
+            Status = "Available"
+        };
+        var result = await _tablesController.CreateTable(request) as ObjectResult;
 
         Assert.NotNull(result);
         Assert.Equal(StatusCodes.Status201Created, result.StatusCode);
