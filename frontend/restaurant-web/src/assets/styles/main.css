@@ -1058,3 +1058,102 @@ body {
     padding: 1.5rem 1rem;
   }
 }
+
+/* ========================================================
+   Jelly Spring Button & Link Physics
+   ======================================================== */
+
+.btn-jelly-primary {
+  padding: 0.85rem 1.85rem;
+  background: var(--gold-gradient);
+  color: #11141a;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(212, 175, 55, 0.35);
+  transition: 
+    transform 0.28s var(--spring-jelly),
+    box-shadow 0.28s ease,
+    background 0.25s ease;
+  will-change: transform;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-jelly-primary:hover:not(:disabled) {
+  background: var(--gold-gradient-hover);
+  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.55);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.btn-jelly-primary:active:not(:disabled) {
+  transform: translateY(2px) scale(0.96);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.btn-jelly-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-jelly-secondary {
+  padding: 0.85rem 1.6rem;
+  background: #ffffff;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: 
+    transform 0.28s var(--spring-jelly),
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+  will-change: transform;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-jelly-secondary:hover:not(:disabled) {
+  border-color: #9ca3af;
+  color: #111827;
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-jelly-secondary:active:not(:disabled) {
+  transform: translateY(2px) scale(0.96);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.btn-jelly-secondary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.link-jelly-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: transform 0.25s var(--spring-jelly), color 0.2s ease;
+}
+
+.link-jelly-back:hover {
+  color: #111827;
+  transform: translateX(-4px);
+}
+

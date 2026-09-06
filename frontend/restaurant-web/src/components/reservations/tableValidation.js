@@ -28,8 +28,10 @@ export function validateTableForm(formData) {
   }
 
   const status = (formData.status || 'Available').trim();
-  if (status !== 'Available' && status !== 'Inactive') {
-    errors.status = "Status must be either 'Available' or 'Inactive'";
+  const validStatuses = ['Available', 'Occupied', 'Inactive'];
+  const matched = validStatuses.find((s) => s.toLowerCase() === status.toLowerCase());
+  if (!matched) {
+    errors.status = "Status must be 'Available', 'Occupied', or 'Inactive'";
   }
 
   return {
@@ -42,8 +44,13 @@ export function validateTableForm(formData) {
  * Sanitizes input into strict payload for POST /api/tables
  */
 export function sanitizeTablePayload(formData) {
-  const statusTrimmed = (formData.status || 'Available').trim();
-  const normalizedStatus = statusTrimmed.toLowerCase() === 'inactive' ? 'Inactive' : 'Available';
+  const statusTrimmed = (formData.status || 'Available').trim().toLowerCase();
+  let normalizedStatus = 'Available';
+  if (statusTrimmed === 'occupied') {
+    normalizedStatus = 'Occupied';
+  } else if (statusTrimmed === 'inactive') {
+    normalizedStatus = 'Inactive';
+  }
 
   return {
     tableNumber: (formData.tableNumber || '').trim().toUpperCase(),

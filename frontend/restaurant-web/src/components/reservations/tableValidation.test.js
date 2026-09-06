@@ -54,7 +54,18 @@ test('validateTableForm flags invalid status values', () => {
     status: 'UnknownStatus',
   });
   assert.equal(result.isValid, false);
-  assert.equal(result.errors.status, "Status must be either 'Available' or 'Inactive'");
+  assert.equal(result.errors.status, "Status must be 'Available', 'Occupied', or 'Inactive'");
+});
+
+test('validateTableForm accepts Occupied status', () => {
+  const result = validateTableForm({
+    tableNumber: 'T-05',
+    capacity: 4,
+    location: 'Main Dining',
+    status: 'Occupied',
+  });
+  assert.equal(result.isValid, true);
+  assert.deepEqual(result.errors, {});
 });
 
 test('sanitizeTablePayload trims, uppercases table number, and normalizes fields', () => {
@@ -62,7 +73,7 @@ test('sanitizeTablePayload trims, uppercases table number, and normalizes fields
     tableNumber: '  t-10  ',
     capacity: '6',
     location: '  Private Dining  ',
-    status: 'inactive',
+    status: 'occupied',
   };
 
   const sanitized = sanitizeTablePayload(rawData);
@@ -70,6 +81,6 @@ test('sanitizeTablePayload trims, uppercases table number, and normalizes fields
     tableNumber: 'T-10',
     capacity: 6,
     location: 'Private Dining',
-    status: 'Inactive',
+    status: 'Occupied',
   });
 });

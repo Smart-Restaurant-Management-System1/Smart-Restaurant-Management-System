@@ -52,7 +52,7 @@ public class TablesController : ControllerBase
             TableNumber = t.TableNumber,
             Capacity = t.Capacity,
             Location = t.Location,
-            Status = t.IsActive ? "Available" : "Inactive",
+            Status = ResolveStatus(t),
             CreatedAt = t.CreatedAt
         });
 
@@ -81,7 +81,7 @@ public class TablesController : ControllerBase
             TableNumber = table.TableNumber,
             Capacity = table.Capacity,
             Location = table.Location,
-            Status = table.IsActive ? "Available" : "Inactive",
+            Status = ResolveStatus(table),
             CreatedAt = table.CreatedAt
         });
     }
@@ -119,19 +119,23 @@ public class TablesController : ControllerBase
 
         string statusTrimmed = string.IsNullOrWhiteSpace(request.Status) ? "Available" : request.Status.Trim();
         bool isAvailable = string.Equals(statusTrimmed, "Available", StringComparison.OrdinalIgnoreCase);
+        bool isOccupied = string.Equals(statusTrimmed, "Occupied", StringComparison.OrdinalIgnoreCase);
         bool isInactive = string.Equals(statusTrimmed, "Inactive", StringComparison.OrdinalIgnoreCase);
 
-        if (!isAvailable && !isInactive)
+        if (!isAvailable && !isOccupied && !isInactive)
         {
-            return BadRequest(new { message = "Status must be either 'Available' or 'Inactive'." });
+            return BadRequest(new { message = "Status must be 'Available', 'Occupied', or 'Inactive'." });
         }
+
+        string resolvedStatus = isAvailable ? "Available" : (isOccupied ? "Occupied" : "Inactive");
 
         var table = new RestaurantTable
         {
             TableNumber = request.TableNumber.Trim(),
             Capacity = request.Capacity,
             Location = request.Location.Trim(),
-            IsActive = isAvailable,
+            Status = resolvedStatus,
+            IsActive = !isInactive,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -146,7 +150,7 @@ public class TablesController : ControllerBase
                 TableNumber = created.TableNumber,
                 Capacity = created.Capacity,
                 Location = created.Location,
-                Status = created.IsActive ? "Available" : "Inactive",
+                Status = ResolveStatus(created),
                 CreatedAt = created.CreatedAt
             };
 
@@ -162,5 +166,151 @@ public class TablesController : ControllerBase
             _logger.LogWarning(ex, "Validation error creating table: {Message}", ex.Message);
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Admin-only endpoint to update an existing dining table
+    /// </summary>
+    [Authorize(Roles = AppRoles.Admin)]
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TableResponseDto))]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateTable(int id, [FromBody] UpdateTableRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (request == null)
+        {
+            return BadRequest(new { message = "Table data is required." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.TableNumber))
+        {
+            return BadRequest(new { message = "Table number is required." });
+        }
+
+        if (request.Capacity <= 0)
+        {
+            return BadRequest(new { message = "Capacity must be greater than 0." });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Location))
+        {
+            return BadRequest(new { message = "Location is required." });
+        }
+
+        string statusTrimmed = string.IsNullOrWhiteSpace(request.Status) ? "Available" : request.Status.Trim();
+        bool isAvailable = string.Equals(statusTrimmed, "Available", StringComparison.OrdinalIgnoreCase);
+        bool isOccupied = string.Equals(statusTrimmed, "Occupied", StringComparison.OrdinalIgnoreCase);
+        bool isInactive = string.Equals(statusTrimmed, "Inactive", StringComparison.OrdinalIgnoreCase);
+
+        if (!isAvailable && !isOccupied && !isInactive)
+        {
+            return BadRequest(new { message = "Status must be 'Available', 'Occupied', or 'Inactive'." });
+        }
+
+        string resolvedStatus = isAvailable ? "Available" : (isOccupied ? "Occupied" : "Inactive");
+
+        var existingTable = await _tableRepository.GetByIdAsync(id, cancellationToken);
+        if (existingTable == null)
+        {
+            return NotFound(new { message = $"Table with ID {id} was not found." });
+        }
+
+        // Occupied rule: Table that is occupied cannot be edited until its status is set to Available
+        if (string.Equals(existingTable.Status, "Occupied", StringComparison.OrdinalIgnoreCase) && !isAvailable)
+        {
+            return BadRequest(new { message = $"Table '{existingTable.TableNumber}' is currently occupied and cannot be edited. It must be set to 'Available' first." });
+        }
+
+        var tableToUpdate = new RestaurantTable
+        {
+            Id = id,
+            TableNumber = request.TableNumber.Trim(),
+            Capacity = request.Capacity,
+            Location = request.Location.Trim(),
+            Status = resolvedStatus,
+            IsActive = !isInactive,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        try
+        {
+            var updated = await _tableRepository.UpdateTableAsync(tableToUpdate, cancellationToken);
+            if (updated == null)
+            {
+                return NotFound(new { message = $"Table with ID {id} was not found." });
+            }
+
+            var response = new TableResponseDto
+            {
+                Id = updated.Id,
+                TableNumber = updated.TableNumber,
+                Capacity = updated.Capacity,
+                Location = updated.Location,
+                Status = ResolveStatus(updated),
+                CreatedAt = updated.CreatedAt
+            };
+
+            return Ok(response);
+        }
+        catch (DuplicateTableNumberException ex)
+        {
+            _logger.LogWarning(ex, "Duplicate table number on update: {TableNumber}", request.TableNumber);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Validation error updating table: {Message}", ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Admin-only endpoint to delete a dining table
+    /// </summary>
+    [Authorize(Roles = AppRoles.Admin)]
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteTable(int id, CancellationToken cancellationToken = default)
+    {
+        var existingTable = await _tableRepository.GetByIdAsync(id, cancellationToken);
+        if (existingTable == null)
+        {
+            return NotFound(new { message = $"Table with ID {id} was not found." });
+        }
+
+        // Occupied rule: Table that is occupied cannot be deleted until it becomes available again
+        if (string.Equals(existingTable.Status, "Occupied", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = $"Table '{existingTable.TableNumber}' is currently occupied and cannot be deleted until it becomes available again." });
+        }
+
+        var deleted = await _tableRepository.DeleteTableAsync(id, cancellationToken);
+        if (!deleted)
+        {
+            return NotFound(new { message = $"Table with ID {id} was not found." });
+        }
+
+        return NoContent();
+    }
+
+    private static string ResolveStatus(RestaurantTable table)
+    {
+        if (!table.IsActive)
+        {
+            return "Inactive";
+        }
+
+        if (string.Equals(table.Status, "Occupied", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Occupied";
+        }
+
+        return "Available";
     }
 }

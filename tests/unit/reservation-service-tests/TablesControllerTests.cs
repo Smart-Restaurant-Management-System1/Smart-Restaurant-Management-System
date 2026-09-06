@@ -291,4 +291,259 @@ public class TablesControllerTests
         var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
         Assert.Equal(404, notFoundResult.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateTable_ValidRequest_Returns200Ok()
+    {
+        // Arrange
+        var request = new UpdateTableRequestDto
+        {
+            TableNumber = "T-01-RENAMED",
+            Capacity = 6,
+            Location = "Main Dining",
+            Status = "Available"
+        };
+
+        var existing = new RestaurantTable
+        {
+            Id = 1,
+            TableNumber = "T-01",
+            Capacity = 2,
+            Location = "Window",
+            IsActive = true
+        };
+
+        var updated = new RestaurantTable
+        {
+            Id = 1,
+            TableNumber = "T-01-RENAMED",
+            Capacity = 6,
+            Location = "Main Dining",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _mockRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _mockRepo.Setup(r => r.UpdateTableAsync(It.IsAny<RestaurantTable>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updated);
+
+        // Act
+        var result = await _controller.UpdateTable(1, request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, okResult.StatusCode);
+        var dto = Assert.IsType<TableResponseDto>(okResult.Value);
+        Assert.Equal("T-01-RENAMED", dto.TableNumber);
+        Assert.Equal(6, dto.Capacity);
+    }
+
+    [Fact]
+    public async Task UpdateTable_WhenNotFound_Returns404NotFound()
+    {
+        // Arrange
+        var request = new UpdateTableRequestDto
+        {
+            TableNumber = "T-99",
+            Capacity = 4,
+            Location = "Patio"
+        };
+
+        _mockRepo.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((RestaurantTable?)null);
+
+        // Act
+        var result = await _controller.UpdateTable(99, request);
+
+        // Assert
+        var notFound = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(404, notFound.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateTable_DuplicateTableNumber_Returns400BadRequest()
+    {
+        // Arrange
+        var request = new UpdateTableRequestDto
+        {
+            TableNumber = "T-02",
+            Capacity = 4,
+            Location = "Window"
+        };
+
+        var existing = new RestaurantTable { Id = 1, TableNumber = "T-01", Capacity = 2, Location = "Window" };
+
+        _mockRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _mockRepo.Setup(r => r.UpdateTableAsync(It.IsAny<RestaurantTable>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new DuplicateTableNumberException("Table number 'T-02' already exists."));
+
+        // Act
+        var result = await _controller.UpdateTable(1, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, badRequest.StatusCode);
+    }
+
+    [Fact]
+    public void UpdateTable_HasAuthorizeAdminAttribute()
+    {
+        var method = typeof(TablesController).GetMethod(nameof(TablesController.UpdateTable));
+        Assert.NotNull(method);
+        var attr = method.GetCustomAttribute<AuthorizeAttribute>();
+        Assert.NotNull(attr);
+        Assert.Equal(AppRoles.Admin, attr.Roles);
+    }
+
+    [Fact]
+    public async Task DeleteTable_WhenExists_Returns204NoContent()
+    {
+        // Arrange
+        var existing = new RestaurantTable { Id = 1, TableNumber = "T-01" };
+        _mockRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _mockRepo.Setup(r => r.DeleteTableAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.DeleteTable(1);
+
+        // Assert
+        var noContent = Assert.IsType<NoContentResult>(result);
+        Assert.Equal(204, noContent.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteTable_WhenNotFound_Returns404NotFound()
+    {
+        // Arrange
+        _mockRepo.Setup(r => r.GetByIdAsync(99, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((RestaurantTable?)null);
+
+        // Act
+        var result = await _controller.DeleteTable(99);
+
+        // Assert
+        var notFound = Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(404, notFound.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateTable_WhenTableIsOccupied_AndTargetStatusNotAvailable_Returns400BadRequest()
+    {
+        // Arrange
+        var request = new UpdateTableRequestDto
+        {
+            TableNumber = "T-01",
+            Capacity = 8,
+            Location = "Window",
+            Status = "Occupied"
+        };
+
+        var existing = new RestaurantTable
+        {
+            Id = 1,
+            TableNumber = "T-01",
+            Capacity = 4,
+            Location = "Window",
+            Status = "Occupied",
+            IsActive = true
+        };
+
+        _mockRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        // Act
+        var result = await _controller.UpdateTable(1, request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, badRequest.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateTable_WhenTableIsOccupied_AndTargetStatusAvailable_Returns200Ok()
+    {
+        // Arrange
+        var request = new UpdateTableRequestDto
+        {
+            TableNumber = "T-01",
+            Capacity = 6,
+            Location = "Window",
+            Status = "Available"
+        };
+
+        var existing = new RestaurantTable
+        {
+            Id = 1,
+            TableNumber = "T-01",
+            Capacity = 4,
+            Location = "Window",
+            Status = "Occupied",
+            IsActive = true
+        };
+
+        var updated = new RestaurantTable
+        {
+            Id = 1,
+            TableNumber = "T-01",
+            Capacity = 6,
+            Location = "Window",
+            Status = "Available",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _mockRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _mockRepo.Setup(r => r.UpdateTableAsync(It.IsAny<RestaurantTable>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(updated);
+
+        // Act
+        var result = await _controller.UpdateTable(1, request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, okResult.StatusCode);
+        var dto = Assert.IsType<TableResponseDto>(okResult.Value);
+        Assert.Equal("Available", dto.Status);
+    }
+
+    [Fact]
+    public async Task DeleteTable_WhenTableIsOccupied_Returns400BadRequest()
+    {
+        // Arrange
+        var existing = new RestaurantTable
+        {
+            Id = 1,
+            TableNumber = "T-01",
+            Capacity = 4,
+            Location = "Window",
+            Status = "Occupied"
+        };
+
+        _mockRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        // Act
+        var result = await _controller.DeleteTable(1);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, badRequest.StatusCode);
+    }
+
+    [Fact]
+    public void DeleteTable_HasAuthorizeAdminAttribute()
+    {
+        var method = typeof(TablesController).GetMethod(nameof(TablesController.DeleteTable));
+        Assert.NotNull(method);
+        var attr = method.GetCustomAttribute<AuthorizeAttribute>();
+        Assert.NotNull(attr);
+        Assert.Equal(AppRoles.Admin, attr.Roles);
+    }
 }

@@ -97,12 +97,18 @@ export default function Register({ onNavigateToLogin }) {
   }, [formData, isSubmitted, accountType]);
 
   const handleAccountTypeChange = (type) => {
+    if (type === accountType) return;
     setAccountType(type);
-    setFormData((prev) => ({
-      ...prev,
-      role: type === 'Customer' ? 'Customer' : (prev.role === 'Customer' ? 'KitchenStaff' : prev.role),
+    setFormData({
+      fullName: '',
+      email: '',
+      phoneNumber: '',
+      password: '',
+      confirmPassword: '',
+      role: type === 'Customer' ? 'Customer' : 'KitchenStaff',
       staffAuthorizationCode: ''
-    }));
+    });
+    setIsSubmitted(false);
     setError(null);
   };
 
@@ -156,9 +162,12 @@ export default function Register({ onNavigateToLogin }) {
       });
       setIsSubmitted(false);
 
-      // Redirect to portal
+      // Redirect to role-appropriate page
+      const registeredRole = result?.role || (accountType === 'Customer' ? 'Customer' : formData.role);
+      const redirectPath = registeredRole === 'Admin' ? '/admin' :
+                           registeredRole === 'KitchenStaff' ? '/kitchen' : '/portal';
       setTimeout(() => {
-        window.location.href = '/portal';
+        window.location.href = redirectPath;
       }, 1200);
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {

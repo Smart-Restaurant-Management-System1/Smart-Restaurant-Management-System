@@ -1,4 +1,4 @@
-﻿-- =======================================================
+-- =======================================================
 -- Smart Restaurant Management System
 -- Reservation Service Database Initialization
 -- =======================================================
@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS `RestaurantTables` (
     `TableNumber` VARCHAR(20) NOT NULL,
     `Capacity` INT NOT NULL,
     `Location` VARCHAR(100) NOT NULL,
+    `Status` VARCHAR(20) NOT NULL DEFAULT 'Available',
     `IsActive` BOOLEAN NOT NULL DEFAULT TRUE,
     `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `UpdatedAt` DATETIME NOT NULL 

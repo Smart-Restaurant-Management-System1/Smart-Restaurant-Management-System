@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { createTable } from '../../services/tableService';
+import { updateTable } from '../../services/tableService';
 import { validateTableForm, sanitizeTablePayload } from './tableValidation';
 
 const LOCATION_OPTIONS = [
@@ -12,7 +12,7 @@ const LOCATION_OPTIONS = [
   'Other',
 ];
 
-export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
+export default function EditTableModal({ isOpen, table, onClose, onTableUpdated }) {
   const [formData, setFormData] = useState({
     tableNumber: '',
     capacity: '4',
@@ -24,6 +24,22 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [serverError, setServerError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Initialize form data when table prop changes
+  useEffect(() => {
+    if (table) {
+      const isPresetLocation = LOCATION_OPTIONS.slice(0, -1).includes(table.location);
+      setFormData({
+        tableNumber: table.tableNumber || '',
+        capacity: table.capacity ? String(table.capacity) : '4',
+        location: isPresetLocation ? table.location : 'Other',
+        customLocation: isPresetLocation ? '' : (table.location || ''),
+        status: table.status || (table.isActive ? 'Available' : 'Inactive'),
+      });
+      setFieldErrors({});
+      setServerError('');
+    }
+  }, [table, isOpen]);
 
   // Close on Escape key
   useEffect(() => {
@@ -41,7 +57,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
     };
   }, [isOpen, isSubmitting]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !table) return null;
 
   const handleClose = () => {
     setFieldErrors({});
@@ -65,9 +81,16 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
     setServerError('');
   };
 
+  const isOccupiedBlocked = table?.status === 'Occupied' && formData.status !== 'Available';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setServerError('');
+
+    if (isOccupiedBlocked) {
+      setServerError(`Table '${table.tableNumber}' is currently occupied and cannot be edited. Please select 'Available' first.`);
+      return;
+    }
 
     const resolvedLocation =
       formData.location === 'Other'
@@ -99,18 +122,10 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
 
     try {
       const payload = sanitizeTablePayload(dataToValidate);
-      const created = await createTable(payload);
+      const updated = await updateTable(table.id, payload);
 
-      // Reset form and notify parent
-      setFormData({
-        tableNumber: '',
-        capacity: '4',
-        location: 'Main Dining',
-        customLocation: '',
-        status: 'Available',
-      });
-      if (onTableCreated) {
-        onTableCreated(created);
+      if (onTableUpdated) {
+        onTableUpdated(updated);
       }
       handleClose();
     } catch (err) {
@@ -118,7 +133,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
         err.response?.data?.message ||
         err.response?.data?.title ||
         err.message ||
-        'Failed to create table. Please check the information and try again.';
+        'Failed to update table. Please check the information and try again.';
       setServerError(msg);
     } finally {
       setIsSubmitting(false);
@@ -185,7 +200,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
                 marginBottom: '0.2rem',
               }}
             >
-              Seating Configuration
+              Modify Seating
             </span>
             <h2
               style={{
@@ -195,7 +210,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
                 margin: 0,
               }}
             >
-              Add Restaurant Table
+              Edit Table {table.tableNumber}
             </h2>
           </div>
 
@@ -232,16 +247,16 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
               backgroundColor: '#fef2f2',
               border: '1px solid #f87171',
               color: '#991b1b',
-              padding: '0.85rem 1rem',
+              padding: '0.65rem 0.9rem',
               borderRadius: '8px',
-              fontSize: '0.88rem',
-              marginBottom: '1.25rem',
+              fontSize: '0.85rem',
+              marginBottom: '1rem',
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -250,12 +265,75 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
           </div>
         )}
 
+        {/* Occupied Warning Banner */}
+        {table.status === 'Occupied' && (
+          <div
+            style={{
+              backgroundColor: formData.status === 'Available' ? '#ecfdf5' : '#fffbeb',
+              border: formData.status === 'Available' ? '1px solid #a7f3d0' : '1px solid #fcd34d',
+              color: formData.status === 'Available' ? '#065f46' : '#92400e',
+              padding: '0.75rem 0.9rem',
+              borderRadius: '8px',
+              fontSize: '0.85rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.6rem',
+            }}
+          >
+            {formData.status === 'Available' ? (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px' }}>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <div>
+                  <span style={{ fontWeight: '600' }}>Releasing Table:</span> Status will be updated to <strong>Available</strong> upon saving.
+                </div>
+              </>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px' }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: '600', marginBottom: '0.15rem' }}>Table is Currently Occupied</div>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#b45309', lineHeight: '1.35' }}>
+                    Occupied tables cannot be modified or deleted. Select <strong>Available</strong> below to free the table and enable saving modifications.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, status: 'Available' }))}
+                    style={{
+                      marginTop: '0.45rem',
+                      padding: '0.3rem 0.7rem',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      color: '#065f46',
+                      backgroundColor: '#d1fae5',
+                      border: '1px solid #6ee7b7',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                    }}
+                  >
+                    ✓ Set to Available
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate>
           {/* Table Number */}
           <div style={{ marginBottom: '0.9rem' }}>
             <label
-              htmlFor="tableNumber"
+              htmlFor="editTableNumber"
               style={{
                 display: 'block',
                 fontSize: '0.85rem',
@@ -267,7 +345,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
               Table Number <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
-              id="tableNumber"
+              id="editTableNumber"
               name="tableNumber"
               type="text"
               placeholder="e.g., T-06 or VIP-01"
@@ -296,7 +374,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
           {/* Seating Capacity */}
           <div style={{ marginBottom: '0.9rem' }}>
             <label
-              htmlFor="capacity"
+              htmlFor="editCapacity"
               style={{
                 display: 'block',
                 fontSize: '0.85rem',
@@ -308,7 +386,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
               Seating Capacity <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <input
-              id="capacity"
+              id="editCapacity"
               name="capacity"
               type="number"
               min="1"
@@ -339,7 +417,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
           {/* Location / Section */}
           <div style={{ marginBottom: '0.9rem' }}>
             <label
-              htmlFor="location"
+              htmlFor="editLocation"
               style={{
                 display: 'block',
                 fontSize: '0.85rem',
@@ -351,7 +429,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
               Location / Section <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <select
-              id="location"
+              id="editLocation"
               name="location"
               value={formData.location}
               onChange={handleChange}
@@ -416,7 +494,7 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
                 marginBottom: '0.4rem',
               }}
             >
-              Initial Status
+              Table Status
             </label>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <label
@@ -518,14 +596,17 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isOccupiedBlocked}
               className="btn-jelly-primary"
+              title={isOccupiedBlocked ? "Select 'Available' to enable saving changes for this occupied table" : ""}
               style={{
                 padding: '0.65rem 1.45rem',
                 fontSize: '0.88rem',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.5rem',
+                opacity: isOccupiedBlocked ? 0.6 : 1,
+                cursor: isOccupiedBlocked ? 'not-allowed' : 'pointer',
               }}
             >
               {isSubmitting ? (
@@ -545,10 +626,12 @@ export default function AddTableModal({ isOpen, onClose, onTableCreated }) {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  <span>Saving Table...</span>
+                  <span>Saving...</span>
                 </>
+              ) : isOccupiedBlocked ? (
+                'Select Available to Save'
               ) : (
-                'Add Table'
+                'Save Changes'
               )}
             </button>
           </div>

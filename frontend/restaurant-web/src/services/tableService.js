@@ -1,10 +1,7 @@
 import axios from 'axios';
 
 const RESERVATION_API_BASE =
-  import.meta.env.VITE_RESERVATION_API_URL ||
-  (import.meta.env.VITE_API_URL
-    ? import.meta.env.VITE_API_URL.replace(':5001', ':5002')
-    : 'http://localhost:5002/api');
+  import.meta.env.VITE_RESERVATION_API_URL || 'http://localhost:5000/api';
 
 export const reservationApi = axios.create({
   baseURL: RESERVATION_API_BASE,
@@ -59,8 +56,30 @@ export const getTableById = async (id) => {
   return response.data;
 };
 
+/**
+ * Updates an existing table by ID (Admin only).
+ * @param {number} id - Table ID.
+ * @param {Object} tableData - { tableNumber, capacity, location, status }
+ * @returns {Promise<Object>} Updated table response object.
+ */
+export const updateTable = async (id, tableData) => {
+  const response = await reservationApi.put(`/tables/${id}`, tableData);
+  return response.data;
+};
+
+/**
+ * Deletes a table by ID (Admin only).
+ * @param {number} id - Table ID.
+ * @returns {Promise<void>}
+ */
+export const deleteTable = async (id) => {
+  await reservationApi.delete(`/tables/${id}`);
+};
+
 export default {
   createTable,
   getTables,
   getTableById,
+  updateTable,
+  deleteTable,
 };

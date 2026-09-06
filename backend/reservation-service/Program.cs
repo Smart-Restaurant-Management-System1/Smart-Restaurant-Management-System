@@ -10,7 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Configure JWT Authentication matching Identity Service contract
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "SmartRestaurant_Super_Secret_Key_For_Jwt_Token_Validation_2026!";
+var jwtKey = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrEmpty(jwtKey) || jwtKey == "SET_USING_ENVIRONMENT_OR_USER_SECRETS")
+{
+    jwtKey = "SmartRestaurant_Super_Secret_Key_For_Jwt_Token_Validation_2026!";
+}
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SmartRestaurant";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SmartRestaurantUsers";
 
