@@ -1,0 +1,94 @@
+name: Cinnamon Bistro CD
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  ACR_NAME: acrcinnamonbistrodev
+  ACR_LOGIN_SERVER: acrcinnamonbistrodev-g7h3ddhecccqdjfv.azurecr.io
+  RESOURCE_GROUP: rg-cinnamon-bistro-dev
+
+jobs:
+  deploy:
+    name: Build and Deploy to Azure
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: a32bd652-cca5-4729-8831-0cfc663d0686
+          tenant-id: 94822146-9a01-4a22-8b35-2e0b3d42f260
+          subscription-id: b44b6fab-2448-45d9-9407-386d76d60439
+
+      - name: Login to Azure Container Registry
+        run: az acr login --name $ACR_NAME
+
+      - name: Build Identity Service image
+        run: |
+          docker build \
+            -t $ACR_LOGIN_SERVER/identity-service:${{ github.sha }} \
+            -t $ACR_LOGIN_SERVER/identity-service:latest \
+            backend/identity-service
+
+      - name: Build Reservation Service image
+        run: |
+          docker build \
+            -t $ACR_LOGIN_SERVER/reservation-service:${{ github.sha }} \
+            -t $ACR_LOGIN_SERVER/reservation-service:latest \
+            backend/reservation-service
+
+      - name: Build Frontend image
+        run: |
+          docker build \
+            -f frontend/restaurant-web/Dockerfile.azure \
+            -t $ACR_LOGIN_SERVER/frontend:${{ github.sha }} \
+            -t $ACR_LOGIN_SERVER/frontend:azure \
+            frontend/restaurant-web
+
+      - name: Push Identity Service image
+        run: |
+          docker push $ACR_LOGIN_SERVER/identity-service:${{ github.sha }}
+          docker push $ACR_LOGIN_SERVER/identity-service:latest
+
+      - name: Push Reservation Service image
+        run: |
+          docker push $ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}
+          docker push $ACR_LOGIN_SERVER/reservation-service:latest
+
+      - name: Push Frontend image
+        run: |
+          docker push $ACR_LOGIN_SERVER/frontend:${{ github.sha }}
+          docker push $ACR_LOGIN_SERVER/frontend:azure
+
+      - name: Deploy Identity Service
+        run: |
+          az containerapp update \
+            --name identity-api \
+            --resource-group $RESOURCE_GROUP \
+            --image $ACR_LOGIN_SERVER/identity-service:${{ github.sha }}
+
+      - name: Deploy Reservation Service
+        run: |
+          az containerapp update \
+            --name reservation-api \
+            --resource-group $RESOURCE_GROUP \
+            --image $ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}
+
+      - name: Deploy Frontend
+        run: |
+          az containerapp update \
+            --name frontend-web \
+            --resource-group $RESOURCE_GROUP \
+            --image $ACR_LOGIN_SERVER/frontend:${{ github.sha }}
+
+
