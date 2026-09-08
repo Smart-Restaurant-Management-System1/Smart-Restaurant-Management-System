@@ -27,7 +27,7 @@ jobs:
         uses: azure/login@v2
         with:
           client-id: a32bd652-cca5-4729-8831-0cfc663d0686
-          tenant-id: 94822146-9a01-4a22-8b35-2e0b3d42f260
+          tenant-id: 44e3cf94-19c9-4e32-96c3-14f5bf01391a
           subscription-id: b44b6fab-2448-45d9-9407-386d76d60439
 
       - name: Login to Azure Container Registry
@@ -90,5 +90,6 @@ jobs:
             --name frontend-web \
             --resource-group $RESOURCE_GROUP \
             --image $ACR_LOGIN_SERVER/frontend:${{ github.sha }}
+
 
 
