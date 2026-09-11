@@ -16,13 +16,17 @@ public sealed class ReservationsController : ControllerBase
     private readonly IAvailabilitySearchService _service;
     private readonly IReservationCreationService _creationService;
     private readonly ILogger<ReservationsController> _logger;
+    private readonly IReservationHistoryService? _historyService;
+    private readonly IReservationLifecycleService? _lifecycleService;
 
-    public ReservationsController(IAvailabilitySearchValidator validator, IAvailabilitySearchService service, IReservationCreationService creationService, ILogger<ReservationsController> logger)
+    public ReservationsController(IAvailabilitySearchValidator validator, IAvailabilitySearchService service, IReservationCreationService creationService, ILogger<ReservationsController> logger, IReservationHistoryService? historyService = null, IReservationLifecycleService? lifecycleService = null)
     {
         _validator = validator;
         _service = service;
         _creationService = creationService;
         _logger = logger;
+        _historyService = historyService;
+        _lifecycleService = lifecycleService;
     }
 
     /// <summary>SR-57 advisory availability search. It does not reserve or lock a table; SR-58 must revalidate atomically.</summary>
@@ -99,6 +103,75 @@ public sealed class ReservationsController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Unable to create the reservation. Please try again later." });
         }
     }
+
+    /// <summary>Returns only the authenticated customer's reservations, newest visit first.</summary>
+    [Authorize(Roles = AppRoles.Customer)]
+    [HttpGet("my-history")]
+    [ProducesResponseType(typeof(ReservationHistoryResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetMyHistory([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (page < 1) errors["page"] = ["Page must be at least 1."];
+        if (pageSize is < 1 or > 50) errors["pageSize"] = ["Page size must be between 1 and 50."];
+        if (errors.Count > 0) return BadRequest(new ValidationProblemDetails(errors) { Status = StatusCodes.Status400BadRequest });
+        if (!TryGetCustomerId(out var customerId)) return Unauthorized();
+        if (_historyService is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation history is unavailable." });
+
+        try
+        {
+            var result = await _historyService.GetForCustomerAsync(customerId, page, pageSize, cancellationToken);
+            return Ok(new ReservationHistoryResponseDto
+            {
+                Items = result.Items.Select(ToHistoryItem).ToList(), Page = result.Page, PageSize = result.PageSize,
+                TotalCount = result.TotalCount, TotalPages = (int)Math.Ceiling(result.TotalCount / (double)result.PageSize)
+            });
+        }
+        catch (MySqlException ex)
+        {
+            _logger.LogError(ex, "Reservation history retrieval failed.");
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Unable to retrieve reservation history. Please try again later." });
+        }
+    }
+
+    [Authorize(Roles = AppRoles.Customer)]
+    [HttpPost("{reservationId:int}/cancel")]
+    public async Task<IActionResult> CancelMyReservation(int reservationId, CancellationToken cancellationToken = default)
+    {
+        if (!TryGetCustomerId(out var customerId)) return Unauthorized();
+        return await ChangeStatusAsync(reservationId, customerId, ReservationStatus.Cancelled, cancellationToken);
+    }
+
+    [Authorize(Roles = AppRoles.Admin)]
+    [HttpPatch("{reservationId:int}/status")]
+    public async Task<IActionResult> ChangeStatus(int reservationId, [FromBody] UpdateReservationStatusRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (request is null || !ReservationStatus.IsKnown(request.Status))
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["status"] = ["Status must be Pending, Confirmed, Cancelled, or Completed."] }) { Status = StatusCodes.Status400BadRequest });
+        return await ChangeStatusAsync(reservationId, null, request.Status!, cancellationToken);
+    }
+
+    private async Task<IActionResult> ChangeStatusAsync(int reservationId, int? customerId, string targetStatus, CancellationToken cancellationToken)
+    {
+        if (reservationId <= 0) return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["reservationId"] = ["A valid reservation ID is required."] }) { Status = StatusCodes.Status400BadRequest });
+        if (_lifecycleService is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation status changes are unavailable." });
+        var outcome = await _lifecycleService.ChangeStatusAsync(reservationId, customerId, targetStatus, cancellationToken);
+        return outcome switch
+        {
+            ReservationStatusUpdateOutcome.Updated => NoContent(),
+            ReservationStatusUpdateOutcome.NotFound => NotFound(new { message = "Reservation not found." }),
+            _ => Conflict(new { code = "INVALID_RESERVATION_TRANSITION", message = "This reservation cannot move to the requested status." })
+        };
+    }
+
+    private bool TryGetCustomerId(out int customerId) => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out customerId) && customerId > 0;
+
+    private static ReservationHistoryItemDto ToHistoryItem(Reservation reservation) => new()
+    {
+        ReservationId = reservation.Id, BookingReference = reservation.BookingReference, TableId = reservation.TableId,
+        TableNumber = reservation.TableNumber, StartDateTime = reservation.StartDateTime, EndDateTime = reservation.EndDateTime,
+        GuestCount = reservation.GuestCount, Status = reservation.Status, CreatedAt = reservation.CreatedAt, UpdatedAt = reservation.UpdatedAt
+    };
 
     private static ReservationConfirmationResponseDto ToConfirmation(Reservation reservation) => new()
     {

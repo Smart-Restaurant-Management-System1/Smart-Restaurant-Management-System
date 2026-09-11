@@ -10,6 +10,7 @@ import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
 import AvailabilitySearchPage from '../pages/availability/AvailabilitySearchPage';
 import ReservationReviewPage from '../pages/availability/ReservationReviewPage';
 import ReservationConfirmationPage from '../pages/availability/ReservationConfirmationPage';
+import ReservationHistoryPage from '../pages/availability/ReservationHistoryPage';
 import UnauthorizedPage from '../pages/common/UnauthorizedPage';
 import LandingPage from '../pages/common/LandingPage';
 import ProtectedRoute from './ProtectedRoute';
@@ -63,6 +64,7 @@ export default function AppRoutes() {
       <Route path="/availability" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}><AvailabilitySearchPage /></ProtectedRoute>} />
       <Route path="/reservations/new" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationReviewPage /></ProtectedRoute>} />
       <Route path="/reservations/confirmation" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationConfirmationPage /></ProtectedRoute>} />
+      <Route path="/reservations/history" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationHistoryPage /></ProtectedRoute>} />
 
       {/* Admin Protected Routes */}
       <Route

@@ -12,4 +12,5 @@ public sealed record Reservation
     public int GuestCount { get; init; }
     public string Status { get; init; } = "Pending";
     public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
 }

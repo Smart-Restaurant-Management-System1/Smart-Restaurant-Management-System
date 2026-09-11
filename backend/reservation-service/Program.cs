@@ -116,6 +116,8 @@ builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchValida
 builder.Services.AddSingleton<ReservationService.Services.IBookingReferenceGenerator, ReservationService.Services.BookingReferenceGenerator>();
 builder.Services.AddScoped<ReservationService.Repositories.IReservationRepository, ReservationService.Repositories.ReservationRepository>();
 builder.Services.AddScoped<ReservationService.Services.IReservationCreationService, ReservationService.Services.ReservationCreationService>();
+builder.Services.AddScoped<ReservationService.Services.IReservationHistoryService, ReservationService.Services.ReservationHistoryService>();
+builder.Services.AddScoped<ReservationService.Services.IReservationLifecycleService, ReservationService.Services.ReservationLifecycleService>();
 
 var app = builder.Build();
 
