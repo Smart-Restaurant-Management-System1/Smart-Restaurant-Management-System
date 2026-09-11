@@ -636,4 +636,139 @@ public class TablesControllerTests
             Assert.Contains(produces, p => p.StatusCode == 403);
         }
     }
+
+    // =====================================================================
+    // SR-13: GetActiveTables
+    // =====================================================================
+
+    [Fact]
+    public async Task GetActiveTables_ActiveTablesExist_Returns200WithActiveTables()
+    {
+        // Arrange
+        var activeTables = new List<RestaurantTable>
+        {
+            new RestaurantTable { Id = 1, TableNumber = "T-01", Capacity = 2, Location = "Window", Status = "Available", IsActive = true, CreatedAt = DateTime.UtcNow },
+            new RestaurantTable { Id = 2, TableNumber = "T-02", Capacity = 4, Location = "Center", Status = "Available", IsActive = true, CreatedAt = DateTime.UtcNow }
+        };
+
+        _mockRepo.Setup(r => r.GetActiveTablesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(activeTables);
+
+        // Act
+        var result = await _controller.GetActiveTables();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, okResult.StatusCode);
+
+        var dtos = Assert.IsAssignableFrom<IEnumerable<ActiveTableResponseDto>>(okResult.Value);
+        Assert.Equal(2, dtos.Count());
+        Assert.All(dtos, dto => Assert.Equal("Available", dto.OperationalStatus));
+    }
+
+    [Fact]
+    public async Task GetActiveTables_NoActiveTables_Returns200WithEmptyList()
+    {
+        // Arrange
+        _mockRepo.Setup(r => r.GetActiveTablesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RestaurantTable>());
+
+        // Act
+        var result = await _controller.GetActiveTables();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(200, okResult.StatusCode);
+
+        var dtos = Assert.IsAssignableFrom<IEnumerable<ActiveTableResponseDto>>(okResult.Value);
+        Assert.Empty(dtos);
+    }
+
+    [Fact]
+    public async Task GetActiveTables_RepositoryCalledWithActiveOnlyTrue()
+    {
+        // Arrange
+        _mockRepo.Setup(r => r.GetActiveTablesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<RestaurantTable>());
+
+        // Act
+        await _controller.GetActiveTables();
+
+        // Assert — repository must be called with activeOnly = true (not null, not false)
+        _mockRepo.Verify(r => r.GetActiveTablesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetActiveTables_DtoContainsRequiredFields()
+    {
+        // Arrange
+        var now = new DateTime(2025, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+        var activeTables = new List<RestaurantTable>
+        {
+            new RestaurantTable
+            {
+                Id = 5,
+                TableNumber = "T-05",
+                Capacity = 6,
+                Location = "Patio",
+                Status = "Available",
+                IsActive = true,
+                CreatedAt = now
+            }
+        };
+
+        _mockRepo.Setup(r => r.GetActiveTablesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(activeTables);
+
+        // Act
+        var result = await _controller.GetActiveTables();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var dtos = Assert.IsAssignableFrom<IEnumerable<ActiveTableResponseDto>>(okResult.Value).ToList();
+        Assert.Single(dtos);
+
+        var dto = dtos[0];
+        Assert.Equal(5, dto.TableId);
+        Assert.Equal("T-05", dto.TableNumber);
+        Assert.Equal(6, dto.SeatingCapacity);
+        Assert.Equal("Available", dto.OperationalStatus);
+        Assert.Equal(4, typeof(ActiveTableResponseDto).GetProperties().Length);
+    }
+
+    [Fact]
+    public void GetActiveTables_HasCorrectAuthorizeAttribute_ForAnyAuthenticatedUser()
+    {
+        // Arrange
+        var method = typeof(TablesController).GetMethod(nameof(TablesController.GetActiveTables));
+
+        // Assert — method exists
+        Assert.NotNull(method);
+
+        // Assert — [Authorize] attribute present
+        var auth = method!.GetCustomAttribute<AuthorizeAttribute>();
+        Assert.NotNull(auth);
+
+        // Assert — roles string contains all three required roles
+        Assert.True(string.IsNullOrEmpty(auth!.Roles));
+
+        // Assert — 401 and 403 response types declared
+        var produces = method.GetCustomAttributes<ProducesResponseTypeAttribute>().ToList();
+        Assert.Contains(produces, p => p.StatusCode == 401);
+        Assert.Contains(produces, p => p.StatusCode == 200);
+    }
+
+    [Fact]
+    public async Task GetActiveTables_DatabaseFailure_Returns500WithProjectMessageShape()
+    {
+        _mockRepo.Setup(r => r.GetActiveTablesAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Database unavailable"));
+
+        var result = await _controller.GetActiveTables();
+
+        var serverError = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(500, serverError.StatusCode);
+        var message = serverError.Value!.GetType().GetProperty("message")?.GetValue(serverError.Value)?.ToString();
+        Assert.Contains("Unable to retrieve active restaurant tables", message);
+    }
 }

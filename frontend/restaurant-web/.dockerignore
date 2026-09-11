@@ -1,0 +1,13 @@
+# Dependencies are installed inside the Linux build container. Do not copy the
+# host's platform-specific modules over them.
+node_modules
+
+# Vite recreates this output during the image build.
+dist
+
+# Development-only files
+.git
+.env
+.env.*
+!\.env.example
+npm-debug.log*

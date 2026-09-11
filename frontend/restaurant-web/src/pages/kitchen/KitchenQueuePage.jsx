@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function KitchenQueuePage() {
@@ -64,29 +64,26 @@ export default function KitchenQueuePage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowLogoutModal(true)}
-            className="btn-jelly-secondary"
-            style={{
-              padding: '0.65rem 1.15rem',
-              fontSize: '0.88rem',
-              color: '#111827',
-              backgroundColor: '#ffffff',
-              borderColor: '#111827',
-              fontWeight: '600',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-            Sign Out
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <Link to="/tables" className="btn-jelly-secondary" style={{ padding: '0.65rem 1.15rem', fontSize: '0.88rem', textDecoration: 'none' }}>
+              View Tables
+            </Link>
+            <button
+              type="button"
+              onClick={() => setShowLogoutModal(true)}
+              className="btn-jelly-secondary"
+              style={{
+                padding: '0.65rem 1.15rem', fontSize: '0.88rem', color: '#111827', backgroundColor: '#ffffff',
+                borderColor: '#111827', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Sign Out
+            </button>
+          </div>
         </div>
 
         {/* Staff Info Banner */}
