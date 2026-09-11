@@ -56,6 +56,12 @@ export const getActiveTables = async () => {
   return response.data;
 };
 
+/** Searches booking-specific availability. This does not create or lock a reservation. */
+export const searchAvailableTables = async (search, signal) => {
+  const response = await reservationApi.get('/reservations/availability', { params: search, signal });
+  return response.data;
+};
+
 /**
  * Retrieves a single table by ID.
  * @param {number} id - Table ID.
@@ -91,6 +97,7 @@ export default {
   getTables,
   getTableById,
   getActiveTables,
+  searchAvailableTables,
   updateTable,
   deleteTable,
 };
