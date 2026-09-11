@@ -108,6 +108,11 @@ builder.Services.AddCors(options =>
 // Dependency Injection
 builder.Services.AddSingleton<ReservationService.Data.DatabaseHelper>();
 builder.Services.AddScoped<ReservationService.Repositories.ITableRepository, ReservationService.Repositories.TableRepository>();
+builder.Services.Configure<AvailabilityRulesOptions>(builder.Configuration.GetSection(AvailabilityRulesOptions.SectionName));
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ReservationService.Repositories.IAvailabilityRepository, ReservationService.Repositories.AvailabilityRepository>();
+builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchService, ReservationService.Services.AvailabilitySearchService>();
+builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchValidator, ReservationService.Services.AvailabilitySearchValidator>();
 
 var app = builder.Build();
 
