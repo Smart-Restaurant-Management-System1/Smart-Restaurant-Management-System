@@ -113,6 +113,9 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ReservationService.Repositories.IAvailabilityRepository, ReservationService.Repositories.AvailabilityRepository>();
 builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchService, ReservationService.Services.AvailabilitySearchService>();
 builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchValidator, ReservationService.Services.AvailabilitySearchValidator>();
+builder.Services.AddSingleton<ReservationService.Services.IBookingReferenceGenerator, ReservationService.Services.BookingReferenceGenerator>();
+builder.Services.AddScoped<ReservationService.Repositories.IReservationRepository, ReservationService.Repositories.ReservationRepository>();
+builder.Services.AddScoped<ReservationService.Services.IReservationCreationService, ReservationService.Services.ReservationCreationService>();
 
 var app = builder.Build();
 

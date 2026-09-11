@@ -16,6 +16,7 @@ services:
       - ./database/identity-db/01_init_identity.sql:/docker-entrypoint-initdb.d/01_init_identity.sql
       - ./database/reservation-db/01_init_reservation.sql:/docker-entrypoint-initdb.d/02_init_reservation.sql
       - ./database/reservation-db/02_reservations.sql:/docker-entrypoint-initdb.d/03_reservations.sql
+      - ./database/reservation-db/03_reservation_creation.sql:/docker-entrypoint-initdb.d/04_reservation_creation.sql
     networks:
       - restaurant-network
     healthcheck:

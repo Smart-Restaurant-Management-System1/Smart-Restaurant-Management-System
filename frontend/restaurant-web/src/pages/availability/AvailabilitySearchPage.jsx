@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { searchAvailableTables } from '../../services/tableService';
 import { calculatedEndTime, initialSearch, validateAvailabilitySearch } from './availabilitySearchView';
 
 const fieldLabel = { date: 'Visit date', startTime: 'Start time', durationMinutes: 'Duration (minutes)', guestCount: 'Guest count' };
 
 export default function AvailabilitySearchPage() {
-  const [values, setValues] = useState(initialSearch);
+  const location = useLocation();
+  const [values, setValues] = useState(() => initialSearch(location.state?.search));
   const [fieldErrors, setFieldErrors] = useState({});
   const [results, setResults] = useState(null);
   const [state, setState] = useState('initial');
