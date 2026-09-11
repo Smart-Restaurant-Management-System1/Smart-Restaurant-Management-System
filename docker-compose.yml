@@ -1,0 +1,89 @@
+name: smart-restaurant-management-system
+
+services:
+  # 1. MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: smart_restaurant_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${IDENTITY_DB_NAME}
+    ports:
+      - '${MYSQL_HOST_PORT}:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/identity-db/01_init_identity.sql:/docker-entrypoint-initdb.d/01_init_identity.sql
+      - ./database/reservation-db/01_init_reservation.sql:/docker-entrypoint-initdb.d/02_init_reservation.sql
+    networks:
+      - restaurant-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 2. Identity Microservice (.NET)
+  identity-service:
+    build:
+      context: ./backend/identity-service
+      dockerfile: Dockerfile
+    container_name: smart_restaurant_identity_service
+    restart: always
+    ports:
+      - '5001:5001'
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=${IDENTITY_DB_NAME};User=root;Password=${MYSQL_ROOT_PASSWORD};AllowPublicKeyRetrieval=True;SslMode=None;
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+      - Staff__AuthorizationCode=${STAFF_AUTHORIZATION_CODE}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - restaurant-network
+
+  # 3. Reservation Microservice (.NET)
+  reservation-service:
+    build:
+      context: ./backend/reservation-service
+      dockerfile: Dockerfile
+    container_name: smart_restaurant_reservation_service
+    restart: always
+    ports:
+      - '5000:5000'
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=mysql;Port=3306;Database=${RESERVATION_DB_NAME};User=root;Password=${MYSQL_ROOT_PASSWORD};AllowPublicKeyRetrieval=True;SslMode=None;
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=${JWT_ISSUER}
+      - Jwt__Audience=${JWT_AUDIENCE}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - restaurant-network
+
+  # 4. Web Frontend (React + Nginx)
+  frontend:
+    build:
+      context: ./frontend/restaurant-web
+      dockerfile: Dockerfile
+    container_name: smart_restaurant_frontend
+    restart: always
+    ports:
+      - '80:80'
+    depends_on:
+      - identity-service
+      - reservation-service
+    networks:
+      - restaurant-network
+
+networks:
+  restaurant-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
