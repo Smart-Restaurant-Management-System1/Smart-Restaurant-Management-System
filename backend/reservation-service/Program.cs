@@ -118,6 +118,7 @@ builder.Services.AddScoped<ReservationService.Repositories.IReservationRepositor
 builder.Services.AddScoped<ReservationService.Services.IReservationCreationService, ReservationService.Services.ReservationCreationService>();
 builder.Services.AddScoped<ReservationService.Services.IReservationHistoryService, ReservationService.Services.ReservationHistoryService>();
 builder.Services.AddScoped<ReservationService.Services.IReservationLifecycleService, ReservationService.Services.ReservationLifecycleService>();
+builder.Services.AddScoped<ReservationService.Services.IAdminReservationService, ReservationService.Services.AdminReservationService>();
 
 var app = builder.Build();
 

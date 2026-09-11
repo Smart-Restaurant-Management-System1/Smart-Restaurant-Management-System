@@ -79,6 +79,9 @@ export const cancelMyReservation = async (reservationId) => {
   await reservationApi.post(`/reservations/${reservationId}/cancel`);
 };
 
+export const getAdminReservations = async (filters) => (await reservationApi.get('/reservations', { params: filters })).data;
+export const updateAdminReservationStatus = async (reservationId, status) => (await reservationApi.patch(`/reservations/${reservationId}/status`, { status })).data;
+
 /**
  * Retrieves a single table by ID.
  * @param {number} id - Table ID.
@@ -118,6 +121,8 @@ export default {
   createReservation,
   getMyReservationHistory,
   cancelMyReservation,
+  getAdminReservations,
+  updateAdminReservationStatus,
   updateTable,
   deleteTable,
 };
