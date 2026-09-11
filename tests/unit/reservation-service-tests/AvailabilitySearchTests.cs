@@ -68,7 +68,7 @@ public sealed class AvailabilitySearchTests
     public async Task Controller_InvalidRequest_Returns400WithoutCallingService()
     {
         var service = new Mock<IAvailabilitySearchService>();
-        var controller = new ReservationsController(CreateValidator(), service.Object, Mock.Of<ILogger<ReservationsController>>());
+        var controller = new ReservationsController(CreateValidator(), service.Object, Mock.Of<IReservationCreationService>(), Mock.Of<ILogger<ReservationsController>>());
         var result = await controller.GetAvailability(new AvailabilitySearchRequestDto { GuestCount = 0 });
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
@@ -83,7 +83,7 @@ public sealed class AvailabilitySearchTests
         var service = new Mock<IAvailabilitySearchService>();
         service.Setup(x => x.SearchAsync(It.IsAny<AvailabilitySearchCriteria>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([new AvailableTable { TableId = 12, TableNumber = "T-12", SeatingCapacity = 4 }]);
-        var controller = new ReservationsController(CreateValidator(), service.Object, Mock.Of<ILogger<ReservationsController>>());
+        var controller = new ReservationsController(CreateValidator(), service.Object, Mock.Of<IReservationCreationService>(), Mock.Of<ILogger<ReservationsController>>());
 
         var result = await controller.GetAvailability(new AvailabilitySearchRequestDto { Date = new DateOnly(2026, 9, 12), StartTime = new TimeOnly(19, 0), DurationMinutes = 90, GuestCount = 4 });
 

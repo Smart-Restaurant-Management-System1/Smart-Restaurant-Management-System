@@ -1188,5 +1188,8 @@ body {
 .field-error { color: #b91c1c; font-size: .85rem; font-weight: 500; }
 .availability-state { margin-top: 1rem; padding: 1.25rem; border: 1px dashed #d1d5db; border-radius: 14px; }
 .availability-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.reservation-review, .reservation-confirmation { max-width: 680px; padding: 1.5rem; border: 1px solid #e5e7eb; border-radius: 14px; box-shadow: 0 4px 14px rgba(17,24,39,.06); }
+.reservation-review dl, .reservation-confirmation dl { display: grid; grid-template-columns: 130px 1fr; gap: .75rem 1rem; margin: 0 0 1.5rem; }
+.reservation-review dt, .reservation-confirmation dt { font-weight: 700; }.reservation-review dd, .reservation-confirmation dd { margin: 0; }
 @media (max-width: 720px) { .availability-fields { grid-template-columns: 1fr; } }
 

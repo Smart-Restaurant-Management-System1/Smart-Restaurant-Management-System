@@ -62,6 +62,12 @@ export const searchAvailableTables = async (search, signal) => {
   return response.data;
 };
 
+/** Creates a reservation from SR-57 search context. Customer ownership is assigned by the JWT server-side. */
+export const createReservation = async (request, idempotencyKey) => {
+  const response = await reservationApi.post('/reservations', request, { headers: { 'Idempotency-Key': idempotencyKey } });
+  return response.data;
+};
+
 /**
  * Retrieves a single table by ID.
  * @param {number} id - Table ID.
@@ -98,6 +104,7 @@ export default {
   getTableById,
   getActiveTables,
   searchAvailableTables,
+  createReservation,
   updateTable,
   deleteTable,
 };

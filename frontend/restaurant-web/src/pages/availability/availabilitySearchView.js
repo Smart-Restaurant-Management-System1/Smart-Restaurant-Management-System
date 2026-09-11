@@ -1,4 +1,4 @@
-export const initialSearch = () => ({ date: '', startTime: '', durationMinutes: '90', guestCount: '2' });
+export const initialSearch = (saved = {}) => ({ date: '', startTime: '', durationMinutes: '90', guestCount: '2', ...saved });
 
 export function validateAvailabilitySearch(values, now = new Date()) {
   const errors = {};

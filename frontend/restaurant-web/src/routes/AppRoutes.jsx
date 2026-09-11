@@ -8,7 +8,8 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
 import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
 import AvailabilitySearchPage from '../pages/availability/AvailabilitySearchPage';
-import ReservationCreationPlaceholderPage from '../pages/availability/ReservationCreationPlaceholderPage';
+import ReservationReviewPage from '../pages/availability/ReservationReviewPage';
+import ReservationConfirmationPage from '../pages/availability/ReservationConfirmationPage';
 import UnauthorizedPage from '../pages/common/UnauthorizedPage';
 import LandingPage from '../pages/common/LandingPage';
 import ProtectedRoute from './ProtectedRoute';
@@ -60,7 +61,8 @@ export default function AppRoutes() {
         }
       />
       <Route path="/availability" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}><AvailabilitySearchPage /></ProtectedRoute>} />
-      <Route path="/reservations/new" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}><ReservationCreationPlaceholderPage /></ProtectedRoute>} />
+      <Route path="/reservations/new" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationReviewPage /></ProtectedRoute>} />
+      <Route path="/reservations/confirmation" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationConfirmationPage /></ProtectedRoute>} />
 
       {/* Admin Protected Routes */}
       <Route
