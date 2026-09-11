@@ -132,7 +132,9 @@ jobs:
         id: test-check
         shell: bash
         run: |
-          if find tests -name "*.csproj" -print -quit | grep -q .; then
+          # Browser E2E projects require a running frontend and APIs. They are
+          # executed separately with that environment; this job is unit-test CI.
+          if find tests/unit -name "*.csproj" -print -quit | grep -q .; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
             echo "Test projects detected."
           else
@@ -143,6 +145,6 @@ jobs:
       - name: Run xUnit tests
         if: steps.test-check.outputs.ready == 'true'
         run: |
-          find tests -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
+          find tests/unit -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
             dotnet test "$project" --configuration Release
           done
