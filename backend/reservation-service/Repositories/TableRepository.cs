@@ -93,6 +93,32 @@ public class TableRepository : ITableRepository
         return tables;
     }
 
+    /// <summary>
+    /// Returns the physical table inventory exposed to authenticated guests and staff.
+    /// The IsActive predicate deliberately lives in this repository query so inactive
+    /// tables cannot be exposed by the SR-13 endpoint and filtered later in the stack.
+    /// </summary>
+    public async Task<IEnumerable<RestaurantTable>> GetActiveTablesAsync(CancellationToken cancellationToken = default)
+    {
+        using var connection = await _dbHelper.CreateConnectionAsync(cancellationToken);
+        const string query = @"SELECT Id, TableNumber, Capacity, Status
+                               FROM RestaurantTables
+                               WHERE IsActive = @IsActive
+                               ORDER BY TableNumber ASC;";
+
+        using var cmd = new MySqlCommand(query, connection);
+        cmd.Parameters.AddWithValue("@IsActive", true);
+
+        var tables = new List<RestaurantTable>();
+        using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            tables.Add(MapActiveTable(reader));
+        }
+
+        return tables;
+    }
+
     public async Task<RestaurantTable?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         using var connection = await _dbHelper.CreateConnectionAsync(cancellationToken);
@@ -278,4 +304,13 @@ public class TableRepository : ITableRepository
             UpdatedAt = updatedAt
         };
     }
+
+    private static RestaurantTable MapActiveTable(MySqlDataReader reader) => new()
+    {
+        Id = reader.GetInt32("Id"),
+        TableNumber = reader.GetString("TableNumber"),
+        Capacity = reader.GetInt32("Capacity"),
+        Status = reader.IsDBNull(reader.GetOrdinal("Status")) ? "Available" : reader.GetString("Status"),
+        IsActive = true
+    };
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using MySqlConnector;
 using ReservationService.DTOs;
 using ReservationService.Exceptions;
 using ReservationService.Models;
@@ -59,6 +60,44 @@ public class TablesController : ControllerBase
         });
 
         return Ok(response);
+    }
+
+    /// <summary>
+    /// SR-13: Returns all active (IsActive = 1) restaurant tables for authenticated customers and staff.
+    /// This is an inventory view only — it does NOT reflect real-time availability by date/time (see SR-57).
+    /// </summary>
+    [Authorize]
+    [HttpGet("active")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ActiveTableResponseDto>))]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetActiveTables(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var tables = await _tableRepository.GetActiveTablesAsync(cancellationToken);
+            var response = tables.Select(t => new ActiveTableResponseDto
+            {
+                TableId = t.Id,
+                TableNumber = t.TableNumber,
+                SeatingCapacity = t.Capacity,
+                OperationalStatus = ResolveStatus(t)
+            });
+
+            return Ok(response);
+        }
+        catch (MySqlException ex)
+        {
+            _logger.LogError(ex, "Unable to retrieve active restaurant tables.");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Unable to retrieve active restaurant tables. Please try again later." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while retrieving active restaurant tables.");
+            return StatusCode(StatusCodes.Status500InternalServerError,
+                new { message = "Unable to retrieve active restaurant tables. Please try again later." });
+        }
     }
 
     /// <summary>

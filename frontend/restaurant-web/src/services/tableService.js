@@ -47,6 +47,16 @@ export const getTables = async (activeOnly = null) => {
 };
 
 /**
+ * Retrieves active physical tables for customers, staff, and administrators.
+ * This is inventory status only; it does not calculate reservation availability.
+ * @returns {Promise<Array>} Active table objects.
+ */
+export const getActiveTables = async () => {
+  const response = await reservationApi.get('/tables/active');
+  return response.data;
+};
+
+/**
  * Retrieves a single table by ID.
  * @param {number} id - Table ID.
  * @returns {Promise<Object>} Table object.
@@ -80,6 +90,7 @@ export default {
   createTable,
   getTables,
   getTableById,
+  getActiveTables,
   updateTable,
   deleteTable,
 };

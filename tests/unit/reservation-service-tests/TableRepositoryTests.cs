@@ -73,6 +73,7 @@ public class TableRepositoryTests
         Assert.Contains(nameof(ITableRepository.CreateTableAsync), methods);
         Assert.Contains(nameof(ITableRepository.ExistsByTableNumberAsync), methods);
         Assert.Contains(nameof(ITableRepository.GetAllTablesAsync), methods);
+        Assert.Contains(nameof(ITableRepository.GetActiveTablesAsync), methods);
         Assert.Contains(nameof(ITableRepository.GetByIdAsync), methods);
         Assert.Contains(nameof(ITableRepository.GetByTableNumberAsync), methods);
         Assert.Contains(nameof(ITableRepository.UpdateTableCapacityAndLocationAsync), methods);
@@ -148,6 +149,27 @@ public class TableRepositoryTests
             Assert.DoesNotContain("DELETE FROM RestaurantTables", content, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("UPDATE RestaurantTables", content);
             Assert.Contains("SET IsActive = 0", content);
+        }
+    }
+
+    [Fact]
+    public void GetActiveTablesAsync_UsesRepositoryLevelActiveFilterAndParameter()
+    {
+        var assemblyLocation = typeof(TableRepository).Assembly.Location;
+        var projectDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(assemblyLocation)!, "..", "..", "..", "..", "..", "backend", "reservation-service"));
+        var repoFilePath = Path.Combine(projectDir, "Repositories", "TableRepository.cs");
+
+        if (File.Exists(repoFilePath))
+        {
+            var content = File.ReadAllText(repoFilePath);
+            var methodStart = content.IndexOf("GetActiveTablesAsync", StringComparison.Ordinal);
+            Assert.True(methodStart >= 0, "Expected a dedicated active-table repository query.");
+            var activeQuery = content[methodStart..];
+            Assert.Contains("WHERE IsActive = @IsActive", activeQuery);
+            Assert.Contains("AddWithValue(\"@IsActive\", true)", activeQuery);
+            Assert.Contains("SELECT Id, TableNumber, Capacity, Status", activeQuery);
+            Assert.DoesNotContain("SELECT *", activeQuery);
+            Assert.Contains("ORDER BY TableNumber ASC", activeQuery);
         }
     }
 }

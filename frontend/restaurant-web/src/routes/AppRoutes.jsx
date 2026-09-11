@@ -6,7 +6,9 @@ import CustomerPortalPage from '../pages/customer/CustomerPortalPage';
 import ProfilePage from '../pages/customer/ProfilePage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
+import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
 import UnauthorizedPage from '../pages/common/UnauthorizedPage';
+import LandingPage from '../pages/common/LandingPage';
 import ProtectedRoute from './ProtectedRoute';
 import { ROLES } from './roles';
 import { useAuth } from '../context/AuthContext';
@@ -24,6 +26,8 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/home" element={<LandingPage />} />
       <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to={getDefaultRedirect()} replace />} />
       <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to={getDefaultRedirect()} replace />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
@@ -42,6 +46,14 @@ export default function AppRoutes() {
         element={
           <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}>
             <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tables"
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.KITCHEN_STAFF, ROLES.ADMIN]}>
+            <ActiveTablesPage />
           </ProtectedRoute>
         }
       />
@@ -66,9 +78,8 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Default Fallback */}
-      <Route path="/" element={<Navigate to={getDefaultRedirect()} replace />} />
-      <Route path="*" element={<Navigate to={getDefaultRedirect()} replace />} />
+      {/* Catch-all fallback: redirect unmatched URLs to Public Landing Page */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

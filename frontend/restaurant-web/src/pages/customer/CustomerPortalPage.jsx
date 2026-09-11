@@ -27,6 +27,13 @@ export default function CustomerPortalPage() {
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <Link
+              to="/tables"
+              className="btn-jelly-secondary"
+              style={{ padding: '0.65rem 1.25rem', fontSize: '0.88rem', textDecoration: 'none' }}
+            >
+              View Tables
+            </Link>
+            <Link
               to="/profile"
               className="btn-jelly-primary"
               style={{

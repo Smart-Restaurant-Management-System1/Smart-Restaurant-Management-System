@@ -1,3 +1,5 @@
+name: smart-restaurant-management-system
+
 services:
   # 1. MySQL Database
   mysql:
