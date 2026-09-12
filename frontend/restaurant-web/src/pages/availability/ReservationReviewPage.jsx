@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { createReservation } from '../../services/tableService';
+import { bookingConflictMessage, isBookingConflict } from './bookingConflict';
 
 const newIdempotencyKey = () => globalThis.crypto?.randomUUID?.() || `reservation-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -26,7 +27,7 @@ export default function ReservationReviewPage() {
       else if (requestError.response?.status === 401) setError('Your session has expired. Please sign in again before confirming your reservation.');
       else if (requestError.response?.status === 403) setError('This account is not allowed to create customer reservations.');
       else if (requestError.response?.status === 404) setError('The selected table no longer exists. Please search again.');
-      else if (requestError.response?.status === 409) setError('This table is no longer available for your selected time. Please search again.');
+      else if (isBookingConflict(requestError)) setError(bookingConflictMessage);
       else setError('We could not confirm whether your reservation was created. Do not retry with a new booking until you have checked with the restaurant.');
     } finally { setSubmitting(false); }
   };

@@ -18,6 +18,7 @@ services:
       - ./database/reservation-db/02_reservations.sql:/docker-entrypoint-initdb.d/03_reservations.sql
       - ./database/reservation-db/03_reservation_creation.sql:/docker-entrypoint-initdb.d/04_reservation_creation.sql
       - ./database/reservation-db/04_reservation_lifecycle.sql:/docker-entrypoint-initdb.d/05_reservation_lifecycle.sql
+      - ./database/reservation-db/05_reservation_concurrency.sql:/docker-entrypoint-initdb.d/06_reservation_concurrency.sql
     networks:
       - restaurant-network
     healthcheck:
