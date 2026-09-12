@@ -79,6 +79,8 @@ export const cancelMyReservation = async (reservationId) => {
   await reservationApi.post(`/reservations/${reservationId}/cancel`);
 };
 
+export const rescheduleReservation = async (reservationId, request) => (await reservationApi.put(`/reservations/${reservationId}/schedule`, request)).data;
+
 export const getAdminReservations = async (filters) => (await reservationApi.get('/reservations', { params: filters })).data;
 export const updateAdminReservationStatus = async (reservationId, status) => (await reservationApi.patch(`/reservations/${reservationId}/status`, { status })).data;
 
@@ -121,6 +123,7 @@ export default {
   createReservation,
   getMyReservationHistory,
   cancelMyReservation,
+  rescheduleReservation,
   getAdminReservations,
   updateAdminReservationStatus,
   updateTable,

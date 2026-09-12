@@ -19,8 +19,9 @@ public sealed class ReservationsController : ControllerBase
     private readonly IReservationHistoryService? _historyService;
     private readonly IReservationLifecycleService? _lifecycleService;
     private readonly IAdminReservationService? _adminService;
+    private readonly IReservationRescheduleService? _rescheduleService;
 
-    public ReservationsController(IAvailabilitySearchValidator validator, IAvailabilitySearchService service, IReservationCreationService creationService, ILogger<ReservationsController> logger, IReservationHistoryService? historyService = null, IReservationLifecycleService? lifecycleService = null, IAdminReservationService? adminService = null)
+    public ReservationsController(IAvailabilitySearchValidator validator, IAvailabilitySearchService service, IReservationCreationService creationService, ILogger<ReservationsController> logger, IReservationHistoryService? historyService = null, IReservationLifecycleService? lifecycleService = null, IAdminReservationService? adminService = null, IReservationRescheduleService? rescheduleService = null)
     {
         _validator = validator;
         _service = service;
@@ -29,6 +30,7 @@ public sealed class ReservationsController : ControllerBase
         _historyService = historyService;
         _lifecycleService = lifecycleService;
         _adminService = adminService;
+        _rescheduleService = rescheduleService;
     }
 
     /// <summary>SR-57 advisory availability search. It does not reserve or lock a table; SR-58 must revalidate atomically.</summary>
@@ -104,6 +106,40 @@ public sealed class ReservationsController : ControllerBase
             _logger.LogError(ex, "Unexpected reservation creation failure.");
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Unable to create the reservation. Please try again later." });
         }
+    }
+
+    /// <summary>Atomically moves a customer-owned upcoming reservation, or any non-terminal reservation for an administrator.</summary>
+    [Authorize(Roles = AppRoles.Customer + "," + AppRoles.Admin)]
+    [HttpPut("{reservationId:int}/schedule")]
+    [ProducesResponseType(typeof(ReservationConfirmationResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RescheduleReservation(int reservationId, [FromBody] RescheduleReservationRequestDto request, CancellationToken cancellationToken = default)
+    {
+        if (reservationId <= 0 || request is null || request.TableId is null || request.TableId <= 0)
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["tableId"] = ["A valid table ID is required."] }) { Status = StatusCodes.Status400BadRequest });
+        if (!TryGetCustomerId(out var actorUserId)) return Unauthorized();
+        var availabilityRequest = new AvailabilitySearchRequestDto { Date = request.Date, StartTime = request.StartTime, DurationMinutes = request.DurationMinutes, GuestCount = request.GuestCount };
+        if (!_validator.TryValidate(availabilityRequest, out var criteria, out var errors)) return BadRequest(new ValidationProblemDetails(errors) { Status = StatusCodes.Status400BadRequest });
+        if (_rescheduleService is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation rescheduling is unavailable." });
+        try
+        {
+            var result = await _rescheduleService.RescheduleAsync(new ReservationRescheduleCommand(reservationId, actorUserId, User.IsInRole(AppRoles.Admin), request.TableId.Value, criteria!), cancellationToken);
+            return result.Outcome switch
+            {
+                ReservationRescheduleOutcome.Updated => Ok(ToConfirmation(result.Reservation!)),
+                ReservationRescheduleOutcome.NotFound or ReservationRescheduleOutcome.TableNotFound => NotFound(new { message = "The requested reservation or table was not found." }),
+                ReservationRescheduleOutcome.Forbidden => Forbid(),
+                ReservationRescheduleOutcome.InvalidState => Conflict(new { code = "INVALID_RESERVATION_STATE", message = "This reservation cannot be rescheduled in its current state." }),
+                ReservationRescheduleOutcome.Unavailable => Conflict(new { code = "TABLE_NO_LONGER_AVAILABLE", message = "The selected table is no longer available for this period. Please search again." }),
+                _ => StatusCode(StatusCodes.Status500InternalServerError, new { message = "Unable to reschedule the reservation. Please try again later." })
+            };
+        }
+        catch (MySqlException ex) { _logger.LogError(ex, "Reservation reschedule failed for reservation {ReservationId}.", reservationId); return StatusCode(500, new { message = "Unable to reschedule the reservation. Please try again later." }); }
+        catch (Exception ex) { _logger.LogError(ex, "Unexpected reservation reschedule failure for reservation {ReservationId}.", reservationId); return StatusCode(500, new { message = "Unable to reschedule the reservation. Please try again later." }); }
     }
 
     /// <summary>Returns only the authenticated customer's reservations, newest visit first.</summary>

@@ -8,6 +8,7 @@ function ReservationCard({ reservation, onCancelled, cancelling }) {
   return <article className="reservation-history-card">
     <div className="reservation-history-card-header"><div><p className="reservation-reference">{reservation.bookingReference}</p><h2>Table {reservation.tableNumber}</h2></div><span className={statusClassName(reservation.status)}>{reservation.status}</span></div>
     <dl><dt>Visit</dt><dd>{formatReservationDateTime(reservation.startDateTime)} - {formatReservationDateTime(reservation.endDateTime)}</dd><dt>Guests</dt><dd>{reservation.guestCount}</dd><dt>Booked</dt><dd>{formatReservationDateTime(reservation.createdAt)}</dd></dl>
+    {canCancel && <Link className="btn-jelly-secondary" to="/reservations/reschedule" state={{ reservation }}>Reschedule</Link>}
     {canCancel && <button type="button" className="reservation-cancel" disabled={cancelling === reservation.reservationId} onClick={() => onCancelled(reservation.reservationId)}>{cancelling === reservation.reservationId ? 'Cancelling…' : 'Cancel reservation'}</button>}
   </article>;
 }

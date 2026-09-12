@@ -114,7 +114,7 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
                     CustomerId = command.CustomerId, TableId = command.TableId, TableNumber = table.Value.TableNumber,
                     BookingReference = referenceGenerator.Generate(), StartDateTime = command.Period.RequestedStart,
                     EndDateTime = command.Period.RequestedEnd, GuestCount = command.Period.GuestCount,
-                    Status = "Pending", CreatedAt = DateTime.UtcNow
+                    Status = ReservationStatus.Pending, CreatedAt = DateTime.UtcNow
                 };
                 try
                 {
@@ -145,16 +145,79 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
         return (reader.GetString("TableNumber"), reader.GetInt32("Capacity"), reader.GetBoolean("IsActive"));
     }
 
-    private static async Task<bool> HasBlockingOverlapAsync(MySqlConnection connection, MySqlTransaction transaction, ReservationCreationCommand command, CancellationToken token)
+    public async Task<ReservationRescheduleResult> RescheduleAtomicallyAsync(ReservationRescheduleCommand command, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+        try
+        {
+            // A destination-table lock serialises every competing create/reschedule for this physical table.
+            var table = await LockTableAsync(connection, transaction, command.TableId, cancellationToken);
+            if (table is null) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.TableNotFound); }
+            var existing = await LockReservationAsync(connection, transaction, command.ReservationId, cancellationToken);
+            if (existing is null) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.NotFound); }
+            // Do not disclose state or availability to a customer who does not own this reservation.
+            if (!command.IsAdmin && existing.CustomerId != command.ActorUserId) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.Forbidden); }
+            if (!CanReschedule(existing, command.IsAdmin)) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.InvalidState); }
+            if (!table.Value.IsActive || table.Value.Capacity < command.Period.GuestCount) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.Unavailable); }
+            if (await HasBlockingOverlapAsync(connection, transaction, command.TableId, command.Period.RequestedStart, command.Period.RequestedEnd, command.ReservationId, cancellationToken))
+            {
+                await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.Unavailable);
+            }
+            var updated = await UpdateScheduleAsync(connection, transaction, existing, command, table.Value.TableNumber, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+            return new(ReservationRescheduleOutcome.Updated, updated);
+        }
+        catch
+        {
+            try { await transaction.RollbackAsync(cancellationToken); } catch { /* preserve original exception */ }
+            throw;
+        }
+    }
+
+    private static bool CanReschedule(Reservation reservation, bool isAdmin)
+    {
+        if (reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed) return false;
+        return isAdmin || (reservation.Status is ReservationStatus.Pending or ReservationStatus.Confirmed && reservation.StartDateTime > DateTime.UtcNow);
+    }
+
+    private static async Task<bool> HasBlockingOverlapAsync(MySqlConnection connection, MySqlTransaction transaction, ReservationCreationCommand command, CancellationToken token) =>
+        await HasBlockingOverlapAsync(connection, transaction, command.TableId, command.Period.RequestedStart, command.Period.RequestedEnd, null, token);
+
+    /// <summary>Canonical half-open interval rule. An optional ID prevents a reschedule from conflicting with itself.</summary>
+    private static async Task<bool> HasBlockingOverlapAsync(MySqlConnection connection, MySqlTransaction transaction, int tableId, DateTime requestedStart, DateTime requestedEnd, int? excludedReservationId, CancellationToken token)
     {
         const string sql = @"SELECT EXISTS(SELECT 1 FROM Reservations WHERE TableId = @TableId
 AND Status IN (@PendingStatus, @ConfirmedStatus)
-AND StartDateTime < @RequestedEnd AND EndDateTime > @RequestedStart);";
+AND StartDateTime < @RequestedEnd AND EndDateTime > @RequestedStart
+AND (@ExcludedReservationId IS NULL OR Id <> @ExcludedReservationId));";
         using var check = new MySqlCommand(sql, connection, transaction);
-        check.Parameters.AddWithValue("@TableId", command.TableId);
-        check.Parameters.AddWithValue("@PendingStatus", "Pending"); check.Parameters.AddWithValue("@ConfirmedStatus", "Confirmed");
-        check.Parameters.AddWithValue("@RequestedStart", command.Period.RequestedStart); check.Parameters.AddWithValue("@RequestedEnd", command.Period.RequestedEnd);
+        check.Parameters.AddWithValue("@TableId", tableId);
+        check.Parameters.AddWithValue("@PendingStatus", ReservationStatus.Pending); check.Parameters.AddWithValue("@ConfirmedStatus", ReservationStatus.Confirmed);
+        check.Parameters.AddWithValue("@RequestedStart", requestedStart); check.Parameters.AddWithValue("@RequestedEnd", requestedEnd);
+        check.Parameters.AddWithValue("@ExcludedReservationId", (object?)excludedReservationId ?? DBNull.Value);
         return Convert.ToInt32(await check.ExecuteScalarAsync(token)) == 1;
+    }
+
+    private static async Task<Reservation?> LockReservationAsync(MySqlConnection connection, MySqlTransaction transaction, int reservationId, CancellationToken token)
+    {
+        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
+FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Id = @Id FOR UPDATE;";
+        using var command = new MySqlCommand(sql, connection, transaction);
+        command.Parameters.AddWithValue("@Id", reservationId);
+        using var reader = await command.ExecuteReaderAsync(token);
+        return await reader.ReadAsync(token) ? MapReservation(reader) : null;
+    }
+
+    private static async Task<Reservation> UpdateScheduleAsync(MySqlConnection connection, MySqlTransaction transaction, Reservation existing, ReservationRescheduleCommand command, string tableNumber, CancellationToken token)
+    {
+        const string sql = @"UPDATE Reservations SET TableId=@TableId, StartDateTime=@StartDateTime, EndDateTime=@EndDateTime, GuestCount=@GuestCount, UpdatedAt=@UpdatedAt WHERE Id=@Id;";
+        using var update = new MySqlCommand(sql, connection, transaction);
+        update.Parameters.AddWithValue("@Id", existing.Id); update.Parameters.AddWithValue("@TableId", command.TableId);
+        update.Parameters.AddWithValue("@StartDateTime", command.Period.RequestedStart); update.Parameters.AddWithValue("@EndDateTime", command.Period.RequestedEnd);
+        update.Parameters.AddWithValue("@GuestCount", command.Period.GuestCount); var now = DateTime.UtcNow; update.Parameters.AddWithValue("@UpdatedAt", now);
+        if (await update.ExecuteNonQueryAsync(token) != 1) throw new InvalidOperationException("Reservation update did not affect exactly one row.");
+        return existing with { TableId = command.TableId, TableNumber = tableNumber, StartDateTime = command.Period.RequestedStart, EndDateTime = command.Period.RequestedEnd, GuestCount = command.Period.GuestCount, UpdatedAt = now };
     }
 
     private static async Task<Reservation> InsertAsync(MySqlConnection connection, MySqlTransaction transaction, Reservation reservation, string? idempotencyKey, CancellationToken token)
