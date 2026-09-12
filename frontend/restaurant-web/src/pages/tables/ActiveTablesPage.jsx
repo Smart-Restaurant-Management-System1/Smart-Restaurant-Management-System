@@ -2,11 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getActiveTables } from '../../services/tableService';
 import { getActiveTablesView, tableCardLabel } from './activeTablesView';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '../../routes/roles';
 
 export default function ActiveTablesPage() {
+  const { user } = useAuth();
   const [tables, setTables] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const backPath = user?.roles?.includes(ROLES.ADMIN) ? '/admin'
+    : user?.roles?.includes(ROLES.KITCHEN_STAFF) ? '/kitchen'
+    : '/portal';
 
   const loadTables = async () => {
     setLoading(true);
@@ -31,7 +38,7 @@ export default function ActiveTablesPage() {
   return (
     <main className="active-tables-page">
       <div className="active-tables-content">
-        <Link to="/" className="link-jelly-back">← Back to home</Link>
+        <Link to={backPath} className="link-jelly-back">← Back to portal</Link>
         <header className="active-tables-header">
           <p className="active-tables-eyebrow">Restaurant guide</p>
           <h1>Our tables</h1>

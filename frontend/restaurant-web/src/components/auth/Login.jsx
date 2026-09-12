@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import loginIllustration from '../../assets/images/login.png';
 
@@ -111,7 +111,9 @@ export default function Login({ onNavigateToRegister }) {
       {/* Left Column: Form & Brand Logo */}
       <div className="fullscreen-form-pane">
         <div className="fullscreen-brand-header">
-          <img src="/logo.png" alt="Cinnamon Bistro Logo" className="fullscreen-logo" />
+          <Link to="/" aria-label="Go to Cinnamon Bistro home">
+            <img src="/logo.png" alt="Cinnamon Bistro Logo" className="fullscreen-logo" />
+          </Link>
         </div>
 
         <div className="fullscreen-form-wrapper">
