@@ -76,10 +76,12 @@ export const getMyReservationHistory = async (page = 1, pageSize = 10) => {
 
 /** Cancels the authenticated customer's eligible reservation. */
 export const cancelMyReservation = async (reservationId) => {
-  await reservationApi.post(`/reservations/${reservationId}/cancel`);
+  return (await reservationApi.patch(`/reservations/${reservationId}/cancel`)).data;
 };
 
-export const rescheduleReservation = async (reservationId, request) => (await reservationApi.put(`/reservations/${reservationId}/schedule`, request)).data;
+export const getMyReservationDetail = async (reservationId) => (await reservationApi.get(`/reservations/${reservationId}/detail`)).data;
+
+export const rescheduleReservation = async (reservationId, request) => (await reservationApi.put(`/reservations/${reservationId}`, request)).data;
 
 export const getAdminReservations = async (filters) => (await reservationApi.get('/reservations', { params: filters })).data;
 export const updateAdminReservationStatus = async (reservationId, status) => (await reservationApi.patch(`/reservations/${reservationId}/status`, { status })).data;

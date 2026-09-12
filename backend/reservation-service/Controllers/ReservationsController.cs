@@ -5,6 +5,7 @@ using System.Security.Claims;
 using ReservationService.DTOs;
 using ReservationService.Models;
 using ReservationService.Services;
+using ReservationService.Repositories;
 
 namespace ReservationService.Controllers;
 
@@ -20,8 +21,10 @@ public sealed class ReservationsController : ControllerBase
     private readonly IReservationLifecycleService? _lifecycleService;
     private readonly IAdminReservationService? _adminService;
     private readonly IReservationRescheduleService? _rescheduleService;
+    private readonly IReservationRepository? _reservationRepository;
+    private readonly ReservationMaintenancePolicy? _maintenancePolicy;
 
-    public ReservationsController(IAvailabilitySearchValidator validator, IAvailabilitySearchService service, IReservationCreationService creationService, ILogger<ReservationsController> logger, IReservationHistoryService? historyService = null, IReservationLifecycleService? lifecycleService = null, IAdminReservationService? adminService = null, IReservationRescheduleService? rescheduleService = null)
+    public ReservationsController(IAvailabilitySearchValidator validator, IAvailabilitySearchService service, IReservationCreationService creationService, ILogger<ReservationsController> logger, IReservationHistoryService? historyService = null, IReservationLifecycleService? lifecycleService = null, IAdminReservationService? adminService = null, IReservationRescheduleService? rescheduleService = null, IReservationRepository? reservationRepository = null, ReservationMaintenancePolicy? maintenancePolicy = null)
     {
         _validator = validator;
         _service = service;
@@ -31,6 +34,8 @@ public sealed class ReservationsController : ControllerBase
         _lifecycleService = lifecycleService;
         _adminService = adminService;
         _rescheduleService = rescheduleService;
+        _reservationRepository = reservationRepository;
+        _maintenancePolicy = maintenancePolicy;
     }
 
     /// <summary>SR-57 advisory availability search. It does not reserve or lock a table; SR-58 must revalidate atomically.</summary>
@@ -108,9 +113,19 @@ public sealed class ReservationsController : ControllerBase
         }
     }
 
-    /// <summary>Atomically moves a customer-owned upcoming reservation, or any non-terminal reservation for an administrator.</summary>
+    /// <summary>
+    /// SR-62 / SR-74 — Atomically reschedule (update table, date, time, duration, guest count) a reservation.
+    /// Customers may update only their own upcoming Pending or Confirmed reservations.
+    /// Admins may update any non-terminal (Pending or Confirmed) reservation.
+    /// Immutable fields (reservation ID, booking reference, customer owner, status, created timestamp) are never changed.
+    /// Uses the shared SR-62 transaction: destination-table lock → active/capacity check → overlap query → UPDATE → commit.
+    /// Self-exclusion: the current reservation is excluded from the overlap check so it does not conflict with itself.
+    /// Back-to-back reservations are allowed (half-open interval rule).
+    /// Routes: PUT /api/reservations/{id}/schedule (original SR-62) and PUT /api/reservations/{id} (SR-74 alias).
+    /// </summary>
     [Authorize(Roles = AppRoles.Customer + "," + AppRoles.Admin)]
     [HttpPut("{reservationId:int}/schedule")]
+    [HttpPut("{reservationId:int}")]
     [ProducesResponseType(typeof(ReservationConfirmationResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -172,12 +187,70 @@ public sealed class ReservationsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// SR-73 — Cancel a customer-owned reservation. Changes status to Cancelled; never deletes the row.
+    /// Idempotent: an already-cancelled reservation returns 200 with its current state.
+    /// Only upcoming Pending or Confirmed reservations are eligible.
+    /// Authentication: Customer JWT required. Ownership is enforced by the backend using the NameIdentifier claim.
+    /// </summary>
     [Authorize(Roles = AppRoles.Customer)]
     [HttpPost("{reservationId:int}/cancel")]
+    [HttpPatch("{reservationId:int}/cancel")]
+    [ProducesResponseType(typeof(CustomerReservationDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CancelMyReservation(int reservationId, CancellationToken cancellationToken = default)
     {
+        if (reservationId <= 0) return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["reservationId"] = ["A valid reservation ID is required."] }) { Status = StatusCodes.Status400BadRequest });
         if (!TryGetCustomerId(out var customerId)) return Unauthorized();
-        return await ChangeStatusAsync(reservationId, customerId, ReservationStatus.Cancelled, false, cancellationToken);
+        if (_lifecycleService is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation status changes are unavailable." });
+        try
+        {
+            var result = await _lifecycleService.CancelForCustomerAsync(reservationId, customerId, cancellationToken);
+            return result.Outcome switch
+            {
+                ReservationCancellationOutcome.Cancelled => Ok(ToCustomerDetail(result.Reservation!)),
+                ReservationCancellationOutcome.NotFound => NotFound(new { message = "Reservation not found." }),
+                _ => Conflict(new { code = "INVALID_RESERVATION_TRANSITION", message = "Only upcoming Pending or Confirmed reservations can be cancelled." })
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Customer cancellation failed for reservation {ReservationId}.", reservationId);
+            return StatusCode(500, new { message = "Unable to cancel the reservation. Reload its details before retrying." });
+        }
+    }
+
+    /// <summary>
+    /// SR-72 — Return a single customer-owned reservation as a customer-safe DTO.
+    /// Returns 404 for an unknown reservation ID and also for a reservation that belongs to a different customer
+    /// (nondisclosure policy: existence is not revealed to unauthorized callers).
+    /// Authentication: Customer JWT required. The customer ID is read from the NameIdentifier claim only.
+    /// To retrieve any reservation as an admin use GET /api/reservations/{id}.
+    /// </summary>
+    [Authorize(Roles = AppRoles.Customer)]
+    [HttpGet("{reservationId:int}/detail")]
+    [ProducesResponseType(typeof(CustomerReservationDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMyReservation(int reservationId, CancellationToken cancellationToken = default)
+    {
+        if (reservationId <= 0) return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["reservationId"] = ["A valid reservation ID is required."] }) { Status = StatusCodes.Status400BadRequest });
+        if (!TryGetCustomerId(out var customerId)) return Unauthorized();
+        if (_reservationRepository is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation lookup is unavailable." });
+        try
+        {
+            var reservation = await _reservationRepository.GetByIdForCustomerAsync(reservationId, customerId, cancellationToken);
+            return reservation is null ? NotFound(new { message = "Reservation not found." }) : Ok(ToCustomerDetail(reservation));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Customer detail retrieval failed for reservation {ReservationId}.", reservationId);
+            return StatusCode(500, new { message = "Unable to retrieve the reservation. Please try again later." });
+        }
     }
 
     [Authorize(Roles = AppRoles.Admin)]
@@ -231,6 +304,15 @@ public sealed class ReservationsController : ControllerBase
     }
 
     private bool TryGetCustomerId(out int customerId) => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out customerId) && customerId > 0;
+
+    private CustomerReservationDetailDto ToCustomerDetail(Reservation reservation) => new()
+    {
+        CanEdit = _maintenancePolicy?.CanCustomerMaintain(reservation) == true,
+        CanCancel = _maintenancePolicy?.CanCustomerMaintain(reservation) == true,
+        ReservationId = reservation.Id, BookingReference = reservation.BookingReference, TableId = reservation.TableId,
+        TableNumber = reservation.TableNumber, StartDateTime = reservation.StartDateTime, EndDateTime = reservation.EndDateTime,
+        GuestCount = reservation.GuestCount, Status = reservation.Status, CreatedAt = reservation.CreatedAt, UpdatedAt = reservation.UpdatedAt
+    };
 
     private static ReservationHistoryItemDto ToHistoryItem(Reservation reservation) => new()
     {

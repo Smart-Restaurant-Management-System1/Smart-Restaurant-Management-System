@@ -13,6 +13,7 @@ import AvailabilitySearchPage from '../pages/availability/AvailabilitySearchPage
 import ReservationReviewPage from '../pages/availability/ReservationReviewPage';
 import ReservationConfirmationPage from '../pages/availability/ReservationConfirmationPage';
 import ReservationHistoryPage from '../pages/availability/ReservationHistoryPage';
+import ReservationDetailPage from '../pages/availability/ReservationDetailPage';
 import ReservationReschedulePage from '../pages/availability/ReservationReschedulePage';
 import UnauthorizedPage from '../pages/common/UnauthorizedPage';
 import LandingPage from '../pages/common/LandingPage';
@@ -68,6 +69,7 @@ export default function AppRoutes() {
       <Route path="/reservations/new" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationReviewPage /></ProtectedRoute>} />
       <Route path="/reservations/confirmation" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationConfirmationPage /></ProtectedRoute>} />
       <Route path="/reservations/history" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationHistoryPage /></ProtectedRoute>} />
+      <Route path="/reservations/:reservationId" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationDetailPage /></ProtectedRoute>} />
       <Route path="/reservations/reschedule" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationReschedulePage /></ProtectedRoute>} />
 
       {/* Admin Protected Routes */}

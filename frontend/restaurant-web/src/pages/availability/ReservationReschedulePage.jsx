@@ -1,16 +1,9 @@
-import React, { useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { rescheduleReservation } from '../../services/tableService';
-import { bookingConflictMessage, isBookingConflict, safeSearchCriteria } from './bookingConflict';
+import React from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 
-const inputValue = (value) => String(value || '').replace('T', ' ');
-
+// Compatibility entry point: detail/edit now reloads from the protected server route.
 export default function ReservationReschedulePage() {
-  const { state } = useLocation(); const navigate = useNavigate(); const alertRef = useRef(null); const reservation = state?.reservation;
-  const [form, setForm] = useState(() => reservation ? ({ date: inputValue(reservation.startDateTime).slice(0, 10), startTime: inputValue(reservation.startDateTime).slice(11, 16), durationMinutes: Math.round((new Date(reservation.endDateTime) - new Date(reservation.startDateTime)) / 60000), guestCount: reservation.guestCount }) : null);
-  const [submitting, setSubmitting] = useState(false); const [error, setError] = useState('');
-  if (!reservation || !form) return <main className="availability-page"><div className="availability-content"><h1>Reservation details unavailable</h1><Link to="/reservations/history">Back to booking history</Link></div></main>;
-  const search = safeSearchCriteria(form);
-  const submit = async (event) => { event.preventDefault(); if (submitting) return; setSubmitting(true); setError(''); try { const updated = await rescheduleReservation(reservation.reservationId, { tableId: reservation.tableId, ...search, durationMinutes: Number(search.durationMinutes), guestCount: Number(search.guestCount) }); navigate('/reservations/confirmation', { replace: true, state: { reservation: updated } }); } catch (requestError) { setError(isBookingConflict(requestError) ? bookingConflictMessage : requestError?.response?.data?.message || 'We could not reschedule this reservation. Please try again.'); setTimeout(() => alertRef.current?.focus(), 0); } finally { setSubmitting(false); } };
-  return <main className="availability-page"><div className="availability-content"><Link className="link-jelly-back" to="/reservations/history">← Back to booking history</Link><header className="availability-header"><p className="active-tables-eyebrow">Reschedule reservation</p><h1>Update your visit</h1><p>Table {reservation.tableNumber}; availability is checked again when you submit.</p></header><form className="availability-form" onSubmit={submit}><div className="availability-fields"><label>Date<input required type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></label><label>Start time<input required type="time" value={form.startTime} onChange={(e) => setForm({ ...form, startTime: e.target.value })} /></label><label>Duration (minutes)<input required type="number" min="30" value={form.durationMinutes} onChange={(e) => setForm({ ...form, durationMinutes: e.target.value })} /></label><label>Guests<input required type="number" min="1" value={form.guestCount} onChange={(e) => setForm({ ...form, guestCount: e.target.value })} /></label></div>{error && <div ref={alertRef} tabIndex="-1" className="active-tables-error" role="alert"><p>{error}</p>{error === bookingConflictMessage && <Link to="/availability" state={{ search }}>Return to availability search</Link>}</div>}<button className="btn-jelly-primary" disabled={submitting} type="submit">{submitting ? 'Updating reservation…' : 'Update reservation'}</button><p role="status">{submitting ? 'Your reservation is being updated. Please do not submit again.' : ''}</p></form></div></main>;
+  const { state } = useLocation();
+  const id = state?.reservation?.reservationId;
+  return <Navigate replace to={id ? '/reservations/' + id : '/reservations/history'} />;
 }

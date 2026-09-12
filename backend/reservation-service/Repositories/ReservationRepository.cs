@@ -7,7 +7,7 @@ using ReservationService.Services;
 namespace ReservationService.Repositories;
 
 /// <summary>SR-62 locking workflow: one transaction locks a physical table before the overlap recheck and insert.</summary>
-public sealed class ReservationRepository(DatabaseHelper databaseHelper, IBookingReferenceGenerator referenceGenerator) : IReservationRepository
+public sealed class ReservationRepository(DatabaseHelper databaseHelper, IBookingReferenceGenerator referenceGenerator, ReservationMaintenancePolicy maintenancePolicy) : IReservationRepository
 {
     public async Task<ReservationHistoryPage> GetForAdminAsync(AdminReservationQuery query, CancellationToken cancellationToken = default)
     {
@@ -34,6 +34,17 @@ public sealed class ReservationRepository(DatabaseHelper databaseHelper, IBookin
 FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId WHERE r.Id = @Id;";
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@Id", reservationId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? MapReservation(reader) : null;
+    }
+    public async Task<Reservation?> GetByIdForCustomerAsync(int reservationId, int customerId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
+FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId WHERE r.Id = @Id AND r.CustomerId = @CustomerId;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Id", reservationId);
+        command.Parameters.AddWithValue("@CustomerId", customerId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? MapReservation(reader) : null;
     }
@@ -147,6 +158,11 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
 
     public async Task<ReservationRescheduleResult> RescheduleAtomicallyAsync(ReservationRescheduleCommand command, CancellationToken cancellationToken = default)
     {
+        // Non-locking preflight prevents table/state disclosure. Repeat authorization under the row lock.
+        var visible = command.IsAdmin
+            ? await GetByIdAsync(command.ReservationId, cancellationToken)
+            : await GetByIdForCustomerAsync(command.ReservationId, command.ActorUserId, cancellationToken);
+        if (visible is null) return new(ReservationRescheduleOutcome.NotFound);
         await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
         try
@@ -157,8 +173,9 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
             var existing = await LockReservationAsync(connection, transaction, command.ReservationId, cancellationToken);
             if (existing is null) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.NotFound); }
             // Do not disclose state or availability to a customer who does not own this reservation.
-            if (!command.IsAdmin && existing.CustomerId != command.ActorUserId) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.Forbidden); }
-            if (!CanReschedule(existing, command.IsAdmin)) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.InvalidState); }
+            if (!command.IsAdmin && existing.CustomerId != command.ActorUserId) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.NotFound); }
+            if (!maintenancePolicy.CanReschedule(existing, command.IsAdmin)) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.InvalidState); }
+            if (command.Period.RequestedStart <= maintenancePolicy.RestaurantNow) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.InvalidState); }
             if (!table.Value.IsActive || table.Value.Capacity < command.Period.GuestCount) { await transaction.RollbackAsync(cancellationToken); return new(ReservationRescheduleOutcome.Unavailable); }
             if (await HasBlockingOverlapAsync(connection, transaction, command.TableId, command.Period.RequestedStart, command.Period.RequestedEnd, command.ReservationId, cancellationToken))
             {
@@ -175,10 +192,34 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
         }
     }
 
-    private static bool CanReschedule(Reservation reservation, bool isAdmin)
+    public async Task<ReservationCancellationResult> CancelForCustomerAtomicallyAsync(int reservationId, int customerId, CancellationToken cancellationToken = default)
     {
-        if (reservation.Status is ReservationStatus.Cancelled or ReservationStatus.Completed) return false;
-        return isAdmin || (reservation.Status is ReservationStatus.Pending or ReservationStatus.Confirmed && reservation.StartDateTime > DateTime.UtcNow);
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken);
+        // Lock only the reservation, not its joined table: avoids inverted table/reservation locks.
+        var existing = await LockReservationAsync(connection, transaction, reservationId, cancellationToken);
+        if (existing is null || existing.CustomerId != customerId) return new(ReservationCancellationOutcome.NotFound);
+        if (existing.Status != ReservationStatus.Cancelled && !maintenancePolicy.CanCustomerMaintain(existing))
+            return new(ReservationCancellationOutcome.InvalidState);
+        await using (var table = new MySqlCommand("SELECT TableNumber FROM RestaurantTables WHERE Id=@TableId;", connection, transaction))
+        {
+            table.Parameters.AddWithValue("@TableId", existing.TableId);
+            existing = existing with { TableNumber = (string)(await table.ExecuteScalarAsync(cancellationToken))! };
+        }
+        if (existing.Status != ReservationStatus.Cancelled)
+        {
+            var now = maintenancePolicy.UtcNow;
+            await using var update = new MySqlCommand("UPDATE Reservations SET Status=@Status, UpdatedAt=@UpdatedAt WHERE Id=@Id AND CustomerId=@CustomerId;", connection, transaction);
+            update.Parameters.AddWithValue("@Status", ReservationStatus.Cancelled);
+            update.Parameters.AddWithValue("@UpdatedAt", now);
+            update.Parameters.AddWithValue("@Id", reservationId);
+            update.Parameters.AddWithValue("@CustomerId", customerId);
+            if (await update.ExecuteNonQueryAsync(cancellationToken) != 1) throw new InvalidOperationException("Cancellation did not update one row.");
+            existing = existing with { Status = ReservationStatus.Cancelled, UpdatedAt = now };
+        }
+        // Replays retain UpdatedAt and produce no second mutation/event. Disposal rolls back failed operations.
+        await transaction.CommitAsync(cancellationToken);
+        return new(ReservationCancellationOutcome.Cancelled, existing);
     }
 
     private static async Task<bool> HasBlockingOverlapAsync(MySqlConnection connection, MySqlTransaction transaction, ReservationCreationCommand command, CancellationToken token) =>
@@ -201,8 +242,8 @@ AND (@ExcludedReservationId IS NULL OR Id <> @ExcludedReservationId));";
 
     private static async Task<Reservation?> LockReservationAsync(MySqlConnection connection, MySqlTransaction transaction, int reservationId, CancellationToken token)
     {
-        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
-FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Id = @Id FOR UPDATE;";
+        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, '' AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
+FROM Reservations r WHERE r.Id = @Id FOR UPDATE;";
         using var command = new MySqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("@Id", reservationId);
         using var reader = await command.ExecuteReaderAsync(token);

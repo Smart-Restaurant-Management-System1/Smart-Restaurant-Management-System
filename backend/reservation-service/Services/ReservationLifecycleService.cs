@@ -5,6 +5,8 @@ namespace ReservationService.Services;
 
 public sealed class ReservationLifecycleService(IReservationRepository repository) : IReservationLifecycleService
 {
+    public Task<ReservationCancellationResult> CancelForCustomerAsync(int reservationId, int customerId, CancellationToken cancellationToken = default) =>
+        repository.CancelForCustomerAtomicallyAsync(reservationId, customerId, cancellationToken);
     public async Task<ReservationStatusUpdateOutcome> ChangeStatusAsync(int reservationId, int? customerId, string targetStatus, CancellationToken cancellationToken = default)
     {
         if (!ReservationStatus.IsKnown(targetStatus)) return ReservationStatusUpdateOutcome.Conflict;
