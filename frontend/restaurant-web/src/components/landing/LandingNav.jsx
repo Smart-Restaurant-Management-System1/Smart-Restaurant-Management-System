@@ -1,10 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { landingLinks } from './landingLinks.js';
 
-export const landingLinks = [
-  ['Home', '#home'], ['About', '#about'], ['Features', '#features'],
-  ['Reservations', '#reservations'], ['Contact', '#contact'],
-];
+export { landingLinks };
 
 export default function LandingNav({ actions, isLoading }) {
   const [isOpen, setIsOpen] = useState(false);
