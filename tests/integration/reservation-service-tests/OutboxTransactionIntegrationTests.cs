@@ -33,9 +33,9 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        if (ShouldSkip) return;
+        if (ConnectionString is null) return;
 
-        _db = new TestDatabaseHelper(ConnectionString!);
+        _db = new TestDatabaseHelper(ConnectionString);
         _outboxRepo = new OutboxRepository(_db);
         _refGen = new BookingReferenceGenerator();
         var availOpts = Options.Create(new AvailabilityRulesOptions
@@ -49,11 +49,13 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
         _policy = new ReservationMaintenancePolicy(TimeProvider.System, availOpts);
         _reservationRepo = new ReservationRepository(_db, _refGen, _policy, _outboxRepo);
 
-        // Clean up outbox rows from previous test runs.
+        // Clean up reservation and outbox rows left by previous test runs to prevent slot conflicts.
         _connection = new MySqlConnection(ConnectionString);
         await _connection.OpenAsync();
-        await using var cleanup = new MySqlCommand("DELETE FROM ReservationOutbox WHERE AggregateType = 'Reservation' AND CreatedAtUtc > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 HOUR);", _connection);
-        await cleanup.ExecuteNonQueryAsync();
+        await using var cleanRes = new MySqlCommand("DELETE FROM Reservations WHERE StartDateTime > UTC_TIMESTAMP();", _connection);
+        await cleanRes.ExecuteNonQueryAsync();
+        await using var cleanOutbox = new MySqlCommand("DELETE FROM ReservationOutbox WHERE CreatedAtUtc > DATE_SUB(UTC_TIMESTAMP(), INTERVAL 1 HOUR);", _connection);
+        await cleanOutbox.ExecuteNonQueryAsync();
     }
 
     public async Task DisposeAsync()
@@ -63,13 +65,12 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 1: Successful creation inserts outbox row ────────────────────────────────────────
 
-    [SkippableFact]
+    [SR101Fact]
     public async Task CreateReservation_InsertsOutboxEvent_AtomicallyWithReservation()
     {
-        SkippableFactAttribute.Skip(ShouldSkip, "SR101_TEST_MYSQL not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
-        var command = new ReservationCreationCommand(CustomerId: 1, TableId: tableId, Period: FuturePeriod(), IdempotencyKey: null);
+        var command = new ReservationCreationCommand(CustomerId: 1, TableId: tableId, Period: FuturePeriod(0), IdempotencyKey: null);
 
         var beforeCount = await OutboxCountAsync(OutboxEventStatus.Pending);
         var result = await _reservationRepo.CreateAtomicallyAsync(command);
@@ -89,13 +90,12 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 2: Conflict rollback creates no outbox row ───────────────────────────────────────
 
-    [SkippableFact]
+    [SR101Fact]
     public async Task OverlappingCreate_RollsBack_CreatesNoOutboxRow()
     {
-        SkippableFactAttribute.Skip(ShouldSkip, "SR101_TEST_MYSQL not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
-        var period = FuturePeriod();
+        var period = FuturePeriod(1);
 
         // First booking succeeds.
         var first = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, period, null));
@@ -113,14 +113,13 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 3: Idempotent replay creates no duplicate outbox row ─────────────────────────────
 
-    [SkippableFact]
+    [SR101Fact]
     public async Task IdempotentCreate_Replay_CreatesNoAdditionalOutboxRow()
     {
-        SkippableFactAttribute.Skip(ShouldSkip, "SR101_TEST_MYSQL not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
         var key = $"idem-test-{Guid.NewGuid():N}";
-        var command = new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 5), key);
+        var command = new ReservationCreationCommand(1, tableId, FuturePeriod(2), key);
 
         var first = await _reservationRepo.CreateAtomicallyAsync(command);
         Assert.Equal(ReservationCreateOutcome.Created, first.Outcome);
@@ -138,13 +137,12 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 4: Admin status change creates outbox row ────────────────────────────────────────
 
-    [SkippableFact]
+    [SR101Fact]
     public async Task UpdateStatus_Confirmed_InsertsStatusChangedEvent()
     {
-        SkippableFactAttribute.Skip(ShouldSkip, "SR101_TEST_MYSQL not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
-        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 8), null));
+        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(3), null));
         Assert.Equal(ReservationCreateOutcome.Created, create.Outcome);
         var reservationId = create.Reservation!.Id;
 
@@ -167,13 +165,12 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 5: Admin cancel creates ReservationCancelled event (not StatusChanged) ──────────
 
-    [SkippableFact]
+    [SR101Fact]
     public async Task UpdateStatus_Cancelled_InsertsCancelledEvent_NotStatusChanged()
     {
-        SkippableFactAttribute.Skip(ShouldSkip, "SR101_TEST_MYSQL not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
-        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 10), null));
+        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(4), null));
         var reservationId = create.Reservation!.Id;
 
         var updated = await _reservationRepo.UpdateStatusAsync(reservationId, null, "Pending", "Cancelled");
@@ -189,14 +186,13 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 6: EventId is unique across events ────────────────────────────────────────────────
 
-    [SkippableFact]
+    [SR101Fact]
     public async Task TwoCreations_HaveDifferentEventIds()
     {
-        SkippableFactAttribute.Skip(ShouldSkip, "SR101_TEST_MYSQL not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
-        var r1 = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 12), null));
-        var r2 = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 14), null));
+        var r1 = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(5), null));
+        var r2 = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(6), null));
 
         Assert.Equal(ReservationCreateOutcome.Created, r1.Outcome);
         Assert.Equal(ReservationCreateOutcome.Created, r2.Outcome);
@@ -210,14 +206,13 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 7: Pending events returned in deterministic order ────────────────────────────────
 
-    [SkippableFact]
+    [SR101Fact]
     public async Task GetByStatus_ReturnsPendingInOccurredAtOrder()
     {
-        SkippableFactAttribute.Skip(ShouldSkip, "SR101_TEST_MYSQL not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
-        await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 16), null));
-        await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 18), null));
+        await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(7), null));
+        await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(8), null));
 
         var events = await _outboxRepo.GetByStatusAsync(OutboxEventStatus.Pending, 100);
         var ordered = events.OrderBy(e => e.OccurredAtUtc).ThenBy(e => e.Id).ToList();
@@ -227,13 +222,12 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 8: Outbox claim marks rows Processing ─────────────────────────────────────────────
 
-    [SkippableFact]
+    [SR101Fact]
     public async Task ClaimBatch_MarksRowsProcessing()
     {
-        SkippableFactAttribute.Skip(ShouldSkip, "SR101_TEST_MYSQL not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
-        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 20), null));
+        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(9), null));
         var reservationId = create.Reservation!.Id;
 
         var lockId = Guid.NewGuid();
@@ -247,13 +241,12 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 9: MarkProcessed sets Processed status ────────────────────────────────────────────
 
-    [SkippableFact]
+    [SR101Fact]
     public async Task MarkProcessed_SetsProcessedStatus()
     {
-        SkippableFactAttribute.Skip(ShouldSkip, "SR101_TEST_MYSQL not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
-        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 22), null));
+        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(10), null));
         var reservationId = create.Reservation!.Id;
 
         var batch = await _outboxRepo.ClaimBatchAsync(Guid.NewGuid(), 10, TimeSpan.FromSeconds(30));
@@ -266,14 +259,12 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
 
     // ── Test 10: Broker integration — real publish, mark processed ─────────────────────────────
 
-    [SkippableFact]
+    [SR101KafkaFact]
     public async Task RealKafka_PublishAndMarkProcessed_End2End()
     {
-        SkippableFactAttribute.Skip(ShouldSkip || string.IsNullOrWhiteSpace(KafkaBootstrap),
-            "SR101_TEST_MYSQL or SR101_TEST_KAFKA not set");
 
         var tableId = await GetFirstActiveTableIdAsync();
-        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(offsetHours: 24), null));
+        var create = await _reservationRepo.CreateAtomicallyAsync(new ReservationCreationCommand(1, tableId, FuturePeriod(11), null));
         var reservationId = create.Reservation!.Id;
 
         var batch = await _outboxRepo.ClaimBatchAsync(Guid.NewGuid(), 10, TimeSpan.FromSeconds(60));
@@ -341,9 +332,10 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
         return Convert.ToInt32(await cmd.ExecuteScalarAsync());
     }
 
-    private static AvailabilitySearchCriteria FuturePeriod(int offsetHours = 2)
+    // Each dayOffset produces a distinct booking date so parallel/sequential tests don't conflict.
+    private static AvailabilitySearchCriteria FuturePeriod(int dayOffset = 0)
     {
-        var start = DateTime.UtcNow.AddDays(7).AddHours(offsetHours).Date.AddHours(14);
+        var start = DateTime.UtcNow.AddDays(7 + dayOffset).Date.AddHours(14);
         return new AvailabilitySearchCriteria(start, start.AddHours(1), 2);
     }
 
@@ -357,13 +349,23 @@ public sealed class OutboxTransactionIntegrationTests : IAsyncLifetime
     }
 }
 
-/// <summary>xUnit skip attribute — equivalent to [Fact(Skip=...)] but conditionally skipped at runtime.</summary>
-public sealed class SkippableFactAttribute : FactAttribute
+/// <summary>Skips the test unless SR101_TEST_MYSQL is set (MySQL integration gate).</summary>
+public sealed class SR101FactAttribute : FactAttribute
 {
-    public static new void Skip(bool condition, string reason)
+    public SR101FactAttribute()
     {
-        if (condition) throw new SkipException(reason);
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SR101_TEST_MYSQL")))
+            Skip = "Set SR101_TEST_MYSQL to a MySQL connection string to run outbox integration tests.";
     }
 }
 
-public sealed class SkipException(string reason) : Exception(reason);
+/// <summary>Skips the test unless both SR101_TEST_MYSQL and SR101_TEST_KAFKA are set.</summary>
+public sealed class SR101KafkaFactAttribute : FactAttribute
+{
+    public SR101KafkaFactAttribute()
+    {
+        if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SR101_TEST_MYSQL")) ||
+            string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("SR101_TEST_KAFKA")))
+            Skip = "Set SR101_TEST_MYSQL and SR101_TEST_KAFKA to run the Kafka end-to-end test.";
+    }
+}

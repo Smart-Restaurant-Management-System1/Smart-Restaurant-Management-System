@@ -176,10 +176,18 @@ WHERE Status = 'Processing' AND LockedUntilUtc < @Now;";
         await cmd.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    // MySqlConnector may return CHAR(36) columns as System.Guid (GuidFormat=Char36) or as
+    // System.String (GuidFormat=None). Handle both so the code is connection-string agnostic.
+    private static Guid ReadGuid(MySqlDataReader reader, string column)
+    {
+        var value = reader.GetValue(reader.GetOrdinal(column));
+        return value is Guid g ? g : Guid.Parse((string)value);
+    }
+
     private static OutboxEvent MapRow(MySqlDataReader reader) => new()
     {
         Id = reader.GetInt64("Id"),
-        EventId = Guid.Parse(reader.GetString("EventId")),
+        EventId = ReadGuid(reader, "EventId"),
         EventType = reader.GetString("EventType"),
         SchemaVersion = reader.GetInt32("SchemaVersion"),
         AggregateType = reader.GetString("AggregateType"),
@@ -193,7 +201,7 @@ WHERE Status = 'Processing' AND LockedUntilUtc < @Now;";
         NextAttemptAtUtc = reader.IsDBNull(reader.GetOrdinal("NextAttemptAtUtc")) ? null : reader.GetDateTime("NextAttemptAtUtc"),
         LastError = reader.IsDBNull(reader.GetOrdinal("LastError")) ? null : reader.GetString("LastError"),
         Status = reader.GetString("Status"),
-        LockId = reader.IsDBNull(reader.GetOrdinal("LockId")) ? null : Guid.Parse(reader.GetString("LockId")),
+        LockId = reader.IsDBNull(reader.GetOrdinal("LockId")) ? null : ReadGuid(reader, "LockId"),
         LockedUntilUtc = reader.IsDBNull(reader.GetOrdinal("LockedUntilUtc")) ? null : reader.GetDateTime("LockedUntilUtc"),
     };
 }
