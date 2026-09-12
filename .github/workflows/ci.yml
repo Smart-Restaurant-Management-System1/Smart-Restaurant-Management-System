@@ -142,9 +142,85 @@ jobs:
             echo "xUnit test projects have not been implemented yet."
           fi
 
-      - name: Run xUnit tests
+      - name: Run xUnit tests (unit + SR-113 contract + SR-112 publisher — no real broker needed)
         if: steps.test-check.outputs.ready == 'true'
         run: |
           find tests/unit -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
             dotnet test "$project" --configuration Release
+          done
+
+  kafka-integration:
+    name: SR-114 Kafka Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_test_password
+          MYSQL_DATABASE: restaurant_reservation_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u root -pci_test_password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+      kafka:
+        image: bitnami/kafka:3.9
+        env:
+          KAFKA_CFG_NODE_ID: 1
+          KAFKA_CFG_PROCESS_ROLES: broker,controller
+          KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+          KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+          KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+          ALLOW_PLAINTEXT_LISTENER: "yes"
+        ports:
+          - 9092:9092
+        options: >-
+          --health-cmd="kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"
+          --health-interval=10s
+          --health-timeout=10s
+          --health-retries=10
+          --health-start-period=30s
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Apply MySQL migrations
+        run: |
+          for f in $(ls database/reservation-db/*.sql | sort); do
+            mysql -h 127.0.0.1 -P 3306 -u root -pci_test_password < "$f"
+          done
+
+      - name: Detect integration test projects
+        id: integration-check
+        shell: bash
+        run: |
+          if find tests/integration -name "*.csproj" -print -quit | grep -q .; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "No integration test projects found — skipping."
+          fi
+
+      - name: Run SR-114 MySQL and Kafka integration tests
+        if: steps.integration-check.outputs.ready == 'true'
+        env:
+          SR101_TEST_MYSQL: "Server=127.0.0.1;Port=3306;Database=restaurant_reservation_db;User=root;Password=ci_test_password;AllowPublicKeyRetrieval=True;SslMode=None;"
+          SR101_TEST_KAFKA: "localhost:9092"
+        run: |
+          find tests/integration -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
+            dotnet test "$project" --configuration Release --timeout 300
           done

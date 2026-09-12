@@ -19,6 +19,7 @@ services:
       - ./database/reservation-db/03_reservation_creation.sql:/docker-entrypoint-initdb.d/04_reservation_creation.sql
       - ./database/reservation-db/04_reservation_lifecycle.sql:/docker-entrypoint-initdb.d/05_reservation_lifecycle.sql
       - ./database/reservation-db/05_reservation_concurrency.sql:/docker-entrypoint-initdb.d/06_reservation_concurrency.sql
+      - ./database/reservation-db/06_reservation_outbox.sql:/docker-entrypoint-initdb.d/07_reservation_outbox.sql
     networks:
       - restaurant-network
     healthcheck:
@@ -27,7 +28,43 @@ services:
       timeout: 5s
       retries: 10
 
-  # 2. Identity Microservice (.NET)
+  # 2. Kafka Broker (KRaft mode — no Zookeeper)
+  # SR-101/SR-112: Reservation lifecycle events are published here by the outbox background publisher.
+  # Topic: restaurant.reservations.v1
+  # For CI and integration tests set KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+  kafka:
+    image: bitnami/kafka:3.9
+    container_name: smart_restaurant_kafka
+    restart: always
+    environment:
+      # KRaft mode — standalone single-broker, no Zookeeper required.
+      KAFKA_CFG_NODE_ID: 1
+      KAFKA_CFG_PROCESS_ROLES: broker,controller
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_CFG_NUM_PARTITIONS: 4
+      # Retain reservation events for 7 days for replay/debugging.
+      KAFKA_CFG_LOG_RETENTION_HOURS: 168
+      ALLOW_PLAINTEXT_LISTENER: "yes"
+    ports:
+      - '9092:9092'
+    volumes:
+      - kafka_data:/bitnami/kafka
+    networks:
+      - restaurant-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # 3. Identity Microservice (.NET)
   identity-service:
     build:
       context: ./backend/identity-service
@@ -64,8 +101,15 @@ services:
       - Jwt__Key=${JWT_KEY}
       - Jwt__Issuer=${JWT_ISSUER}
       - Jwt__Audience=${JWT_AUDIENCE}
+      # SR-112: Kafka outbox publisher settings. SaslUsername/SaslPassword are empty for plaintext local dev.
+      - Kafka__BootstrapServers=kafka:9092
+      - Kafka__ReservationTopic=restaurant.reservations.v1
+      - Kafka__SecurityProtocol=plaintext
+      - Kafka__PublisherEnabled=true
     depends_on:
       mysql:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - restaurant-network
@@ -91,3 +135,4 @@ networks:
 
 volumes:
   mysql_data:
+  kafka_data:
