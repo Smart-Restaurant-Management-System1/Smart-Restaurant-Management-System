@@ -61,6 +61,12 @@ builder.Services.AddSwaggerGen(options =>
         Description = "Microservice managing tables, availability, and reservations."
     });
 
+    // Include XML doc comments from the compiled assembly so that <summary> annotations
+    // appear in the Swagger UI and generated OpenAPI spec.
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath);
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -110,6 +116,7 @@ builder.Services.AddSingleton<ReservationService.Data.DatabaseHelper>();
 builder.Services.AddScoped<ReservationService.Repositories.ITableRepository, ReservationService.Repositories.TableRepository>();
 builder.Services.Configure<AvailabilityRulesOptions>(builder.Configuration.GetSection(AvailabilityRulesOptions.SectionName));
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddScoped<ReservationService.Services.ReservationMaintenancePolicy>();
 builder.Services.AddScoped<ReservationService.Repositories.IAvailabilityRepository, ReservationService.Repositories.AvailabilityRepository>();
 builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchService, ReservationService.Services.AvailabilitySearchService>();
 builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchValidator, ReservationService.Services.AvailabilitySearchValidator>();
