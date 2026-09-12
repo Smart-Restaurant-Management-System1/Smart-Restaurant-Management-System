@@ -199,6 +199,8 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button type="button" onClick={() => navigate('/admin/reservations')} className="btn-jelly-primary" style={{ padding: '0.65rem 1.15rem', fontSize: '0.88rem' }}>Manage reservations</button>
           <button
             type="button"
             onClick={() => setShowLogoutModal(true)}
@@ -222,6 +224,7 @@ export default function AdminDashboardPage() {
             </svg>
             Sign Out
           </button>
+          </div>
         </div>
 
         {/* Admin Info Banner */}

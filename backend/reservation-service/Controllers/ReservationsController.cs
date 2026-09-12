@@ -18,8 +18,9 @@ public sealed class ReservationsController : ControllerBase
     private readonly ILogger<ReservationsController> _logger;
     private readonly IReservationHistoryService? _historyService;
     private readonly IReservationLifecycleService? _lifecycleService;
+    private readonly IAdminReservationService? _adminService;
 
-    public ReservationsController(IAvailabilitySearchValidator validator, IAvailabilitySearchService service, IReservationCreationService creationService, ILogger<ReservationsController> logger, IReservationHistoryService? historyService = null, IReservationLifecycleService? lifecycleService = null)
+    public ReservationsController(IAvailabilitySearchValidator validator, IAvailabilitySearchService service, IReservationCreationService creationService, ILogger<ReservationsController> logger, IReservationHistoryService? historyService = null, IReservationLifecycleService? lifecycleService = null, IAdminReservationService? adminService = null)
     {
         _validator = validator;
         _service = service;
@@ -27,6 +28,7 @@ public sealed class ReservationsController : ControllerBase
         _logger = logger;
         _historyService = historyService;
         _lifecycleService = lifecycleService;
+        _adminService = adminService;
     }
 
     /// <summary>SR-57 advisory availability search. It does not reserve or lock a table; SR-58 must revalidate atomically.</summary>
@@ -139,7 +141,7 @@ public sealed class ReservationsController : ControllerBase
     public async Task<IActionResult> CancelMyReservation(int reservationId, CancellationToken cancellationToken = default)
     {
         if (!TryGetCustomerId(out var customerId)) return Unauthorized();
-        return await ChangeStatusAsync(reservationId, customerId, ReservationStatus.Cancelled, cancellationToken);
+        return await ChangeStatusAsync(reservationId, customerId, ReservationStatus.Cancelled, false, cancellationToken);
     }
 
     [Authorize(Roles = AppRoles.Admin)]
@@ -148,16 +150,44 @@ public sealed class ReservationsController : ControllerBase
     {
         if (request is null || !ReservationStatus.IsKnown(request.Status))
             return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["status"] = ["Status must be Pending, Confirmed, Cancelled, or Completed."] }) { Status = StatusCodes.Status400BadRequest });
-        return await ChangeStatusAsync(reservationId, null, request.Status!, cancellationToken);
+        return await ChangeStatusAsync(reservationId, null, request.Status!, true, cancellationToken);
     }
 
-    private async Task<IActionResult> ChangeStatusAsync(int reservationId, int? customerId, string targetStatus, CancellationToken cancellationToken)
+    [Authorize(Roles = AppRoles.Admin)]
+    [HttpGet]
+    [ProducesResponseType(typeof(AdminReservationResponseDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAdminReservations([FromQuery] AdminReservationQueryDto request, CancellationToken cancellationToken = default)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (request.Page < 1) errors["page"] = ["Page must be at least 1."];
+        if (request.PageSize is < 1 or > 100) errors["pageSize"] = ["Page size must be between 1 and 100."];
+        if (request.VisitFrom is not null && request.VisitTo is not null && request.VisitFrom > request.VisitTo) errors["visitTo"] = ["Visit end date must not be before visit start date."];
+        if (!string.IsNullOrWhiteSpace(request.Status) && !ReservationStatus.IsKnown(request.Status)) errors["status"] = ["Status must be Pending, Confirmed, Cancelled, or Completed."];
+        if (request.TableNumber?.Length > 32) errors["tableNumber"] = ["Table number must not exceed 32 characters."];
+        if (request.BookingReference?.Length > 32) errors["bookingReference"] = ["Booking reference must not exceed 32 characters."];
+        if (errors.Count > 0) return BadRequest(new ValidationProblemDetails(errors) { Status = StatusCodes.Status400BadRequest });
+        if (_adminService is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation management is unavailable." });
+        var page = await _adminService.SearchAsync(new AdminReservationQuery(request.VisitFrom, request.VisitTo, request.Status, request.TableNumber, request.BookingReference, request.Page, request.PageSize), cancellationToken);
+        return Ok(ToAdminResponse(page));
+    }
+
+    [Authorize(Roles = AppRoles.Admin)]
+    [HttpGet("{reservationId:int}")]
+    public async Task<IActionResult> GetAdminReservation(int reservationId, CancellationToken cancellationToken = default)
+    {
+        if (_adminService is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation management is unavailable." });
+        var reservation = await _adminService.GetAsync(reservationId, cancellationToken);
+        return reservation is null ? NotFound(new { message = "Reservation not found." }) : Ok(ToAdminItem(reservation));
+    }
+
+    private async Task<IActionResult> ChangeStatusAsync(int reservationId, int? customerId, string targetStatus, bool returnReservation, CancellationToken cancellationToken)
     {
         if (reservationId <= 0) return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["reservationId"] = ["A valid reservation ID is required."] }) { Status = StatusCodes.Status400BadRequest });
         if (_lifecycleService is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation status changes are unavailable." });
         var outcome = await _lifecycleService.ChangeStatusAsync(reservationId, customerId, targetStatus, cancellationToken);
         return outcome switch
         {
+            ReservationStatusUpdateOutcome.Updated when returnReservation && _adminService is not null => Ok(ToAdminItem((await _adminService.GetAsync(reservationId, cancellationToken))!)),
             ReservationStatusUpdateOutcome.Updated => NoContent(),
             ReservationStatusUpdateOutcome.NotFound => NotFound(new { message = "Reservation not found." }),
             _ => Conflict(new { code = "INVALID_RESERVATION_TRANSITION", message = "This reservation cannot move to the requested status." })
@@ -171,6 +201,19 @@ public sealed class ReservationsController : ControllerBase
         ReservationId = reservation.Id, BookingReference = reservation.BookingReference, TableId = reservation.TableId,
         TableNumber = reservation.TableNumber, StartDateTime = reservation.StartDateTime, EndDateTime = reservation.EndDateTime,
         GuestCount = reservation.GuestCount, Status = reservation.Status, CreatedAt = reservation.CreatedAt, UpdatedAt = reservation.UpdatedAt
+    };
+
+    private static AdminReservationItemDto ToAdminItem(Reservation reservation) => new()
+    {
+        ReservationId = reservation.Id, CustomerId = reservation.CustomerId, BookingReference = reservation.BookingReference, TableId = reservation.TableId,
+        TableNumber = reservation.TableNumber, StartDateTime = reservation.StartDateTime, EndDateTime = reservation.EndDateTime, GuestCount = reservation.GuestCount,
+        Status = reservation.Status, CreatedAt = reservation.CreatedAt, UpdatedAt = reservation.UpdatedAt
+    };
+
+    private static AdminReservationResponseDto ToAdminResponse(ReservationHistoryPage page) => new()
+    {
+        Items = page.Items.Select(ToAdminItem).ToList(), Page = page.Page, PageSize = page.PageSize, TotalCount = page.TotalCount,
+        TotalPages = (int)Math.Ceiling(page.TotalCount / (double)page.PageSize)
     };
 
     private static ReservationConfirmationResponseDto ToConfirmation(Reservation reservation) => new()

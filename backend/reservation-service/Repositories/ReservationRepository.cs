@@ -9,6 +9,35 @@ namespace ReservationService.Repositories;
 /// <summary>SR-62 locking workflow: one transaction locks a physical table before the overlap recheck and insert.</summary>
 public sealed class ReservationRepository(DatabaseHelper databaseHelper, IBookingReferenceGenerator referenceGenerator) : IReservationRepository
 {
+    public async Task<ReservationHistoryPage> GetForAdminAsync(AdminReservationQuery query, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        var (where, parameters) = BuildAdminFilters(query);
+        await using var count = new MySqlCommand($"SELECT COUNT(*) FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId {where};", connection);
+        AddParameters(count, parameters);
+        var total = Convert.ToInt32(await count.ExecuteScalarAsync(cancellationToken));
+        const string columns = "r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
+        await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT @PageSize OFFSET @Offset;", connection);
+        AddParameters(command, parameters);
+        command.Parameters.AddWithValue("@PageSize", query.PageSize);
+        command.Parameters.AddWithValue("@Offset", (query.Page - 1) * query.PageSize);
+        var items = new List<Reservation>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken)) items.Add(MapReservation(reader));
+        return new ReservationHistoryPage(items, query.Page, query.PageSize, total);
+    }
+
+    public async Task<Reservation?> GetByIdAsync(int reservationId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
+FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId WHERE r.Id = @Id;";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Id", reservationId);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? MapReservation(reader) : null;
+    }
+
     public async Task<ReservationHistoryPage> GetHistoryForCustomerAsync(int customerId, int page, int pageSize, CancellationToken cancellationToken = default)
     {
         await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
@@ -161,4 +190,21 @@ FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Cu
         GuestCount = reader.GetInt32("GuestCount"), Status = reader.GetString("Status"), CreatedAt = reader.GetDateTime("CreatedAt"),
         UpdatedAt = reader.GetDateTime("UpdatedAt")
     };
+
+    private static (string Where, Dictionary<string, object> Parameters) BuildAdminFilters(AdminReservationQuery query)
+    {
+        var clauses = new List<string>();
+        var parameters = new Dictionary<string, object>();
+        if (query.VisitFrom is not null) { clauses.Add("r.StartDateTime >= @VisitFrom"); parameters["@VisitFrom"] = query.VisitFrom.Value.ToDateTime(TimeOnly.MinValue); }
+        if (query.VisitTo is not null) { clauses.Add("r.StartDateTime < @VisitToExclusive"); parameters["@VisitToExclusive"] = query.VisitTo.Value.AddDays(1).ToDateTime(TimeOnly.MinValue); }
+        if (!string.IsNullOrWhiteSpace(query.Status)) { clauses.Add("r.Status = @Status"); parameters["@Status"] = query.Status; }
+        if (!string.IsNullOrWhiteSpace(query.TableNumber)) { clauses.Add("t.TableNumber LIKE @TableNumber"); parameters["@TableNumber"] = $"%{query.TableNumber}%"; }
+        if (!string.IsNullOrWhiteSpace(query.BookingReference)) { clauses.Add("r.BookingReference LIKE @BookingReference"); parameters["@BookingReference"] = $"%{query.BookingReference}%"; }
+        return (clauses.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", clauses), parameters);
+    }
+
+    private static void AddParameters(MySqlCommand command, Dictionary<string, object> parameters)
+    {
+        foreach (var (name, value) in parameters) command.Parameters.AddWithValue(name, value);
+    }
 }
