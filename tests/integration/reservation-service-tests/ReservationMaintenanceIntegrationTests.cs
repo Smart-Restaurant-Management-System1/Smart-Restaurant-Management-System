@@ -43,7 +43,7 @@ public sealed class MaintenanceDatabase : IAsyncLifetime
         new Dictionary<string, string?> { ["ConnectionStrings:DefaultConnection"] = ConnectionString }).Build());
     public sealed class Clock : TimeProvider { public override DateTimeOffset GetUtcNow() => new(2030, 1, 1, 0, 0, 0, TimeSpan.Zero); }
     public ReservationRepository Repository(DatabaseHelper? helper = null) => new(helper ?? Helper,
-        new BookingReferenceGenerator(), new ReservationMaintenancePolicy(new Clock(), Options.Create(new AvailabilityRulesOptions())));
+        new BookingReferenceGenerator(), new ReservationMaintenancePolicy(new Clock(), Options.Create(new AvailabilityRulesOptions())), new NullOutboxRepository());
     public async Task InitializeAsync()
     {
         var setting = Environment.GetEnvironmentVariable("SR59_TEST_MYSQL");
@@ -284,4 +284,15 @@ public sealed class ReservationMaintenanceIntegrationTests(MaintenanceDatabase d
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", Token(99, "Admin"));
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync($"/api/reservations/{booking.Id}")).StatusCode);
     }
+}
+
+/// <summary>No-op outbox repository for tests that don't exercise Kafka event publishing.</summary>
+internal sealed class NullOutboxRepository : IOutboxRepository
+{
+    public Task InsertAsync(MySqlConnection connection, MySqlTransaction transaction, OutboxEvent outboxEvent, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task<IReadOnlyList<OutboxEvent>> ClaimBatchAsync(Guid lockId, int batchSize, TimeSpan leaseDuration, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OutboxEvent>>(Array.Empty<OutboxEvent>());
+    public Task MarkProcessedAsync(long outboxId, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task RecordFailureAsync(long outboxId, int attemptCount, DateTime nextAttemptAtUtc, string? lastError, int maxAttempts, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task RecoverExpiredClaimsAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task<IReadOnlyList<OutboxEvent>> GetByStatusAsync(string status, int limit, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<OutboxEvent>>(Array.Empty<OutboxEvent>());
 }

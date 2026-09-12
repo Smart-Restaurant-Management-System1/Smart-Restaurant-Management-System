@@ -121,6 +121,8 @@ builder.Services.AddScoped<ReservationService.Repositories.IAvailabilityReposito
 builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchService, ReservationService.Services.AvailabilitySearchService>();
 builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchValidator, ReservationService.Services.AvailabilitySearchValidator>();
 builder.Services.AddSingleton<ReservationService.Services.IBookingReferenceGenerator, ReservationService.Services.BookingReferenceGenerator>();
+// SR-115: Outbox repository (scoped — participates in HTTP request scoped lifetime)
+builder.Services.AddScoped<ReservationService.Repositories.IOutboxRepository, ReservationService.Repositories.OutboxRepository>();
 builder.Services.AddScoped<ReservationService.Repositories.IReservationRepository, ReservationService.Repositories.ReservationRepository>();
 builder.Services.AddScoped<ReservationService.Services.IReservationCreationService, ReservationService.Services.ReservationCreationService>();
 builder.Services.AddScoped<ReservationService.Services.IReservationRescheduleService, ReservationService.Services.ReservationRescheduleService>();
@@ -128,6 +130,10 @@ builder.Services.AddScoped<ReservationService.Services.IReservationReportService
 builder.Services.AddScoped<ReservationService.Services.IReservationHistoryService, ReservationService.Services.ReservationHistoryService>();
 builder.Services.AddScoped<ReservationService.Services.IReservationLifecycleService, ReservationService.Services.ReservationLifecycleService>();
 builder.Services.AddScoped<ReservationService.Services.IAdminReservationService, ReservationService.Services.AdminReservationService>();
+// SR-112: Kafka publisher — singleton producer reused across requests; hosted service polls the outbox.
+builder.Services.Configure<ReservationService.Models.KafkaOptions>(builder.Configuration.GetSection(ReservationService.Models.KafkaOptions.SectionName));
+builder.Services.AddSingleton<ReservationService.Services.IReservationEventPublisher, ReservationService.Services.ConfluentKafkaPublisher>();
+builder.Services.AddHostedService<ReservationService.Services.OutboxPublisherService>();
 
 var app = builder.Build();
 
