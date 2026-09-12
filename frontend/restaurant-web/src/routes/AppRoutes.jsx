@@ -6,6 +6,7 @@ import CustomerPortalPage from '../pages/customer/CustomerPortalPage';
 import ProfilePage from '../pages/customer/ProfilePage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminReservationsPage from '../pages/admin/AdminReservationsPage';
+import ReservationReportsPage from '../pages/admin/ReservationReportsPage';
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
 import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
 import AvailabilitySearchPage from '../pages/availability/AvailabilitySearchPage';
@@ -79,6 +80,7 @@ export default function AppRoutes() {
         }
       />
       <Route path="/admin/reservations" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><AdminReservationsPage /></ProtectedRoute>} />
+      <Route path="/admin/reports/reservations" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><ReservationReportsPage /></ProtectedRoute>} />
 
       {/* Kitchen Staff Protected Routes */}
       <Route
