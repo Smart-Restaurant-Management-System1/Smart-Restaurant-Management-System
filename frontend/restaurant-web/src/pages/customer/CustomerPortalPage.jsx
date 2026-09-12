@@ -27,6 +27,7 @@ export default function CustomerPortalPage() {
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
             <Link to="/availability" className="btn-jelly-primary" style={{ padding: '0.65rem 1.25rem', fontSize: '0.88rem', textDecoration: 'none' }}>Find a table</Link>
+            <Link to="/reservations/history" className="btn-jelly-secondary" style={{ padding: '0.65rem 1.25rem', fontSize: '0.88rem', textDecoration: 'none' }}>My reservations</Link>
             <Link
               to="/tables"
               className="btn-jelly-secondary"

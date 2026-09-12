@@ -68,6 +68,17 @@ export const createReservation = async (request, idempotencyKey) => {
   return response.data;
 };
 
+/** Retrieves the authenticated customer's paginated reservation history. */
+export const getMyReservationHistory = async (page = 1, pageSize = 10) => {
+  const response = await reservationApi.get('/reservations/my-history', { params: { page, pageSize } });
+  return response.data;
+};
+
+/** Cancels the authenticated customer's eligible reservation. */
+export const cancelMyReservation = async (reservationId) => {
+  await reservationApi.post(`/reservations/${reservationId}/cancel`);
+};
+
 /**
  * Retrieves a single table by ID.
  * @param {number} id - Table ID.
@@ -105,6 +116,8 @@ export default {
   getActiveTables,
   searchAvailableTables,
   createReservation,
+  getMyReservationHistory,
+  cancelMyReservation,
   updateTable,
   deleteTable,
 };

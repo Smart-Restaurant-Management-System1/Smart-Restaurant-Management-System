@@ -9,6 +9,54 @@ namespace ReservationService.Repositories;
 /// <summary>SR-62 locking workflow: one transaction locks a physical table before the overlap recheck and insert.</summary>
 public sealed class ReservationRepository(DatabaseHelper databaseHelper, IBookingReferenceGenerator referenceGenerator) : IReservationRepository
 {
+    public async Task<ReservationHistoryPage> GetHistoryForCustomerAsync(int customerId, int page, int pageSize, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string countSql = "SELECT COUNT(*) FROM Reservations WHERE CustomerId = @CustomerId;";
+        await using var countCommand = new MySqlCommand(countSql, connection);
+        countCommand.Parameters.AddWithValue("@CustomerId", customerId);
+        var totalCount = Convert.ToInt32(await countCommand.ExecuteScalarAsync(cancellationToken));
+
+        const string historySql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime,
+r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
+FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId
+WHERE r.CustomerId = @CustomerId
+ORDER BY r.StartDateTime DESC, r.Id DESC
+LIMIT @PageSize OFFSET @Offset;";
+        await using var command = new MySqlCommand(historySql, connection);
+        command.Parameters.AddWithValue("@CustomerId", customerId);
+        command.Parameters.AddWithValue("@PageSize", pageSize);
+        command.Parameters.AddWithValue("@Offset", (page - 1) * pageSize);
+        var reservations = new List<Reservation>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken)) reservations.Add(MapReservation(reader));
+        return new ReservationHistoryPage(reservations, page, pageSize, totalCount);
+    }
+
+    public async Task<string?> GetStatusAsync(int reservationId, int? customerId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = "SELECT Status FROM Reservations WHERE Id = @Id AND (@CustomerId IS NULL OR CustomerId = @CustomerId);";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Id", reservationId);
+        command.Parameters.AddWithValue("@CustomerId", (object?)customerId ?? DBNull.Value);
+        return (await command.ExecuteScalarAsync(cancellationToken)) as string;
+    }
+
+    public async Task<bool> UpdateStatusAsync(int reservationId, int? customerId, string currentStatus, string targetStatus, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = @"UPDATE Reservations SET Status = @TargetStatus, UpdatedAt = @UpdatedAt
+WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerId = @CustomerId);";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Id", reservationId);
+        command.Parameters.AddWithValue("@CustomerId", (object?)customerId ?? DBNull.Value);
+        command.Parameters.AddWithValue("@CurrentStatus", currentStatus);
+        command.Parameters.AddWithValue("@TargetStatus", targetStatus);
+        command.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
+        return await command.ExecuteNonQueryAsync(cancellationToken) == 1;
+    }
+
     public async Task<ReservationCreateResult> CreateAtomicallyAsync(ReservationCreationCommand command, CancellationToken cancellationToken = default)
     {
         await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
@@ -96,12 +144,21 @@ VALUES (@CustomerId, @TableId, @BookingReference, @StartDateTime, @EndDateTime, 
 
     private static async Task<Reservation?> FindIdempotentReservationAsync(MySqlConnection connection, MySqlTransaction transaction, ReservationCreationCommand command, CancellationToken token)
     {
-        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt
+        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
 FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.CustomerId = @CustomerId AND r.IdempotencyKey = @IdempotencyKey FOR UPDATE;";
         using var query = new MySqlCommand(sql, connection, transaction);
         query.Parameters.AddWithValue("@CustomerId", command.CustomerId); query.Parameters.AddWithValue("@IdempotencyKey", command.IdempotencyKey);
         using var reader = await query.ExecuteReaderAsync(token);
         if (!await reader.ReadAsync(token)) return null;
-        return new Reservation { Id = reader.GetInt32("Id"), CustomerId = reader.GetInt32("CustomerId"), TableId = reader.GetInt32("TableId"), TableNumber = reader.GetString("TableNumber"), BookingReference = reader.GetString("BookingReference"), StartDateTime = reader.GetDateTime("StartDateTime"), EndDateTime = reader.GetDateTime("EndDateTime"), GuestCount = reader.GetInt32("GuestCount"), Status = reader.GetString("Status"), CreatedAt = reader.GetDateTime("CreatedAt") };
+        return MapReservation(reader);
     }
+
+    private static Reservation MapReservation(MySqlDataReader reader) => new()
+    {
+        Id = reader.GetInt32("Id"), CustomerId = reader.GetInt32("CustomerId"), TableId = reader.GetInt32("TableId"),
+        TableNumber = reader.GetString("TableNumber"), BookingReference = reader.GetString("BookingReference"),
+        StartDateTime = reader.GetDateTime("StartDateTime"), EndDateTime = reader.GetDateTime("EndDateTime"),
+        GuestCount = reader.GetInt32("GuestCount"), Status = reader.GetString("Status"), CreatedAt = reader.GetDateTime("CreatedAt"),
+        UpdatedAt = reader.GetDateTime("UpdatedAt")
+    };
 }
