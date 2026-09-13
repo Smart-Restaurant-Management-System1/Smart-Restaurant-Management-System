@@ -33,7 +33,7 @@ services:
   # Topic: restaurant.reservations.v1
   # For CI and integration tests set KAFKA_BOOTSTRAP_SERVERS=kafka:9092
   kafka:
-    image: bitnami/kafka:3.9
+    image: bitnamilegacy/kafka:3.9
     container_name: smart_restaurant_kafka
     restart: always
     environment:

@@ -121,8 +121,9 @@ builder.Services.AddScoped<ReservationService.Repositories.IAvailabilityReposito
 builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchService, ReservationService.Services.AvailabilitySearchService>();
 builder.Services.AddScoped<ReservationService.Services.IAvailabilitySearchValidator, ReservationService.Services.AvailabilitySearchValidator>();
 builder.Services.AddSingleton<ReservationService.Services.IBookingReferenceGenerator, ReservationService.Services.BookingReferenceGenerator>();
-// SR-115: Outbox repository (scoped — participates in HTTP request scoped lifetime)
-builder.Services.AddScoped<ReservationService.Repositories.IOutboxRepository, ReservationService.Repositories.OutboxRepository>();
+// SR-115: Outbox repository is stateless (DatabaseHelper singleton + per-call connections/transactions),
+// and must be singleton so the singleton OutboxPublisherService (a hosted service) can consume it directly.
+builder.Services.AddSingleton<ReservationService.Repositories.IOutboxRepository, ReservationService.Repositories.OutboxRepository>();
 builder.Services.AddScoped<ReservationService.Repositories.IReservationRepository, ReservationService.Repositories.ReservationRepository>();
 builder.Services.AddScoped<ReservationService.Services.IReservationCreationService, ReservationService.Services.ReservationCreationService>();
 builder.Services.AddScoped<ReservationService.Services.IReservationRescheduleService, ReservationService.Services.ReservationRescheduleService>();
