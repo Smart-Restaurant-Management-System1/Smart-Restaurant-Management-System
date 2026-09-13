@@ -44,15 +44,26 @@ BEGIN
     END IF;
 
     -- Add LockId column if missing (safe on re-run after partial migration).
+    -- Checked independently of LockedUntilUtc so a partially applied prior run
+    -- (one column present, the other missing) cannot leave either column
+    -- permanently missing or cause a duplicate-column error.
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_schema = DATABASE() AND table_name = 'ReservationOutbox' AND column_name = 'LockId'
     ) THEN
         ALTER TABLE ReservationOutbox
-            ADD COLUMN LockId CHAR(36) NULL COMMENT 'Publisher instance UUID holding the processing lease',
+            ADD COLUMN LockId CHAR(36) NULL COMMENT 'Publisher instance UUID holding the processing lease';
+    END IF;
+
+    -- Add LockedUntilUtc column if missing (safe on re-run after partial migration).
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = 'ReservationOutbox' AND column_name = 'LockedUntilUtc'
+    ) THEN
+        ALTER TABLE ReservationOutbox
             ADD COLUMN LockedUntilUtc DATETIME(3) NULL COMMENT 'Lease expiry; expired leases are recoverable';
     END IF;
-END /
+END //
 DELIMITER ;
 CALL ApplyReservationOutbox();
 DROP PROCEDURE ApplyReservationOutbox;
