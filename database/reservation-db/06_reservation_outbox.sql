@@ -52,7 +52,7 @@ BEGIN
             ADD COLUMN LockId CHAR(36) NULL COMMENT 'Publisher instance UUID holding the processing lease',
             ADD COLUMN LockedUntilUtc DATETIME(3) NULL COMMENT 'Lease expiry; expired leases are recoverable';
     END IF;
-END //
+END /
 DELIMITER ;
 CALL ApplyReservationOutbox();
 DROP PROCEDURE ApplyReservationOutbox;
