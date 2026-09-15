@@ -87,17 +87,30 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Configure CORS for Frontend
+// Same-origin requests via the frontend's Nginx reverse proxy never trigger CORS at all;
+// this policy exists as defense-in-depth for direct API consumers (Swagger, mobile clients,
+// local tooling) and is not the primary mechanism that makes the deployed frontend work.
+var frontendOrigin = builder.Configuration["Cors:AllowedOrigin"]
+    ?? "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io";
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy.SetIsOriginAllowed(origin =>
               {
-                  if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                  if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
                   {
-                      return uri.Host == "localhost" || uri.Host == "127.0.0.1";
+                      return false;
                   }
-                  return false;
+
+                  // Localhost/127.0.0.1 are permitted only in Development, on any scheme/port.
+                  if (builder.Environment.IsDevelopment() && (uri.Host == "localhost" || uri.Host == "127.0.0.1"))
+                  {
+                      return true;
+                  }
+
+                  return string.Equals(origin, frontendOrigin, StringComparison.OrdinalIgnoreCase);
               })
               .AllowAnyHeader()
               .AllowAnyMethod()
