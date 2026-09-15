@@ -10,9 +10,9 @@ permissions:
   id-token: write
 
 env:
-  ACR_NAME: acrcinnamonbistrodev
-  ACR_LOGIN_SERVER: acrcinnamonbistrodev-g7h3ddhecccqdjfv.azurecr.io
-  RESOURCE_GROUP: rg-cinnamon-bistro-dev
+  ACR_NAME: ${{ vars.ACR_NAME }}
+  ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+  RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
 
 jobs:
   deploy:
@@ -26,70 +26,67 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: a32bd652-cca5-4729-8831-0cfc663d0686
-          tenant-id: 44e3cf94-19c9-4e32-96c3-14f5bf01391a
-          subscription-id: b44b6fab-2448-45d9-9407-386d76d60439
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Login to Azure Container Registry
-        run: az acr login --name $ACR_NAME
+        run: az acr login --name "$ACR_NAME"
 
       - name: Build Identity Service image
         run: |
           docker build \
-            -t $ACR_LOGIN_SERVER/identity-service:${{ github.sha }} \
-            -t $ACR_LOGIN_SERVER/identity-service:latest \
+            -t "$ACR_LOGIN_SERVER/identity-service:${{ github.sha }}" \
+            -t "$ACR_LOGIN_SERVER/identity-service:latest" \
             backend/identity-service
 
       - name: Build Reservation Service image
         run: |
           docker build \
-            -t $ACR_LOGIN_SERVER/reservation-service:${{ github.sha }} \
-            -t $ACR_LOGIN_SERVER/reservation-service:latest \
+            -t "$ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}" \
+            -t "$ACR_LOGIN_SERVER/reservation-service:latest" \
             backend/reservation-service
 
       - name: Build Frontend image
         run: |
           docker build \
             -f frontend/restaurant-web/Dockerfile.azure \
-            -t $ACR_LOGIN_SERVER/frontend:${{ github.sha }} \
-            -t $ACR_LOGIN_SERVER/frontend:azure \
+            -t "$ACR_LOGIN_SERVER/frontend:${{ github.sha }}" \
+            -t "$ACR_LOGIN_SERVER/frontend:azure" \
             frontend/restaurant-web
 
       - name: Push Identity Service image
         run: |
-          docker push $ACR_LOGIN_SERVER/identity-service:${{ github.sha }}
-          docker push $ACR_LOGIN_SERVER/identity-service:latest
+          docker push "$ACR_LOGIN_SERVER/identity-service:${{ github.sha }}"
+          docker push "$ACR_LOGIN_SERVER/identity-service:latest"
 
       - name: Push Reservation Service image
         run: |
-          docker push $ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}
-          docker push $ACR_LOGIN_SERVER/reservation-service:latest
+          docker push "$ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}"
+          docker push "$ACR_LOGIN_SERVER/reservation-service:latest"
 
       - name: Push Frontend image
         run: |
-          docker push $ACR_LOGIN_SERVER/frontend:${{ github.sha }}
-          docker push $ACR_LOGIN_SERVER/frontend:azure
+          docker push "$ACR_LOGIN_SERVER/frontend:${{ github.sha }}"
+          docker push "$ACR_LOGIN_SERVER/frontend:azure"
 
       - name: Deploy Identity Service
         run: |
           az containerapp update \
             --name identity-api \
-            --resource-group $RESOURCE_GROUP \
-            --image $ACR_LOGIN_SERVER/identity-service:${{ github.sha }}
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_LOGIN_SERVER/identity-service:${{ github.sha }}"
 
       - name: Deploy Reservation Service
         run: |
           az containerapp update \
             --name reservation-api \
-            --resource-group $RESOURCE_GROUP \
-            --image $ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}"
 
       - name: Deploy Frontend
         run: |
           az containerapp update \
             --name frontend-web \
-            --resource-group $RESOURCE_GROUP \
-            --image $ACR_LOGIN_SERVER/frontend:${{ github.sha }}
-
-
-
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_LOGIN_SERVER/frontend:${{ github.sha }}"
