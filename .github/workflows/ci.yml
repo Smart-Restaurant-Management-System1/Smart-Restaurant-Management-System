@@ -142,12 +142,13 @@ jobs:
             echo "xUnit test projects have not been implemented yet."
           fi
 
-      - name: Run xUnit tests (unit + SR-113 contract + SR-112 publisher — no real broker needed)
+      - name: Run xUnit tests (unit + SR-113 contract + SR-112 publisher â€” no real broker needed)
         if: steps.test-check.outputs.ready == 'true'
         run: |
           find tests/unit -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
             dotnet test "$project" --configuration Release
           done
+
 
   kafka-integration:
     name: SR-114 Kafka Integration Tests
@@ -168,6 +169,28 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
+      kafka:
+        image: bitnamilegacy/kafka:3.9
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_CFG_NODE_ID: 1
+          KAFKA_CFG_PROCESS_ROLES: broker,controller
+          KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+          KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+          KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+          KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 1
+          KAFKA_CFG_NUM_PARTITIONS: 4
+          ALLOW_PLAINTEXT_LISTENER: "yes"
+        options: >-
+          --health-cmd="kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"
+          --health-interval=10s
+          --health-timeout=10s
+          --health-retries=10
+          --health-start-period=30s
 
     steps:
       - name: Checkout repository
@@ -192,13 +215,14 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "No integration test projects found — skipping."
+            echo "No integration test projects found â€” skipping."
           fi
 
-      - name: Run SR-114 MySQL integration tests (Kafka end-to-end skipped — no broker in CI)
+      - name: Run SR-114 MySQL and Kafka integration tests
         if: steps.integration-check.outputs.ready == 'true'
         env:
           SR101_TEST_MYSQL: "Server=127.0.0.1;Port=3306;Database=restaurant_reservation_db;User=root;Password=ci_test_password;AllowPublicKeyRetrieval=True;SslMode=None;"
+          SR101_TEST_KAFKA: "127.0.0.1:9092"
         run: |
           find tests/integration -name "*.csproj" -print0 | while IFS= read -r -d '' project; do
             dotnet test "$project" --configuration Release
