@@ -1,0 +1,11 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1789488073241,243,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-3,text,true,,402,827,3,3,http://localhost:5000/api/Reservations,243,0,47
+1789488073243,116,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-2,text,true,,402,827,3,3,http://localhost:5000/api/Reservations,107,0,45
+1789488073243,159,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-1,text,true,,402,827,3,3,http://localhost:5000/api/Reservations,159,0,45
+1789488073622,155,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-2,text,true,,401,827,4,4,http://localhost:5000/api/Reservations,155,0,0
+1789488073627,188,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-3,text,true,,402,827,3,3,http://localhost:5000/api/Reservations,188,0,0
+1789488073629,186,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-1,text,true,,401,827,3,3,http://localhost:5000/api/Reservations,186,0,0
+1789488073650,233,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-4,text,true,,402,827,1,1,http://localhost:5000/api/Reservations,233,0,6
+1789488073888,101,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-4,text,true,,402,827,1,1,http://localhost:5000/api/Reservations,101,0,0
+1789488074624,34,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-5,text,true,,401,827,1,1,http://localhost:5000/api/Reservations,34,0,2
+1789488074660,38,JMETER_SR58_001,201,Created,JMETER_SR58_001 1-5,text,true,,402,827,1,1,http://localhost:5000/api/Reservations,38,0,0

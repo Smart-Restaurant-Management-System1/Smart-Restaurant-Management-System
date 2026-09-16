@@ -1,0 +1,4 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1789332350943,56,Register User,400,Bad Request,Smoke 1 User 1-1,text,false,Test failed: code expected to contain /201/,470,248,1,1,http://localhost:5001/api/auth/register,50,0,31
+1789332351051,8,Login,400,Bad Request,Smoke 1 User 1-1,text,false,Test failed: code expected to contain /200/,470,245,1,1,http://localhost:5001/api/auth/login,8,0,0
+1789332351066,13,Availability,401,Unauthorized,Smoke 1 User 1-1,,false,Test failed: code expected to contain /200/,128,251,1,1,http://localhost:5000/api/reservations/availability,13,0,1

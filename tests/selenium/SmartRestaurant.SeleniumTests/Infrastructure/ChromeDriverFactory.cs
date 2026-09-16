@@ -13,7 +13,13 @@ internal static class ChromeDriverFactory
         options.AddArgument("--no-sandbox");
         options.AddArgument("--disable-dev-shm-usage");
 
-        var driver = new ChromeDriver(options);
+        var chromeBinary = Environment.GetEnvironmentVariable("SELENIUM_CHROME_BINARY");
+        if (!string.IsNullOrWhiteSpace(chromeBinary)) options.BinaryLocation = chromeBinary;
+
+        var driverDirectory = Environment.GetEnvironmentVariable("SELENIUM_CHROMEDRIVER_DIRECTORY");
+        var driver = string.IsNullOrWhiteSpace(driverDirectory)
+            ? new ChromeDriver(options)
+            : new ChromeDriver(ChromeDriverService.CreateDefaultService(driverDirectory), options);
         driver.Manage().Timeouts().ImplicitWait = TimeSpan.Zero;
         return driver;
     }

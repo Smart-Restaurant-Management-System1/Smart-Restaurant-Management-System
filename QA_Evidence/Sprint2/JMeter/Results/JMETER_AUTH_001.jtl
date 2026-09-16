@@ -1,0 +1,2 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1789488357551,60,JMETER_AUTH_001,401,Unauthorized,JMETER_AUTH_001 1-1,,true,,128,172,1,1,http://localhost:5000/api/Reservations/my-history,55,0,22
