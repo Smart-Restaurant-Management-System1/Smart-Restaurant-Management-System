@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="JMETER_SR58_001 Reservation Creation Moderate Load Test" enabled="true">
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+        <collectionProp name="Arguments.arguments"/>
+      </elementProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="JMETER_SR58_001" enabled="true">
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller" enabled="true">
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+          <stringProp name="LoopController.loops">2</stringProp>
+        </elementProp>
+        <stringProp name="ThreadGroup.num_threads">5</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">5</stringProp>
+        <boolProp name="ThreadGroup.scheduler">false</boolProp>
+        <stringProp name="ThreadGroup.duration"></stringProp>
+        <stringProp name="ThreadGroup.delay"></stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="Generate Unique Non-Conflicting Reservation Payload" enabled="true">
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="parameters"></stringProp>
+          <stringProp name="filename"></stringProp>
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="script">def baseOffset = (props.get('baseOffset') ?: System.getenv('JMETER_QA_BASE_OFFSET') ?: '220') as int
+def threadNum = ctx.getThreadNum()
+def iteration = vars.getIteration()
+def requestIdx = (threadNum * 2) + iteration
+
+def tableIdsStr = props.get('tableIds') ?: System.getenv('JMETER_QA_TABLE_IDS') ?: (props.get('tableId') ?: System.getenv('JMETER_QA_TABLE_ID') ?: '1')
+def tableIds = tableIdsStr.split(',').collect { it.trim() }.findAll { !it.isEmpty() }
+def selectedTableId = Integer.parseInt(tableIds[(requestIdx - 1) % tableIds.size()])
+
+def bookingDate = java.time.LocalDate.now().plusDays(baseOffset + requestIdx).toString()
+def qaToken = props.get('qaToken') ?: System.getenv('JMETER_QA_TOKEN') ?: ''
+
+if (!qaToken) {
+    throw new IllegalStateException('Required parameter qaToken is missing.')
+}
+
+vars.put('qaToken', qaToken)
+
+def payload = new groovy.json.JsonBuilder([
+    tableId: selectedTableId,
+    date: bookingDate,
+    startTime: '18:00',
+    durationMinutes: 60,
+    guestCount: 2
+]).toString()
+
+vars.put('bookingBody', payload)</stringProp>
+        </JSR223PreProcessor>
+        <hashTree/>
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Request Headers" enabled="true">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="Authorization" elementType="Header">
+              <stringProp name="Header.name">Authorization</stringProp>
+              <stringProp name="Header.value">Bearer ${qaToken}</stringProp>
+            </elementProp>
+            <elementProp name="Content-Type" elementType="Header">
+              <stringProp name="Header.name">Content-Type</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+            <elementProp name="Accept" elementType="Header">
+              <stringProp name="Header.name">Accept</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="JMETER_SR58_001" enabled="true">
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">${bookingBody}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <stringProp name="HTTPSampler.domain">localhost</stringProp>
+          <stringProp name="HTTPSampler.port">5000</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.path">/api/Reservations</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+          <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+          <stringProp name="HTTPSampler.connect_timeout">10000</stringProp>
+          <stringProp name="HTTPSampler.response_timeout">30000</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <JSR223Assertion guiclass="TestBeanGUI" testclass="JSR223Assertion" testname="Validate HTTP 201 Created and Reservation Id" enabled="true">
+            <stringProp name="scriptLanguage">groovy</stringProp>
+            <stringProp name="parameters"></stringProp>
+            <stringProp name="filename"></stringProp>
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="script">def code = prev.getResponseCode()
+if (code.startsWith('5')) {
+    AssertionResult.setFailure(true)
+    AssertionResult.setFailureMessage('Server error encountered: HTTP ' + code)
+} else if (code == '409') {
+    AssertionResult.setFailure(true)
+    AssertionResult.setFailureMessage('Slot conflict (HTTP 409): table/slot is not available')
+} else if (code != '201') {
+    AssertionResult.setFailure(true)
+    AssertionResult.setFailureMessage('Expected HTTP 201 Created, but received HTTP ' + code)
+} else {
+    try {
+        def text = prev.getResponseDataAsString()
+        def body = new groovy.json.JsonSlurper().parseText(text)
+        if (body.reservationId == null &amp;&amp; body.id == null) {
+            AssertionResult.setFailure(true)
+            AssertionResult.setFailureMessage('HTTP 201 response missing reservationId')
+        }
+    } catch (Exception ex) {
+        AssertionResult.setFailure(true)
+        AssertionResult.setFailureMessage('Invalid JSON response: ' + ex.getMessage())
+    }
+}</stringProp>
+          </JSR223Assertion>
+          <hashTree/>
+        </hashTree>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>
+

@@ -1,0 +1,4 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1789332169796,122,POST /api/auth/register,400,Bad Request,JMETER_SMOKE_001 - Single User 1-1,text,false,Test failed: code expected to contain /201/,470,250,1,1,http://localhost:5001/api/auth/register,113,0,55
+1789332169999,11,POST /api/auth/login,400,Bad Request,JMETER_SMOKE_001 - Single User 1-1,text,false,Test failed: code expected to contain /200/,470,247,1,1,http://localhost:5001/api/auth/login,11,0,0
+1789332170014,19,GET /api/reservations/availability,401,Unauthorized,JMETER_SMOKE_001 - Single User 1-1,,false,Test failed: code expected to contain /200/,128,249,1,1,http://localhost:5000/api/reservations/availability,19,0,1
