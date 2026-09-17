@@ -12,4 +12,8 @@ test('active tables view renders a card grid when tables are returned', () => {
   const tables = [{ tableId: 1, tableNumber: 'T-01', seatingCapacity: 4, operationalStatus: 'Available' }];
   assert.equal(getActiveTablesView({ loading: false, error: '', tables }), 'ready');
   assert.equal(tableCardLabel(tables[0]), 'Table T-01 - 4 seats');
+
+  const tableWithLocation = { tableId: 2, tableNumber: 'T-02', seatingCapacity: 2, location: 'Window', operationalStatus: 'Available' };
+  assert.equal(tableCardLabel(tableWithLocation), 'Table T-02 (Window) - 2 seats');
 });
+

@@ -6,4 +6,7 @@ export const getActiveTablesView = ({ loading, error, tables }) => {
 };
 
 export const tableCardLabel = (table) =>
-  `Table ${table.tableNumber} - ${table.seatingCapacity} ${table.seatingCapacity === 1 ? 'seat' : 'seats'}`;
+  table?.location
+    ? `Table ${table.tableNumber} (${table.location}) - ${table.seatingCapacity} ${table.seatingCapacity === 1 ? 'seat' : 'seats'}`
+    : `Table ${table.tableNumber} - ${table.seatingCapacity} ${table.seatingCapacity === 1 ? 'seat' : 'seats'}`;
+

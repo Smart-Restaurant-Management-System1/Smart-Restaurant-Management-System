@@ -4,10 +4,21 @@ import { useAuth } from '../../context/AuthContext';
 import { getUserProfile, updateUserProfile } from '../../services/userService';
 import PageHeader from '../../components/common/PageHeader';
 import { validateProfileForm, sanitizeProfilePayload, formatProfileForForm } from './profileValidation';
+import { ROLES } from '../../routes/roles';
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const handleCancel = () => {
+    if (user?.roles?.includes(ROLES.ADMIN)) {
+      navigate('/admin');
+    } else if (user?.roles?.includes(ROLES.KITCHEN_STAFF)) {
+      navigate('/kitchen');
+    } else {
+      navigate('/portal');
+    }
+  };
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -169,7 +180,7 @@ export default function ProfilePage() {
             marginBottom: '1rem',
           }}
         />
-        <p style={{ color: '#6b7280', fontSize: '0.95rem' }}>Loading customer profile...</p>
+        <p style={{ color: '#6b7280', fontSize: '0.95rem' }}>Loading profile...</p>
       </div>
     );
   }
@@ -431,7 +442,7 @@ export default function ProfilePage() {
 
             <button
               type="button"
-              onClick={() => navigate('/portal')}
+              onClick={handleCancel}
               disabled={isSaving}
               className="bistro-button-outline"
             >

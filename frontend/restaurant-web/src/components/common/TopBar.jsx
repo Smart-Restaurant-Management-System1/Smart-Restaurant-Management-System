@@ -52,10 +52,15 @@ export default function TopBar({ onToggleMobileSidebar, onOpenLogoutModal }) {
           </svg>
         </button>
 
-        <span className={getBadgeClass()}>
+        <Link
+          to={isKitchen ? '/kitchen' : '/portal'}
+          className={getBadgeClass()}
+          style={{ textDecoration: 'none' }}
+          title={`Go to ${getPortalLabel()}`}
+        >
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'currentColor' }} />
           {getPortalLabel()}
-        </span>
+        </Link>
       </div>
 
       <div className="topbar-right">

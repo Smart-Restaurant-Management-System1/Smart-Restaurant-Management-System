@@ -101,7 +101,7 @@ public class TableRepository : ITableRepository
     public async Task<IEnumerable<RestaurantTable>> GetActiveTablesAsync(CancellationToken cancellationToken = default)
     {
         using var connection = await _dbHelper.CreateConnectionAsync(cancellationToken);
-        const string query = @"SELECT Id, TableNumber, Capacity, Status
+        const string query = @"SELECT Id, TableNumber, Capacity, Location, Status
                                FROM RestaurantTables
                                WHERE IsActive = @IsActive
                                ORDER BY TableNumber ASC;";
@@ -305,12 +305,19 @@ public class TableRepository : ITableRepository
         };
     }
 
-    private static RestaurantTable MapActiveTable(MySqlDataReader reader) => new()
+    private static RestaurantTable MapActiveTable(MySqlDataReader reader)
     {
-        Id = reader.GetInt32("Id"),
-        TableNumber = reader.GetString("TableNumber"),
-        Capacity = reader.GetInt32("Capacity"),
-        Status = reader.IsDBNull(reader.GetOrdinal("Status")) ? "Available" : reader.GetString("Status"),
-        IsActive = true
-    };
+        var locOrdinal = reader.GetOrdinal("Location");
+        string location = reader.IsDBNull(locOrdinal) ? string.Empty : reader.GetString(locOrdinal);
+
+        return new RestaurantTable
+        {
+            Id = reader.GetInt32("Id"),
+            TableNumber = reader.GetString("TableNumber"),
+            Capacity = reader.GetInt32("Capacity"),
+            Location = location,
+            Status = reader.IsDBNull(reader.GetOrdinal("Status")) ? "Available" : reader.GetString("Status"),
+            IsActive = true
+        };
+    }
 }

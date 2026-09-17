@@ -21,6 +21,7 @@ export default function AdminDashboardPage() {
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
   const [tableToDeactivate, setTableToDeactivate] = useState(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [alertNotice, setAlertNotice] = useState(null);
 
   const handleOpenEditModal = (table) => {
     setSelectedTableForEdit(table);
@@ -54,17 +55,29 @@ export default function AdminDashboardPage() {
       }, 4000);
     } catch (err) {
       console.error('Failed to make table available:', err);
-      alert(err.response?.data?.message || 'Failed to update table status. Please try again.');
+      setAlertNotice({
+        title: 'Status Update Failed',
+        message: err.response?.data?.message || 'Failed to update table status. Please try again.',
+        type: 'error',
+      });
     }
   };
 
   const handleOpenDeactivateModal = (table) => {
     if (table.status === 'Occupied') {
-      alert(`Table '${table.tableNumber}' is currently occupied and cannot be deactivated until it becomes available again.`);
+      setAlertNotice({
+        title: 'Cannot Deactivate Table',
+        message: `Table '${table.tableNumber}' is currently occupied and cannot be deactivated until it becomes available again.`,
+        type: 'warning',
+      });
       return;
     }
     if (table.status === 'Inactive' || table.isActive === false) {
-      alert(`Table '${table.tableNumber}' is already inactive.`);
+      setAlertNotice({
+        title: 'Table Already Inactive',
+        message: `Table '${table.tableNumber}' is already marked as inactive.`,
+        type: 'info',
+      });
       return;
     }
     setTableToDeactivate(table);
@@ -74,9 +87,13 @@ export default function AdminDashboardPage() {
   const handleConfirmDeactivate = async () => {
     if (!tableToDeactivate || isDeactivating) return;
     if (tableToDeactivate.status === 'Occupied') {
-      alert(`Table '${tableToDeactivate.tableNumber}' is currently occupied and cannot be deactivated until it becomes available again.`);
       setIsDeactivateModalOpen(false);
       setTableToDeactivate(null);
+      setAlertNotice({
+        title: 'Cannot Deactivate Table',
+        message: `Table '${tableToDeactivate.tableNumber}' is currently occupied and cannot be deactivated until it becomes available again.`,
+        type: 'warning',
+      });
       return;
     }
     setIsDeactivating(true);
@@ -97,7 +114,11 @@ export default function AdminDashboardPage() {
       setTableToDeactivate(null);
     } catch (err) {
       console.error('Failed to deactivate table:', err);
-      alert(err.response?.data?.message || 'Failed to deactivate table. Please try again.');
+      setAlertNotice({
+        title: 'Deactivation Failed',
+        message: err.response?.data?.message || 'Failed to deactivate table. Please try again.',
+        type: 'error',
+      });
     } finally {
       setIsDeactivating(false);
     }
@@ -146,9 +167,9 @@ export default function AdminDashboardPage() {
     <div className="admin-page-content">
       {/* Unified Page Header */}
       <PageHeader
-        eyebrow="Admin Portal"
-        title={<>Restaurant Management & <em>Seating.</em></>}
-        subtitle="Configure restaurant dining tables, monitor room seating capacity, and oversee daily operations."
+        eyebrow="Table Management"
+        title={<>Restaurant Tables & <em>Seating.</em></>}
+        subtitle="Digital configuration of dining tables, seat capacities, and floor layout."
         actions={
           <button
             type="button"
@@ -175,7 +196,7 @@ export default function AdminDashboardPage() {
           </p>
         </div>
         <span className="bistro-info-tag">
-          Admin Session
+          Active Administrator
         </span>
       </div>
 
@@ -203,39 +224,6 @@ export default function AdminDashboardPage() {
           <span>{successBanner}</span>
         </div>
       )}
-
-      {/* Section Header & Add Table Action */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          marginBottom: '1.5rem',
-        }}
-      >
-        <div>
-          <h2 style={{ fontSize: '1.45rem', margin: 0 }}>
-            Restaurant Tables & <em>Seating</em>
-          </h2>
-          <p style={{ color: 'var(--bistro-muted)', fontSize: '0.9rem', margin: '0.25rem 0 0' }}>
-            Digital configuration of dining tables and seat capacities.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsAddModalOpen(true)}
-          className="bistro-button-gold"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Add Table
-        </button>
-      </div>
 
       {/* Capacity / Overview Cards - Matching Landing Page Metric Numbers */}
       <div
@@ -315,7 +303,7 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={fetchTables}
-                className="btn-jelly-secondary"
+                className="bistro-button-outline"
                 style={{ padding: '0.65rem 1.25rem', fontSize: '0.88rem' }}
               >
                 Retry
@@ -352,7 +340,7 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(true)}
-                className="btn-jelly-primary"
+                className="bistro-button-gold"
                 style={{ padding: '0.7rem 1.4rem', fontSize: '0.9rem' }}
               >
                 Add Your First Table
@@ -507,7 +495,7 @@ export default function AdminDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => handleMakeAvailable(tbl)}
-                                className="btn-jelly-secondary"
+                                className="bistro-button-outline"
                                 title={`Release table ${tbl.tableNumber} and set status to Available`}
                                 style={{
                                   padding: '0.42rem 0.75rem',
@@ -530,7 +518,7 @@ export default function AdminDashboardPage() {
                             <button
                               type="button"
                               onClick={() => handleOpenEditModal(tbl)}
-                              className="btn-jelly-secondary"
+                              className="bistro-button-outline"
                               title={isOccupied ? `Table ${tbl.tableNumber} is occupied. View or release to edit.` : `Edit table ${tbl.tableNumber}`}
                               style={{
                                 padding: '0.42rem 0.75rem',
@@ -553,7 +541,7 @@ export default function AdminDashboardPage() {
                                   type="button"
                                   onClick={() => !isDeactivateDisabled && handleOpenDeactivateModal(tbl)}
                                   disabled={isDeactivateDisabled}
-                                  className="btn-jelly-secondary"
+                                  className="bistro-button-outline"
                                   title={
                                     isOccupied
                                       ? `Table ${tbl.tableNumber} is occupied and cannot be deactivated until made available`
@@ -625,7 +613,7 @@ export default function AdminDashboardPage() {
             right: 0,
             bottom: 0,
             backgroundColor: 'rgba(17, 24, 39, 0.65)',
-            backdropFilter: 'blur(4px)',
+            backdropFilter: 'blur(6px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -641,15 +629,16 @@ export default function AdminDashboardPage() {
               padding: '2rem',
               maxWidth: '440px',
               width: '100%',
-              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
               textAlign: 'center',
               border: '1px solid #e5e7eb',
+              animation: 'modalPopupReveal 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards',
             }}
           >
             <div
               style={{
-                width: '50px',
-                height: '50px',
+                width: '52px',
+                height: '52px',
                 borderRadius: '50%',
                 backgroundColor: '#fef3c7',
                 color: '#d97706',
@@ -659,7 +648,7 @@ export default function AdminDashboardPage() {
                 margin: '0 auto 1.25rem',
               }}
             >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
               </svg>
@@ -667,23 +656,24 @@ export default function AdminDashboardPage() {
             <h2
               id="deactivateModalTitle"
               style={{
-                fontSize: '1.25rem',
+                fontFamily: 'Playfair Display, Georgia, serif',
+                fontSize: '1.35rem',
                 fontWeight: '700',
                 color: '#111827',
                 marginBottom: '0.5rem',
               }}
             >
-              Deactivate Table {tableToDeactivate.tableNumber}
+              Deactivate Table {tableToDeactivate.tableNumber}?
             </h2>
             <p
               style={{
                 fontSize: '0.92rem',
                 color: '#6b7280',
                 marginBottom: '1.75rem',
-                lineHeight: '1.5',
+                lineHeight: '1.55',
               }}
             >
-              Are you sure you want to deactivate table <strong>{tableToDeactivate.tableNumber}</strong> ({tableToDeactivate.capacity} seats, {tableToDeactivate.location})? This will mark the table as <strong>Inactive</strong> and prevent new reservations while preserving all historical dining records.
+              Are you sure you want to deactivate table <strong style={{ color: '#111827' }}>{tableToDeactivate.tableNumber}</strong> ({tableToDeactivate.capacity} seats, {tableToDeactivate.location})? This will mark the table as <strong style={{ color: '#b45309' }}>Inactive</strong> and prevent new reservations while preserving all historical dining records.
             </p>
 
             <div
@@ -697,10 +687,10 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={() => setIsDeactivateModalOpen(false)}
                 disabled={isDeactivating}
-                className="btn-jelly-secondary"
+                className="bistro-button-outline"
                 style={{
                   padding: '0.65rem 1.25rem',
-                  fontSize: '0.88rem',
+                  fontSize: '0.9rem',
                   flex: 1,
                 }}
               >
@@ -710,14 +700,10 @@ export default function AdminDashboardPage() {
                 type="button"
                 onClick={handleConfirmDeactivate}
                 disabled={isDeactivating}
-                className="btn-jelly-primary"
+                className="bistro-button-danger"
                 style={{
                   padding: '0.65rem 1.25rem',
-                  fontSize: '0.88rem',
-                  backgroundColor: '#d97706',
-                  color: '#ffffff',
-                  background: '#d97706',
-                  boxShadow: '0 4px 12px rgba(217, 119, 6, 0.25)',
+                  fontSize: '0.9rem',
                   flex: 1,
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -742,6 +728,117 @@ export default function AdminDashboardPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert / Notice Modal (replaces unstyled window.alert) */}
+      {alertNotice && (
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          onClick={() => setAlertNotice(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(17, 24, 39, 0.65)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '1rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              padding: '2rem',
+              maxWidth: '420px',
+              width: '100%',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+              textAlign: 'center',
+              border: '1px solid #e5e7eb',
+              animation: 'modalPopupReveal 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            }}
+          >
+            <div
+              style={{
+                width: '52px',
+                height: '52px',
+                borderRadius: '50%',
+                backgroundColor: alertNotice.type === 'error' ? '#fee2e2' : alertNotice.type === 'warning' ? '#fef3c7' : '#e0f2fe',
+                color: alertNotice.type === 'error' ? '#dc2626' : alertNotice.type === 'warning' ? '#d97706' : '#0284c7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 1.25rem',
+              }}
+            >
+              {alertNotice.type === 'error' ? (
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+              ) : alertNotice.type === 'warning' ? (
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              ) : (
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+              )}
+            </div>
+
+            <h3
+              style={{
+                fontFamily: 'Playfair Display, Georgia, serif',
+                fontSize: '1.35rem',
+                fontWeight: '700',
+                color: '#111827',
+                marginBottom: '0.5rem',
+              }}
+            >
+              {alertNotice.title}
+            </h3>
+
+            <p
+              style={{
+                fontSize: '0.92rem',
+                color: '#6b7280',
+                lineHeight: '1.55',
+                marginBottom: '1.5rem',
+              }}
+            >
+              {alertNotice.message}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setAlertNotice(null)}
+              className="bistro-button-gold"
+              style={{
+                width: '100%',
+                padding: '0.7rem 1.5rem',
+                fontSize: '0.92rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              Understood
+            </button>
           </div>
         </div>
       )}

@@ -5,12 +5,13 @@ import PageHeader from '../../components/common/PageHeader';
 
 export default function CustomerPortalPage() {
   const { user } = useAuth();
+  const isAdmin = user?.roles?.includes('Admin');
 
   return (
     <div className="portal-page-content">
       {/* Unified Page Header with Landing Page Serif & Italic Flair */}
       <PageHeader
-        eyebrow="Dining Portal"
+        eyebrow={isAdmin ? 'Admin Dashboard' : 'Dining Portal'}
         title={<>A place to gather. A moment to <em>savour.</em></>}
         subtitle={`Welcome back, ${user?.fullName || 'valued guest'}. Manage your table reservations, explore seating availability, and keep your dining profile updated.`}
         actions={
@@ -31,14 +32,14 @@ export default function CustomerPortalPage() {
       <div className="bistro-info-banner">
         <div>
           <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--bistro-ink)' }}>
-            <strong>Guest Account:</strong> {user?.fullName || 'Guest'} ({user?.email})
+            <strong>{isAdmin ? 'Admin Account:' : 'Guest Account:'}</strong> {user?.fullName || 'Guest'} ({user?.email})
           </p>
           <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--bistro-bronze)' }}>
             <strong>Access Level:</strong> {user?.roles?.join(', ') || 'Customer'} (Online Table Booking & Reservation History)
           </p>
         </div>
         <span className="bistro-info-tag">
-          Active Member
+          {isAdmin ? 'Administrator' : 'Active Member'}
         </span>
       </div>
 
