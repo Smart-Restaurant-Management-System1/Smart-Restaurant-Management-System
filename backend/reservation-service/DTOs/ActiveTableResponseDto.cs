@@ -9,5 +9,7 @@ public class ActiveTableResponseDto
     public int TableId { get; set; }
     public string TableNumber { get; set; } = string.Empty;
     public int SeatingCapacity { get; set; }
+    public string Location { get; set; } = string.Empty;
     public string OperationalStatus { get; set; } = "Available";
 }
+

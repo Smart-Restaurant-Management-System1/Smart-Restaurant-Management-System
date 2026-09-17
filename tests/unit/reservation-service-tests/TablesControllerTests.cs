@@ -732,8 +732,9 @@ public class TablesControllerTests
         Assert.Equal(5, dto.TableId);
         Assert.Equal("T-05", dto.TableNumber);
         Assert.Equal(6, dto.SeatingCapacity);
+        Assert.Equal("Patio", dto.Location);
         Assert.Equal("Available", dto.OperationalStatus);
-        Assert.Equal(4, typeof(ActiveTableResponseDto).GetProperties().Length);
+        Assert.Equal(5, typeof(ActiveTableResponseDto).GetProperties().Length);
     }
 
     [Fact]

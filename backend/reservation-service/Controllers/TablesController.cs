@@ -81,6 +81,7 @@ public class TablesController : ControllerBase
                 TableId = t.Id,
                 TableNumber = t.TableNumber,
                 SeatingCapacity = t.Capacity,
+                Location = t.Location,
                 OperationalStatus = ResolveStatus(t)
             });
 

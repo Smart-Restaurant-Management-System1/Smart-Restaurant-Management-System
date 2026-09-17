@@ -96,11 +96,37 @@ export default function ReservationDetailPage() {
         }
       />
     {loading && <div className="bistro-card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--bistro-muted)' }} role="status">Loading reservation…</div>}
-    {error && <div className="availability-state active-tables-error" role="alert" tabIndex="-1" ref={alert} style={{ background: '#fff8f8', border: '1px solid #fecaca', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem', color: '#991b1b' }}><p style={{ margin: 0 }}>{error}</p>
-      <button type="button" className="bistro-button-gold" disabled={busy} onClick={() => setReload(x => x + 1)} style={{ marginTop: '0.75rem' }}>Reload details</button>
-      {conflict && <Link className="bistro-button-outline" to="/availability" state={{ search: updateRequest(form) }} style={{ marginLeft: '0.5rem' }}>Search other available tables</Link>}
-    </div>}
-    {success && <div style={{ background: '#edf7ee', border: '1px solid #c2e2c6', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '1.5rem', color: '#1e5e29' }} role="status">{success}</div>}
+    {error && (
+      <div className="bistro-alert bistro-alert-error" role="alert" tabIndex="-1" ref={alert} style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span style={{ fontWeight: 500 }}>{error}</span>
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.85rem' }}>
+          <button type="button" className="bistro-button-gold" disabled={busy} onClick={() => setReload(x => x + 1)}>
+            Reload details
+          </button>
+          {conflict && (
+            <Link className="bistro-button-outline" to="/availability" state={{ search: updateRequest(form) }}>
+              Search other available tables
+            </Link>
+          )}
+        </div>
+      </div>
+    )}
+    {success && (
+      <div className="bistro-alert bistro-alert-success" role="status">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+        <span>{success}</span>
+      </div>
+    )}
     {reservation && <><ReservationDetails reservation={reservation} />
       {!reservation.canEdit && !reservation.canCancel && <p style={{ color: 'var(--bistro-muted)', marginTop: '1rem' }}>This booking is read-only. Only upcoming Pending or Confirmed bookings can be changed.</p>}
       {reservation.canEdit && form && <form className="availability-form bistro-card" onSubmit={e => { e.preventDefault(); mutate(false); }} style={{ marginTop: '1.5rem' }}>
@@ -118,15 +144,82 @@ export default function ReservationDetailPage() {
           <button className="bistro-button-gold" type="submit" style={{ marginTop: '1rem' }}>Save changes</button>
         </fieldset>
       </form>}
-      {reservation.canCancel && <button ref={cancelButton} className="bistro-button-outline" type="button" disabled={busy} onClick={() => dialog.current.showModal()} style={{ marginTop: '1rem', color: '#991b1b', borderColor: '#fca5a5' }}>Cancel reservation</button>}
-      <dialog ref={dialog} aria-labelledby="cancel-title" onCancel={e => { if (busy) e.preventDefault(); }}
-        onClose={() => cancelButton.current?.focus()}>
-        <h2 id="cancel-title">Cancel this reservation?</h2><p>Your booking reference is {reservation.bookingReference}. This action releases your booking.</p>
-        <button type="button" autoFocus disabled={busy} onClick={() => dialog.current.close()}>Keep reservation</button>
-        <button type="button" disabled={busy} onClick={() => mutate(true)}>Confirm cancellation</button>
+      {reservation.canCancel && (
+        <button
+          ref={cancelButton}
+          className="bistro-button-outline"
+          type="button"
+          disabled={busy}
+          onClick={() => dialog.current.showModal()}
+          style={{ marginTop: '1rem', color: '#991b1b', borderColor: '#fca5a5' }}
+        >
+          Cancel reservation
+        </button>
+      )}
+      <dialog
+        ref={dialog}
+        aria-labelledby="cancel-title"
+        onCancel={e => { if (busy) e.preventDefault(); }}
+        onClose={() => cancelButton.current?.focus()}
+      >
+        <div
+          style={{
+            width: '52px',
+            height: '52px',
+            borderRadius: '50%',
+            backgroundColor: '#fef2f2',
+            color: '#dc2626',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1.25rem',
+            border: '1px solid rgba(220, 38, 38, 0.25)',
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+        </div>
+        <h2 id="cancel-title" style={{ textAlign: 'center', marginBottom: '0.4rem' }}>
+          Cancel this reservation?
+        </h2>
+        <p style={{ textAlign: 'center', color: 'var(--bistro-muted)', marginBottom: '1.75rem', fontSize: '0.92rem' }}>
+          Your booking reference is <strong style={{ color: 'var(--bistro-ink)', letterSpacing: '0.04em' }}>{reservation.bookingReference}</strong>. This action releases your booking.
+        </p>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+          <button
+            type="button"
+            autoFocus
+            disabled={busy}
+            onClick={() => dialog.current.close()}
+            className="bistro-button-outline"
+            style={{ flex: 1, justifyContent: 'center' }}
+          >
+            Keep reservation
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => mutate(true)}
+            className="bistro-button-danger"
+            style={{ flex: 1, justifyContent: 'center' }}
+          >
+            {busy ? 'Cancelling…' : 'Confirm cancellation'}
+          </button>
+        </div>
       </dialog>
     </>}
-    {busy && <p role="status">Saving your change. Please do not submit again.</p>}
+    {busy && (
+      <div className="bistro-alert bistro-alert-info" role="status" style={{ marginTop: '1.25rem' }}>
+        <svg style={{ animation: 'spin 1s linear infinite', width: '18px', height: '18px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
+          <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        <span>Saving your change. Please do not submit again.</span>
+      </div>
+    )}
   </div>
   );
 }

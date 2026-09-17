@@ -33,11 +33,11 @@ public sealed class ReservationRepository(
     {
         await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
         var (where, parameters) = BuildAdminFilters(query);
-        await using var count = new MySqlCommand($"SELECT COUNT(*) FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId {where};", connection);
+        await using var count = new MySqlCommand($"SELECT COUNT(*) FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId {where};", connection);
         AddParameters(count, parameters);
         var total = Convert.ToInt32(await count.ExecuteScalarAsync(cancellationToken));
-        const string columns = "r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
-        await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT @PageSize OFFSET @Offset;", connection);
+        const string columns = "r.Id, r.CustomerId, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
+        await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT @PageSize OFFSET @Offset;", connection);
         AddParameters(command, parameters);
         command.Parameters.AddWithValue("@PageSize", query.PageSize);
         command.Parameters.AddWithValue("@Offset", (query.Page - 1) * query.PageSize);
@@ -50,8 +50,8 @@ public sealed class ReservationRepository(
     public async Task<Reservation?> GetByIdAsync(int reservationId, CancellationToken cancellationToken = default)
     {
         await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
-        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
-FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId WHERE r.Id = @Id;";
+        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
+FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId WHERE r.Id = @Id;";
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@Id", reservationId);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -61,8 +61,8 @@ FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId WHER
     public async Task<Reservation?> GetByIdForCustomerAsync(int reservationId, int customerId, CancellationToken cancellationToken = default)
     {
         await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
-        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
-FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId WHERE r.Id = @Id AND r.CustomerId = @CustomerId;";
+        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
+FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId WHERE r.Id = @Id AND r.CustomerId = @CustomerId;";
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@Id", reservationId);
         command.Parameters.AddWithValue("@CustomerId", customerId);
@@ -77,9 +77,9 @@ FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId WHER
         await using var countCommand = new MySqlCommand(countSql, connection);
         countCommand.Parameters.AddWithValue("@CustomerId", customerId);
         var totalCount = Convert.ToInt32(await countCommand.ExecuteScalarAsync(cancellationToken));
-        const string historySql = @"SELECT r.Id, r.CustomerId, r.TableId, t.TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime,
+        const string historySql = @"SELECT r.Id, r.CustomerId, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime,
 r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
-FROM Reservations AS r INNER JOIN RestaurantTables AS t ON t.Id = r.TableId
+FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId
 WHERE r.CustomerId = @CustomerId ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT @PageSize OFFSET @Offset;";
         await using var command = new MySqlCommand(historySql, connection);
         command.Parameters.AddWithValue("@CustomerId", customerId);
@@ -118,9 +118,10 @@ WHERE r.CustomerId = @CustomerId ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT 
         {
             // Lock the row and fetch fields needed for the event envelope.
             const string selectSql = @"
-SELECT r.Id, r.CustomerId, r.TableId, '' AS TableNumber, r.BookingReference,
+SELECT r.Id, r.CustomerId, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference,
        r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
-FROM Reservations r WHERE r.Id = @Id AND (@CustomerId IS NULL OR r.CustomerId = @CustomerId)
+FROM Reservations r LEFT JOIN RestaurantTables t ON t.Id = r.TableId
+WHERE r.Id = @Id AND (@CustomerId IS NULL OR r.CustomerId = @CustomerId)
 AND r.Status = @CurrentStatus FOR UPDATE;";
             Reservation? existing = null;
             await using (var sel = new MySqlCommand(selectSql, connection, transaction))
@@ -333,8 +334,8 @@ AND (@ExcludedReservationId IS NULL OR Id <> @ExcludedReservationId));";
 
     private static async Task<Reservation?> LockReservationAsync(MySqlConnection connection, MySqlTransaction transaction, int reservationId, CancellationToken token)
     {
-        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, '' AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
-FROM Reservations r WHERE r.Id = @Id FOR UPDATE;";
+        const string sql = @"SELECT r.Id, r.CustomerId, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt
+FROM Reservations r LEFT JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Id = @Id FOR UPDATE;";
         using var command = new MySqlCommand(sql, connection, transaction);
         command.Parameters.AddWithValue("@Id", reservationId);
         using var reader = await command.ExecuteReaderAsync(token);

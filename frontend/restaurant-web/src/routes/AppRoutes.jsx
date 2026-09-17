@@ -19,7 +19,7 @@ import UnauthorizedPage from '../pages/common/UnauthorizedPage';
 import LandingPage from '../pages/common/LandingPage';
 import ProtectedRoute from './ProtectedRoute';
 import AppLayout from '../components/common/AppLayout';
-import { ROLES } from './roles';
+import { ROLES, ALL_ROLES } from './roles';
 import { useAuth } from '../context/AuthContext';
 
 export default function AppRoutes() {
@@ -36,10 +36,20 @@ export default function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/home" element={<LandingPage />} />
       <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to={getDefaultRedirect()} replace />} />
       <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to={getDefaultRedirect()} replace />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+      {/* Shared Authenticated Profile Route (All Roles: Customer, KitchenStaff, Admin) */}
+      <Route
+        element={
+          <ProtectedRoute allowedRoles={ALL_ROLES}>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/profile" element={<ProfilePage />} />
+      </Route>
 
       {/* Customer & Admin Shared Protected Routes */}
       <Route
@@ -50,7 +60,6 @@ export default function AppRoutes() {
         }
       >
         <Route path="/portal" element={<CustomerPortalPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/availability" element={<AvailabilitySearchPage />} />
       </Route>
 

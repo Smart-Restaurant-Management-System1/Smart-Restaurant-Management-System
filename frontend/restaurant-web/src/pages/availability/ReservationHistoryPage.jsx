@@ -66,7 +66,7 @@ export default function ReservationHistoryPage() {
         title={<>Your Booking <em>History</em></>}
         subtitle="Review upcoming dining reservations and previous visits. Manage or reschedule your bookings directly."
         actions={
-          <Link to="/availability" className="bistro-button-gold">
+          <Link to="/tables" className="bistro-button-gold">
             + Book New Table
           </Link>
         }
@@ -92,8 +92,8 @@ export default function ReservationHistoryPage() {
           <p style={{ fontSize: '1rem', color: 'var(--bistro-muted)', marginBottom: '1.5rem' }}>
             You do not have any reservations yet. Pull up a chair and make yourself at home.
           </p>
-          <Link className="bistro-button-gold" to="/availability">
-            Find an Available Table <span aria-hidden="true">→</span>
+          <Link className="bistro-button-gold" to="/tables">
+            Explore Tables & Book <span aria-hidden="true">→</span>
           </Link>
         </div>
       )}

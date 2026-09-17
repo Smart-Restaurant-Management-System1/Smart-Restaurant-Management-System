@@ -259,7 +259,20 @@ public sealed class ReservationsController : ControllerBase
     {
         if (request is null || !ReservationStatus.IsKnown(request.Status))
             return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["status"] = ["Status must be Pending, Confirmed, Cancelled, or Completed."] }) { Status = StatusCodes.Status400BadRequest });
-        return await ChangeStatusAsync(reservationId, null, request.Status!, true, cancellationToken);
+        try
+        {
+            return await ChangeStatusAsync(reservationId, null, request.Status!, true, cancellationToken);
+        }
+        catch (MySqlException ex)
+        {
+            _logger.LogError(ex, "Database error changing status for reservation {ReservationId} to {Status}.", reservationId, request?.Status);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Database error while updating reservation status. Please try again." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error changing status for reservation {ReservationId} to {Status}.", reservationId, request?.Status);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Unable to change reservation status. Please try again later." });
+        }
     }
 
     [Authorize(Roles = AppRoles.Admin)]
@@ -294,10 +307,18 @@ public sealed class ReservationsController : ControllerBase
         if (reservationId <= 0) return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]> { ["reservationId"] = ["A valid reservation ID is required."] }) { Status = StatusCodes.Status400BadRequest });
         if (_lifecycleService is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation status changes are unavailable." });
         var outcome = await _lifecycleService.ChangeStatusAsync(reservationId, customerId, targetStatus, cancellationToken);
+        if (outcome == ReservationStatusUpdateOutcome.Updated)
+        {
+            if (returnReservation && _adminService is not null)
+            {
+                var updated = await _adminService.GetAsync(reservationId, cancellationToken);
+                return updated is not null ? Ok(ToAdminItem(updated)) : NoContent();
+            }
+            return NoContent();
+        }
+
         return outcome switch
         {
-            ReservationStatusUpdateOutcome.Updated when returnReservation && _adminService is not null => Ok(ToAdminItem((await _adminService.GetAsync(reservationId, cancellationToken))!)),
-            ReservationStatusUpdateOutcome.Updated => NoContent(),
             ReservationStatusUpdateOutcome.NotFound => NotFound(new { message = "Reservation not found." }),
             _ => Conflict(new { code = "INVALID_RESERVATION_TRANSITION", message = "This reservation cannot move to the requested status." })
         };
