@@ -17,7 +17,7 @@ export default function Sidebar({
 
   const isActive = (path) => {
     if (path === '/portal' && location.pathname === '/portal') return true;
-    if (path === '/admin' && location.pathname === '/admin') return true;
+    if (path === '/admin' && (location.pathname === '/admin' || location.pathname === '/admin/tables' || (isAdmin && location.pathname === '/tables'))) return true;
     if (path === '/kitchen' && location.pathname === '/kitchen') return true;
     if (path === '/availability' && (location.pathname === '/availability' || location.pathname === '/reservations/new' || location.pathname === '/reservations/confirmation')) return true;
     if (path === '/reservations/history' && (location.pathname === '/reservations/history' || location.pathname.startsWith('/reservations/'))) return true;
@@ -90,12 +90,13 @@ export default function Sidebar({
   const adminNavItems = [
     {
       to: '/admin',
-      label: 'Management Overview',
+      label: 'Table Management',
       icon: (
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="18" y1="20" x2="18" y2="10" />
-          <line x1="12" y1="20" x2="12" y2="4" />
-          <line x1="6" y1="20" x2="6" y2="14" />
+          <path d="M4 18v3" />
+          <path d="M20 18v3" />
+          <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
+          <path d="M2 11h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z" />
         </svg>
       ),
     },
@@ -120,18 +121,6 @@ export default function Sidebar({
           <circle cx="12" cy="12" r="10" />
           <path d="M12 2a10 10 0 0 1 10 10" />
           <path d="M12 12l7 7" />
-        </svg>
-      ),
-    },
-    {
-      to: '/tables',
-      label: 'Dining Tables',
-      icon: (
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 18v3" />
-          <path d="M20 18v3" />
-          <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
-          <path d="M2 11h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z" />
         </svg>
       ),
     },
