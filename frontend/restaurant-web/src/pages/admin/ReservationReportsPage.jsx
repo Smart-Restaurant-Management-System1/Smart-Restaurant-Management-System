@@ -14,6 +14,7 @@ import {
   Cell
 } from 'recharts';
 import { reservationApi } from '../../services/tableService';
+import PageHeader from '../../components/common/PageHeader';
 
 const STATUS_COLORS = {
   Confirmed: '#166534',
@@ -140,133 +141,133 @@ export default function ReservationReportsPage() {
   const hasData = summary && summary.totalReservations > 0;
 
   return (
-    <main className="availability-page">
-      <div className="availability-content" style={{ maxWidth: '1180px' }}>
-        <Link className="link-jelly-back" to="/admin">← Back to dashboard</Link>
+    <div className="reservation-reports-page-content">
+      {/* Unified Page Header */}
+      <PageHeader
+        eyebrow="Analytics & Operations"
+        title={<>Reservation Reports & <em>Analytics</em></>}
+        subtitle="Analyze reservation booking volume, cancellation patterns, and table share across the restaurant."
+      />
 
-        <header className="availability-header">
-          <p className="active-tables-eyebrow">Analytics & Reporting</p>
-          <h1>Reservation Reports</h1>
-          <p>Analyze booking volume, cancellation trends, and table reservation share across the restaurant.</p>
-        </header>
+      {/* Date Filter & Export Bar */}
+      <form className="availability-form admin-reservation-filters bistro-card" onSubmit={handleFilterSubmit} style={{ marginBottom: '2rem' }}>
+        <div className="availability-fields" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+          <label style={{ fontSize: '0.88rem', color: 'var(--bistro-ink)', fontWeight: 600 }}>
+            From Date
+            <input
+              type="date"
+              value={filters.from}
+              onChange={(e) => setFilters({ ...filters, from: e.target.value })}
+              disabled={loading}
+              style={{ marginTop: '0.35rem' }}
+            />
+          </label>
+          <label style={{ fontSize: '0.88rem', color: 'var(--bistro-ink)', fontWeight: 600 }}>
+            To Date
+            <input
+              type="date"
+              value={filters.to}
+              onChange={(e) => setFilters({ ...filters, to: e.target.value })}
+              disabled={loading}
+              style={{ marginTop: '0.35rem' }}
+            />
+          </label>
+        </div>
 
-        {/* Date Filter & Export Bar */}
-        <form className="availability-form admin-reservation-filters" onSubmit={handleFilterSubmit} style={{ marginBottom: '2rem' }}>
-          <div className="availability-fields" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-            <label>
-              From Date
-              <input
-                type="date"
-                value={filters.from}
-                onChange={(e) => setFilters({ ...filters, from: e.target.value })}
-                disabled={loading}
-              />
-            </label>
-            <label>
-              To Date
-              <input
-                type="date"
-                value={filters.to}
-                onChange={(e) => setFilters({ ...filters, to: e.target.value })}
-                disabled={loading}
-              />
-            </label>
-          </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1.25rem', alignItems: 'center' }}>
+          <button className="bistro-button-gold" type="submit" disabled={loading}>
+            {loading ? 'Loading…' : 'Apply Range'}
+          </button>
+          <button className="bistro-button-outline" type="button" onClick={handleReset} disabled={loading}>
+            Reset (30 Days)
+          </button>
+          <button
+            className="bistro-button-outline"
+            type="button"
+            disabled={loading || !!exporting}
+            onClick={() => handleExport('csv')}
+            style={{ marginLeft: 'auto' }}
+          >
+            {exporting === 'csv' ? 'Exporting CSV…' : 'Export CSV'}
+          </button>
+          <button
+            className="bistro-button-dark"
+            type="button"
+            disabled={loading || !!exporting}
+            onClick={() => handleExport('xlsx')}
+          >
+            {exporting === 'xlsx' ? 'Exporting Excel…' : 'Export Excel'}
+          </button>
+        </div>
+      </form>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1rem', alignItems: 'center' }}>
-            <button className="btn-jelly-primary" type="submit" disabled={loading}>
-              {loading ? 'Loading…' : 'Apply Range'}
-            </button>
-            <button className="btn-jelly-secondary" type="button" onClick={handleReset} disabled={loading}>
-              Reset (30 Days)
-            </button>
-            <button
-              className="btn-jelly-secondary"
-              type="button"
-              disabled={loading || !!exporting}
-              onClick={() => handleExport('csv')}
-              style={{ marginLeft: 'auto' }}
-            >
-              {exporting === 'csv' ? 'Exporting CSV…' : 'Export CSV'}
-            </button>
-            <button
-              className="btn-jelly-secondary"
-              type="button"
-              disabled={loading || !!exporting}
-              onClick={() => handleExport('xlsx')}
-            >
-              {exporting === 'xlsx' ? 'Exporting Excel…' : 'Export Excel'}
-            </button>
-          </div>
-        </form>
+      {/* Alert States */}
+      {error && (
+        <div className="availability-state active-tables-error" role="alert" style={{ background: '#fff8f8', border: '1px solid #fecaca', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem', color: '#991b1b' }}>
+          <p style={{ margin: 0 }}><strong>Error:</strong> {error}</p>
+        </div>
+      )}
+      {exportError && (
+        <div className="availability-state active-tables-error" role="alert" style={{ background: '#fff8f8', border: '1px solid #fecaca', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem', color: '#991b1b' }}>
+          <p style={{ margin: 0 }}><strong>Export Error:</strong> {exportError}</p>
+        </div>
+      )}
+      {loading && (
+        <div className="availability-state" role="status" style={{ background: '#ffffff', border: '1px dashed #d9d0bf', borderRadius: '10px', color: 'var(--bistro-muted)', textAlign: 'center', padding: '2rem', marginBottom: '1.5rem' }}>
+          Loading reservation report data…
+        </div>
+      )}
 
-        {/* Alert States */}
-        {error && (
-          <div className="availability-state active-tables-error" role="alert" style={{ marginBottom: '1.5rem' }}>
-            <p><strong>Error:</strong> {error}</p>
-          </div>
-        )}
-        {exportError && (
-          <div className="availability-state active-tables-error" role="alert" style={{ marginBottom: '1.5rem' }}>
-            <p><strong>Export Error:</strong> {exportError}</p>
-          </div>
-        )}
-        {loading && (
-          <div className="availability-state" role="status" style={{ marginBottom: '1.5rem' }}>
-            Loading reservation report data…
-          </div>
-        )}
-
-        {/* Summary Metrics Cards */}
-        {summary && (
-          <section aria-label="Report summary" style={{ marginBottom: '2.5rem' }}>
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: '#111827' }}>Summary Overview</h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: '1rem'
-            }}>
-              <div className="active-table-card">
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Total Bookings</p>
-                <p style={{ margin: '0.5rem 0 0', fontSize: '1.85rem', fontWeight: 700, color: '#111827' }}>{summary.totalReservations}</p>
-              </div>
-              <div className="active-table-card">
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#166534', fontWeight: 600, textTransform: 'uppercase' }}>Confirmed</p>
-                <p style={{ margin: '0.5rem 0 0', fontSize: '1.85rem', fontWeight: 700, color: '#166534' }}>{summary.confirmedReservations}</p>
-              </div>
-              <div className="active-table-card">
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#92400e', fontWeight: 600, textTransform: 'uppercase' }}>Pending</p>
-                <p style={{ margin: '0.5rem 0 0', fontSize: '1.85rem', fontWeight: 700, color: '#92400e' }}>{summary.pendingReservations}</p>
-              </div>
-              <div className="active-table-card">
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#1e40af', fontWeight: 600, textTransform: 'uppercase' }}>Completed</p>
-                <p style={{ margin: '0.5rem 0 0', fontSize: '1.85rem', fontWeight: 700, color: '#1e40af' }}>{summary.completedReservations}</p>
-              </div>
-              <div className="active-table-card">
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#991b1b', fontWeight: 600, textTransform: 'uppercase' }}>Cancelled</p>
-                <p style={{ margin: '0.5rem 0 0', fontSize: '1.85rem', fontWeight: 700, color: '#991b1b' }}>{summary.cancelledReservations}</p>
-              </div>
-              <div className="active-table-card">
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Cancellation Rate</p>
-                <p style={{ margin: '0.5rem 0 0', fontSize: '1.85rem', fontWeight: 700, color: summary.cancellationRate > 20 ? '#b91c1c' : '#111827' }}>
-                  {summary.cancellationRate}%
-                </p>
-              </div>
-              <div className="active-table-card">
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Avg Party Size</p>
-                <p style={{ margin: '0.5rem 0 0', fontSize: '1.85rem', fontWeight: 700, color: '#111827' }}>
-                  {summary.averagePartySize} <span style={{ fontSize: '0.95rem', fontWeight: 500, color: '#6b7280' }}>guests</span>
-                </p>
-              </div>
-              <div className="active-table-card">
-                <p style={{ margin: 0, fontSize: '0.85rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase' }}>Top Requested Table</p>
-                <p style={{ margin: '0.5rem 0 0', fontSize: '1.85rem', fontWeight: 700, color: '#b45309' }}>
-                  {summary.mostRequestedTableNumber || 'N/A'}
-                </p>
+      {/* Summary Metrics Cards */}
+      {summary && (
+        <section aria-label="Report summary" style={{ marginBottom: '2.5rem' }}>
+          <h2 style={{ fontSize: '1.45rem', marginBottom: '1.25rem' }}>Summary <em>Overview</em></h2>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '1.25rem'
+          }}>
+            <div className="bistro-metric-card">
+              <span className="bistro-metric-label">Total Bookings</span>
+              <div className="bistro-metric-value">{summary.totalReservations}</div>
+            </div>
+            <div className="bistro-metric-card">
+              <span className="bistro-metric-label" style={{ color: '#276732' }}>Confirmed</span>
+              <div className="bistro-metric-value" style={{ color: '#276732' }}>{summary.confirmedReservations}</div>
+            </div>
+            <div className="bistro-metric-card">
+              <span className="bistro-metric-label" style={{ color: '#8c6736' }}>Pending</span>
+              <div className="bistro-metric-value" style={{ color: '#8c6736' }}>{summary.pendingReservations}</div>
+            </div>
+            <div className="bistro-metric-card">
+              <span className="bistro-metric-label" style={{ color: '#28251f' }}>Completed</span>
+              <div className="bistro-metric-value">{summary.completedReservations}</div>
+            </div>
+            <div className="bistro-metric-card">
+              <span className="bistro-metric-label" style={{ color: '#991b1b' }}>Cancelled</span>
+              <div className="bistro-metric-value" style={{ color: '#991b1b' }}>{summary.cancelledReservations}</div>
+            </div>
+            <div className="bistro-metric-card">
+              <span className="bistro-metric-label">Cancellation Rate</span>
+              <div className="bistro-metric-value" style={{ color: summary.cancellationRate > 20 ? '#991b1b' : 'var(--bistro-ink)' }}>
+                {summary.cancellationRate}%
               </div>
             </div>
-          </section>
-        )}
+            <div className="bistro-metric-card">
+              <span className="bistro-metric-label">Avg Party Size</span>
+              <div className="bistro-metric-value">
+                {summary.averagePartySize} <span style={{ fontSize: '0.92rem', color: 'var(--bistro-muted)', fontFamily: 'Poppins, sans-serif' }}>guests</span>
+              </div>
+            </div>
+            <div className="bistro-metric-card">
+              <span className="bistro-metric-label">Top Requested Table</span>
+              <div className="bistro-metric-value" style={{ color: 'var(--bistro-bronze)' }}>
+                {summary.mostRequestedTableNumber || 'N/A'}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
         {/* Empty State */}
         {!loading && !error && summary && !hasData && (
@@ -434,7 +435,6 @@ export default function ReservationReportsPage() {
             </section>
           </>
         )}
-      </div>
-    </main>
+    </div>
   );
 }

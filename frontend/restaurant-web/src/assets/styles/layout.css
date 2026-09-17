@@ -1,0 +1,883 @@
+/* ========================================================
+   Cinnamon Bistro - Unified Design System & App Layout Styles
+   Aligned with Cinnamon Bistro Landing Page Aesthetics
+   ======================================================== */
+
+:root {
+  /* Landing Page Authentic Palette */
+  --bistro-cream: #f7f3eb;
+  --bistro-ink: #28251f;
+  --bistro-muted: #6b6357;
+  --bistro-gold: #ddbb78;
+  --bistro-gold-hover: #ebcf99;
+  --bistro-bronze: #8c6736;
+  --bistro-border: #dfd8cb;
+  --bistro-border-dark: #8f7959;
+  --bistro-card-bg: #ffffff;
+  --bistro-dark-espresso: #211c17;
+
+  /* App Shell Geometry & Layout */
+  --topbar-height: 72px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 76px;
+  --layout-bg: var(--bistro-cream);
+  --card-bg: #ffffff;
+  --card-border: var(--bistro-border);
+
+  /* Sidebar Warm Mahogany/Espresso (Landing Hero & Footer Theme) */
+  --sidebar-bg: var(--bistro-dark-espresso);
+  --sidebar-border: rgba(221, 187, 120, 0.18);
+  --sidebar-text: #c2b8a7;
+  --sidebar-text-hover: #fff8ec;
+  --sidebar-active-bg: rgba(221, 187, 120, 0.14);
+  --sidebar-active-color: #efd5a4;
+  --sidebar-active-border: #ddbb78;
+
+  /* Upper Bar (Matching .bistro-header in landing.css) */
+  --topbar-bg: rgba(247, 243, 235, 0.97);
+  --topbar-border: #dfd8cb;
+}
+
+/* Base Body & App Shell */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--layout-bg);
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  color: var(--bistro-ink);
+  line-height: 1.6;
+}
+
+/* ========================================================
+   Left Sidebar Navigation
+   ======================================================== */
+
+.app-sidebar {
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.app-sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+}
+
+/* Sidebar Brand Area (Seamlessly merged with TopBar) */
+.sidebar-brand {
+  height: var(--topbar-height);
+  display: flex;
+  align-items: center;
+  padding: 0 1.15rem;
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+  border-right: none !important;
+  text-decoration: none;
+  color: var(--bistro-ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  box-shadow: none !important;
+}
+
+.sidebar-brand:hover {
+  background: #f2ece0;
+}
+
+.sidebar-brand-img {
+  height: 52px;
+  width: auto;
+  max-width: 215px;
+  object-fit: contain;
+  filter: none;
+}
+
+.sidebar-brand-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #f7e096 0%, #ddbb78 50%, #927345 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #282115;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  box-shadow: 0 2px 8px rgba(221, 187, 120, 0.35);
+  flex-shrink: 0;
+}
+
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-brand-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--bistro-ink);
+  line-height: 1.15;
+}
+
+.sidebar-brand-subtitle {
+  font-size: 0.62rem;
+  color: var(--bistro-muted);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.app-sidebar.collapsed .sidebar-brand {
+  padding: 0;
+  justify-content: center;
+}
+
+.app-sidebar.collapsed .sidebar-brand-text,
+.app-sidebar.collapsed .sidebar-brand-img {
+  display: none;
+}
+
+/* Sidebar navigation content right border (below seamless header) */
+.sidebar-section-title,
+.sidebar-nav,
+.sidebar-footer {
+  border-right: 1px solid var(--sidebar-border);
+}
+
+/* Sidebar Section Headers */
+.sidebar-section-title {
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #a3998b;
+  padding: 1.35rem 1.25rem 0.5rem;
+  white-space: nowrap;
+}
+
+.app-sidebar.collapsed .sidebar-section-title {
+  text-align: center;
+  padding: 1.35rem 0.25rem 0.5rem;
+}
+
+/* Sidebar Navigation Items */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.85rem;
+  flex: 1;
+}
+
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.72rem 0.9rem;
+  border-radius: 8px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-nav-link:hover {
+  background: rgba(221, 187, 120, 0.08);
+  color: var(--sidebar-text-hover);
+  transform: translateX(2px);
+}
+
+.sidebar-nav-link.active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-color);
+  border-left-color: var(--sidebar-active-border);
+  font-weight: 600;
+}
+
+.sidebar-nav-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sidebar-nav-link:hover .sidebar-nav-icon {
+  transform: scale(1.1);
+  color: #efd5a4;
+}
+
+.sidebar-nav-link.active .sidebar-nav-icon {
+  color: #ddbb78;
+}
+
+.app-sidebar.collapsed .sidebar-nav-link {
+  justify-content: center;
+  padding: 0.75rem 0;
+}
+
+.app-sidebar.collapsed .sidebar-nav-label {
+  display: none;
+}
+
+/* Sidebar Footer & Collapse Toggle */
+.sidebar-footer {
+  padding: 0.85rem;
+  border-top: 1px solid var(--sidebar-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-collapse-btn {
+  background: transparent;
+  border: 1px solid rgba(221, 187, 120, 0.2);
+  border-radius: 6px;
+  color: #c2b8a7;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-collapse-btn:hover {
+  background: rgba(221, 187, 120, 0.08);
+  color: #fff8ec;
+  border-color: rgba(221, 187, 120, 0.4);
+}
+
+/* ========================================================
+   Main Viewport Area
+   ======================================================== */
+
+.app-main-viewport {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin-left: var(--sidebar-width);
+  transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background-color: var(--layout-bg);
+}
+
+.app-main-viewport.sidebar-collapsed {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+/* ========================================================
+   Upper Bar (Header - Aligned with Landing Header)
+   ======================================================== */
+
+.app-topbar {
+  height: var(--topbar-height);
+  background: var(--topbar-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--topbar-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 990;
+  box-shadow: 0 1px 4px rgba(40, 37, 31, 0.04);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.topbar-mobile-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid #dfd8cb;
+  color: var(--bistro-ink);
+  padding: 0.45rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.topbar-portal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #eee3cf;
+  color: #6b532f;
+  border: 1px solid #c5b699;
+}
+
+.topbar-portal-badge.admin {
+  background: #f5ebe6;
+  color: #8c4228;
+  border-color: #e0c2b5;
+}
+
+.topbar-portal-badge.kitchen {
+  background: #ebf5ec;
+  color: #2d6835;
+  border-color: #bddbbd;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+}
+
+.topbar-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.85rem 0.35rem 0.45rem;
+  border-radius: 9999px;
+  background: #ffffff;
+  border: 1px solid #dfd8cb;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(40, 37, 31, 0.04);
+}
+
+.topbar-user-pill:hover {
+  background: #fdfaf5;
+  border-color: #c5b699;
+  transform: translateY(-1px);
+}
+
+.topbar-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f7e096 0%, #ddbb78 100%);
+  color: #282115;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.86rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(221, 187, 120, 0.4);
+}
+
+.topbar-user-details {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.topbar-user-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--bistro-ink);
+}
+
+.topbar-user-role {
+  font-size: 0.7rem;
+  color: var(--bistro-muted);
+  font-weight: 500;
+}
+
+.topbar-signout-btn {
+  background: transparent;
+  border: 1px solid var(--bistro-border-dark);
+  color: var(--bistro-ink);
+  padding: 0.45rem 0.95rem;
+  border-radius: 5px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  transition: all 0.2s ease;
+}
+
+.topbar-signout-btn:hover {
+  background: #e9dfcc;
+  color: #28251f;
+  transform: translateY(-1px);
+}
+
+/* ========================================================
+   Main Content Container & Typography (Landing Page Match)
+   ======================================================== */
+
+.app-main-content {
+  flex: 1;
+  padding: 2.25rem 2.5rem 3.5rem;
+  max-width: 1320px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Standardized Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2.25rem;
+}
+
+.page-header-info {
+  flex: 1;
+  min-width: 260px;
+}
+
+.page-header-eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--bistro-bronze);
+  margin-bottom: 0.45rem;
+}
+
+.page-header-title {
+  font-family: Georgia, 'Times New Roman', serif !important;
+  font-weight: 400 !important;
+  font-size: 2.15rem !important;
+  letter-spacing: -0.03em !important;
+  color: var(--bistro-ink) !important;
+  margin: 0 0 0.45rem 0 !important;
+  line-height: 1.2 !important;
+}
+
+.page-header-title em {
+  color: var(--bistro-bronze) !important;
+  font-style: italic !important;
+}
+
+.page-header-subtitle {
+  color: var(--bistro-muted) !important;
+  font-size: 0.94rem !important;
+  margin: 0 !important;
+  line-height: 1.6 !important;
+  font-family: 'Poppins', sans-serif !important;
+  max-width: 720px;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+/* ========================================================
+   Bistro Surface Cards & Metrics (Warm Artisanal Theme)
+   ======================================================== */
+
+.bistro-card {
+  background: #ffffff;
+  border: 1px solid var(--bistro-border);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(40, 37, 31, 0.04);
+  padding: 1.65rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.bistro-card:hover {
+  box-shadow: 0 8px 24px rgba(40, 37, 31, 0.08);
+  border-color: #c5b699;
+}
+
+.bistro-card h2,
+.bistro-card h3 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  color: var(--bistro-ink);
+}
+
+.bistro-metric-card {
+  background: #ffffff;
+  border: 1px solid var(--bistro-border);
+  border-radius: 10px;
+  padding: 1.35rem 1.65rem;
+  box-shadow: 0 4px 16px rgba(40, 37, 31, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bistro-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(40, 37, 31, 0.07);
+}
+
+.bistro-metric-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--bistro-bronze);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.bistro-metric-value {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 2.15rem;
+  font-weight: 400;
+  color: var(--bistro-ink);
+  margin-top: 0.35rem;
+  line-height: 1.15;
+}
+
+/* Info Banners */
+.bistro-info-banner {
+  background: #fbf6ec !important;
+  border: 1px solid var(--bistro-border) !important;
+  border-radius: 10px !important;
+  padding: 1.25rem 1.65rem !important;
+  margin-bottom: 2rem !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  box-shadow: 0 2px 8px rgba(40, 37, 31, 0.04) !important;
+}
+
+.bistro-info-tag {
+  display: inline-block;
+  background: #eee3cf;
+  color: #6b532f;
+  border: 1px solid #c5b699;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+}
+
+/* ========================================================
+   Standardized Buttons (Landing Page Visual Spec)
+   ======================================================== */
+
+.bistro-button-gold,
+.btn-jelly-primary {
+  background: var(--bistro-gold) !important;
+  color: #282115 !important;
+  border: 1px solid #cca967 !important;
+  border-radius: 5px !important;
+  font-weight: 600 !important;
+  font-size: 0.88rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  padding: 0.65rem 1.35rem !important;
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  box-shadow: 0 2px 8px rgba(140, 103, 54, 0.16) !important;
+}
+
+.bistro-button-gold:hover,
+.btn-jelly-primary:hover {
+  background: #ebcf99 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(140, 103, 54, 0.24) !important;
+}
+
+.bistro-button-dark,
+.btn-jelly-secondary {
+  background: var(--bistro-ink) !important;
+  color: #fff8eb !important;
+  border: 1px solid var(--bistro-ink) !important;
+  border-radius: 5px !important;
+  font-weight: 600 !important;
+  font-size: 0.88rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  padding: 0.65rem 1.35rem !important;
+  transition: transform 0.2s ease, background 0.2s ease !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+
+.bistro-button-dark:hover,
+.btn-jelly-secondary:hover {
+  background: #3c382f !important;
+  transform: translateY(-1px) !important;
+}
+
+.bistro-button-outline {
+  border: 1px solid var(--bistro-border-dark) !important;
+  border-radius: 5px !important;
+  color: var(--bistro-ink) !important;
+  background: transparent !important;
+  font-weight: 600 !important;
+  font-size: 0.86rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  padding: 0.55rem 1.15rem !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+
+.bistro-button-outline:hover {
+  background: #e9dfcc !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ========================================================
+   Form Inputs & Controls (Warm Cream Theme)
+   ======================================================== */
+
+.availability-form,
+.reservation-review,
+.reservation-confirmation,
+.reservation-history-card {
+  background: #ffffff !important;
+  border: 1px solid var(--bistro-border) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(40, 37, 31, 0.04) !important;
+}
+
+.availability-fields input,
+.admin-reservation-filters select,
+.admin-reservation-filters input,
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+select {
+  background: #ffffff;
+  border: 1px solid #d9d0bf;
+  border-radius: 5px;
+  color: var(--bistro-ink);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.92rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.availability-fields input:focus,
+.admin-reservation-filters select:focus,
+.admin-reservation-filters input:focus,
+.form-control:focus,
+input:focus,
+select:focus {
+  border-color: var(--bistro-bronze);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(221, 187, 120, 0.25);
+}
+
+/* Clear icon and action button clearance so text never overlaps icons */
+.form-control.with-icon,
+input.with-icon,
+.input-icon-wrapper input,
+.input-icon-wrapper .form-control {
+  padding-left: 2.85rem !important;
+}
+
+.form-control.with-action,
+input.with-action,
+.input-icon-wrapper input.with-action,
+.input-icon-wrapper .form-control.with-action {
+  padding-right: 2.85rem !important;
+}
+
+.input-icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-icon-wrapper .input-icon,
+.input-icon-wrapper > svg:first-child {
+  position: absolute;
+  left: 1rem;
+  color: rgba(212, 175, 55, 0.85);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--bistro-border);
+}
+
+thead th {
+  background: #eee8dc !important;
+  color: #443a2d !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding: 0.9rem 1.15rem !important;
+  border-bottom: 1px solid var(--bistro-border) !important;
+  text-align: left;
+}
+
+tbody td {
+  padding: 0.95rem 1.15rem !important;
+  border-bottom: 1px solid #eee5d7 !important;
+  color: var(--bistro-ink) !important;
+  font-size: 0.9rem !important;
+}
+
+tbody tr:hover {
+  background: #fbf6ec !important;
+}
+
+/* Semantic Status Tags */
+.reservation-status-confirmed,
+.status-badge-available {
+  background: #eef7ed !important;
+  color: #276732 !important;
+  border: 1px solid #c3e2c5 !important;
+  border-radius: 9999px !important;
+  padding: 0.3rem 0.75rem !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+}
+
+.reservation-status-pending,
+.status-badge-reserved {
+  background: #fdf5e6 !important;
+  color: #8c6736 !important;
+  border: 1px solid #edd5a4 !important;
+  border-radius: 9999px !important;
+  padding: 0.3rem 0.75rem !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+}
+
+.reservation-status-cancelled,
+.status-badge-occupied,
+.status-badge-inactive {
+  background: #fdf2f2 !important;
+  color: #991b1b !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 9999px !important;
+  padding: 0.3rem 0.75rem !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+}
+
+.reservation-status-completed {
+  background: #f0ede6 !important;
+  color: #554e44 !important;
+  border: 1px solid #ded6c8 !important;
+  border-radius: 9999px !important;
+  padding: 0.3rem 0.75rem !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+}
+
+/* Mobile Sidebar Drawer Backdrop */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(33, 28, 23, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+}
+
+/* ========================================================
+   Responsive Media Queries
+   ======================================================== */
+
+@media (max-width: 1024px) {
+  .app-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .app-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop.active {
+    display: block;
+  }
+
+  .app-main-viewport {
+    margin-left: 0 !important;
+  }
+
+  .topbar-mobile-toggle {
+    display: inline-flex;
+  }
+
+  .sidebar-collapse-btn {
+    display: none;
+  }
+
+  .app-main-content {
+    padding: 1.5rem 1.25rem 2.5rem;
+  }
+
+  .page-header-title {
+    font-size: 1.75rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar-user-details {
+    display: none;
+  }
+
+  .topbar-portal-badge {
+    display: none;
+  }
+
+  .app-topbar {
+    padding: 0 1rem;
+  }
+
+  .page-header-title {
+    font-size: 1.55rem !important;
+  }
+}

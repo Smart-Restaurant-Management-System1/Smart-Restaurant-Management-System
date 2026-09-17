@@ -85,11 +85,18 @@ export default function Login({ onNavigateToRegister }) {
 
       let targetPath = '/portal';
       if (isAdmin) {
-        targetPath = (fromPath && fromPath.startsWith('/admin')) ? fromPath : '/admin';
+        targetPath = (fromPath && !fromPath.startsWith('/kitchen') && fromPath !== '/unauthorized' && fromPath !== '/login' && fromPath !== '/register') ? fromPath : '/admin';
       } else if (isKitchenStaff) {
-        targetPath = (fromPath && fromPath.startsWith('/kitchen')) ? fromPath : '/kitchen';
+        targetPath = (fromPath && (fromPath.startsWith('/kitchen') || fromPath.startsWith('/tables'))) ? fromPath : '/kitchen';
       } else {
-        targetPath = fromPath || '/portal';
+        // Customer: only allow legitimate customer routes, never redirect to admin, kitchen, or unauthorized
+        const isCustomerSafePath = fromPath &&
+          !fromPath.startsWith('/admin') &&
+          !fromPath.startsWith('/kitchen') &&
+          fromPath !== '/unauthorized' &&
+          fromPath !== '/login' &&
+          fromPath !== '/register';
+        targetPath = isCustomerSafePath ? fromPath : '/portal';
       }
 
       setTimeout(() => {
