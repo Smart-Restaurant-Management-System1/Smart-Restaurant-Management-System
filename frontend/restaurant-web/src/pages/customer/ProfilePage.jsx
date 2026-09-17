@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getUserProfile, updateUserProfile } from '../../services/userService';
+import PageHeader from '../../components/common/PageHeader';
 import { validateProfileForm, sanitizeProfilePayload, formatProfileForForm } from './profileValidation';
 
 export default function ProfilePage() {
@@ -174,156 +175,97 @@ export default function ProfilePage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: '#ffffff',
-        color: '#111827',
-        padding: '3rem 1.5rem',
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '720px',
-          margin: '0 auto',
-        }}
-      >
-        {/* Navigation Breadcrumb / Return */}
-        <div style={{ marginBottom: '1.75rem' }}>
-          <Link
-            to="/portal"
-            className="link-jelly-back"
+    <div className="profile-page-content" style={{ maxWidth: '800px', margin: '0 auto' }}>
+      {/* Unified Page Header */}
+      {/* Unified Page Header */}
+      <PageHeader
+        eyebrow="Account Settings"
+        title={<>Account <em>Profile</em></>}
+        subtitle="View and update your personal details, contact information, and role access."
+      />
+
+      {/* Alerts */}
+      {error && (
+        <div className="availability-state active-tables-error" role="alert" style={{ background: '#fff8f8', border: '1px solid #fecaca', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem', color: '#991b1b', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#991b1b"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0 }}
           >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-            Back to Dining Portal
-          </Link>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span>{error}</span>
+        </div>
+      )}
+
+      {success && (
+        <div style={{ background: '#edf7ee', border: '1px solid #c2e2c6', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem', color: '#1e5e29', display: 'flex', alignItems: 'center', gap: '0.75rem' }} role="alert">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#2e7d32"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0 }}
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+            <polyline points="22 4 12 14.01 9 11.01" />
+          </svg>
+          <span>Profile updated successfully!</span>
+        </div>
+      )}
+
+      {/* Read-Only Account Summary Banner */}
+      <div className="bistro-info-banner">
+        <div>
+          <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--bistro-bronze)', fontWeight: '700', letterSpacing: '0.08em' }}>
+            Account Status
+          </div>
+          <div style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--bistro-ink)', marginTop: '0.2rem' }}>
+            {originalProfile?.isActive !== false ? 'Active' : 'Inactive'}
+          </div>
         </div>
 
-        {/* Header matching login typography */}
-        <div className="auth-form-title-group" style={{ marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '2.25rem', fontWeight: '700', color: '#111827', marginBottom: '0.35rem', letterSpacing: '-0.5px' }}>
-            Customer Profile
-          </h1>
-          <p style={{ color: '#6b7280', fontSize: '0.95rem' }}>
-            View and manage your personal details and contact information.
-          </p>
-        </div>
-
-        {/* Alerts */}
-        {error && (
-          <div className="alert alert-danger" role="alert">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#f87171"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ marginRight: '10px', flexShrink: 0 }}
-            >
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>{error}</span>
+        <div>
+          <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--bistro-bronze)', fontWeight: '700', letterSpacing: '0.08em' }}>
+            Assigned Role
           </div>
-        )}
-
-        {success && (
-          <div className="alert alert-success" role="alert">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#34d399"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ marginRight: '10px', flexShrink: 0 }}
-            >
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            <span>Profile updated successfully!</span>
-          </div>
-        )}
-
-        {/* Read-Only Account Summary Card */}
-        <div
-          style={{
-            background: '#fdfaf0',
-            border: '1px solid #d4af37',
-            padding: '1.25rem 1.5rem',
-            borderRadius: '12px',
-            marginBottom: '2rem',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '1.5rem',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <div>
-            <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', color: '#9e7d20', fontWeight: '700', letterSpacing: '0.5px' }}>
-              Account Status
-            </div>
-            <div style={{ fontSize: '1rem', fontWeight: '600', color: '#111827', marginTop: '0.2rem' }}>
-              {originalProfile?.isActive !== false ? 'Active' : 'Inactive'}
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', color: '#9e7d20', fontWeight: '700', letterSpacing: '0.5px' }}>
-              Assigned Role
-            </div>
-            <div style={{ marginTop: '0.2rem' }}>
-              <span
-                style={{
-                  display: 'inline-block',
-                  padding: '0.2rem 0.6rem',
-                  borderRadius: '6px',
-                  fontSize: '0.8rem',
-                  fontWeight: '700',
-                  background: 'rgba(212, 175, 55, 0.2)',
-                  color: '#9e7d20',
-                  border: '1px solid rgba(212, 175, 55, 0.5)',
-                }}
-              >
-                {originalProfile?.roles?.join(', ') || 'Customer'}
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <div style={{ fontSize: '0.78rem', textTransform: 'uppercase', color: '#9e7d20', fontWeight: '700', letterSpacing: '0.5px' }}>
-              Member Since
-            </div>
-            <div style={{ fontSize: '0.95rem', fontWeight: '500', color: '#374151', marginTop: '0.2rem' }}>
-              {originalProfile?.createdAt
-                ? new Date(originalProfile.createdAt).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })
-                : 'N/A'}
-            </div>
+          <div style={{ marginTop: '0.2rem' }}>
+            <span className="bistro-info-tag">
+              {originalProfile?.roles?.join(', ') || 'Customer'}
+            </span>
           </div>
         </div>
+
+        <div>
+          <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--bistro-bronze)', fontWeight: '700', letterSpacing: '0.08em' }}>
+            Member Since
+          </div>
+          <div style={{ fontSize: '0.95rem', fontWeight: '500', color: 'var(--bistro-muted)', marginTop: '0.2rem' }}>
+            {originalProfile?.createdAt
+              ? new Date(originalProfile.createdAt).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })
+              : 'N/A'}
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Edit Form Card */}
+      <div className="bistro-card" style={{ padding: '2.5rem 2rem' }}>
 
         {/* Profile Edit Form */}
         <form onSubmit={handleSubmit} noValidate>
@@ -352,14 +294,14 @@ export default function ProfilePage() {
                 type="text"
                 id="profileFullName"
                 name="fullName"
-                className={`form-control ${fieldErrors.fullName ? 'is-invalid' : ''}`}
+                className={`form-control with-icon ${fieldErrors.fullName ? 'is-invalid' : ''}`}
                 placeholder="Enter your full name"
                 value={formData.fullName}
                 onChange={handleChange}
                 disabled={isSaving}
                 style={{
                   width: '100%',
-                  padding: '0.78rem 1rem 0.78rem 2.75rem',
+                  padding: '0.78rem 1rem 0.78rem 2.85rem',
                   fontSize: '0.95rem',
                   color: '#111827',
                   backgroundColor: '#ffffff',
@@ -397,14 +339,14 @@ export default function ProfilePage() {
                 type="email"
                 id="profileEmail"
                 name="email"
-                className={`form-control ${fieldErrors.email ? 'is-invalid' : ''}`}
+                className={`form-control with-icon ${fieldErrors.email ? 'is-invalid' : ''}`}
                 placeholder="name@domain.com"
                 value={formData.email}
                 onChange={handleChange}
                 disabled={isSaving}
                 style={{
                   width: '100%',
-                  padding: '0.78rem 1rem 0.78rem 2.75rem',
+                  padding: '0.78rem 1rem 0.78rem 2.85rem',
                   fontSize: '0.95rem',
                   color: '#111827',
                   backgroundColor: '#ffffff',
@@ -441,14 +383,14 @@ export default function ProfilePage() {
                 type="tel"
                 id="profilePhone"
                 name="phoneNumber"
-                className={`form-control ${fieldErrors.phoneNumber ? 'is-invalid' : ''}`}
+                className={`form-control with-icon ${fieldErrors.phoneNumber ? 'is-invalid' : ''}`}
                 placeholder="+1 555-0199"
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 disabled={isSaving}
                 style={{
                   width: '100%',
-                  padding: '0.78rem 1rem 0.78rem 2.75rem',
+                  padding: '0.78rem 1rem 0.78rem 2.85rem',
                   fontSize: '0.95rem',
                   color: '#111827',
                   backgroundColor: '#ffffff',
@@ -462,11 +404,11 @@ export default function ProfilePage() {
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
             <button
               type="submit"
               disabled={isSaving}
-              className="btn-jelly-primary"
+              className="bistro-button-gold"
             >
               {isSaving ? (
                 <>
@@ -475,7 +417,7 @@ export default function ProfilePage() {
                       width: '16px',
                       height: '16px',
                       borderRadius: '50%',
-                      border: '2px solid #11141a',
+                      border: '2px solid #282115',
                       borderTopColor: 'transparent',
                       animation: 'spin 0.75s linear infinite',
                     }}
@@ -491,7 +433,7 @@ export default function ProfilePage() {
               type="button"
               onClick={() => navigate('/portal')}
               disabled={isSaving}
-              className="btn-jelly-secondary"
+              className="bistro-button-outline"
             >
               Cancel
             </button>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { cancelMyReservation, getActiveTables, getMyReservationDetail, rescheduleReservation } from '../../services/tableService';
 import { editValues, updateRequest, validateEdit, maintenanceError, singleFlight } from './reservationMaintenance';
+import PageHeader from '../../components/common/PageHeader';
 import './reservationDetail.css';
 
 export function ReservationDetails({ reservation }) {
@@ -82,31 +83,42 @@ export default function ReservationDetailPage() {
     value={form[name]} onChange={change} aria-invalid={Boolean(errors[name])}
     aria-describedby={errors[name] ? name + '-error' : undefined} {...extras} />
     {errors[name] && <span id={name + '-error'}>{errors[name]}</span>}</label>;
-  return <main className="availability-page"><div className="availability-content reservation-detail">
-    <Link to="/reservations/history">Back to booking history</Link><h1>Your reservation</h1>
-    {loading && <p role="status">Loading reservation…</p>}
-    {error && <div role="alert" tabIndex="-1" ref={alert}><p>{error}</p>
-      <button type="button" disabled={busy} onClick={() => setReload(x => x + 1)}>Reload details</button>
-      {conflict && <Link to="/availability" state={{ search: updateRequest(form) }}>Search other available tables</Link>}
+  return (
+    <div className="reservation-detail-page-content" style={{ maxWidth: '850px', margin: '0 auto' }}>
+      <PageHeader
+        eyebrow="Reservation Details"
+        title={<>Manage Your <em>Reservation</em></>}
+        subtitle={reservation ? `Booking reference ${reservation.bookingReference} for Table ${reservation.tableNumber}` : 'Inspect or reschedule your booked visit'}
+        actions={
+          <Link to="/reservations/history" className="bistro-button-outline">
+            ← Back to History
+          </Link>
+        }
+      />
+    {loading && <div className="bistro-card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--bistro-muted)' }} role="status">Loading reservation…</div>}
+    {error && <div className="availability-state active-tables-error" role="alert" tabIndex="-1" ref={alert} style={{ background: '#fff8f8', border: '1px solid #fecaca', borderRadius: '10px', padding: '1.25rem', marginBottom: '1.5rem', color: '#991b1b' }}><p style={{ margin: 0 }}>{error}</p>
+      <button type="button" className="bistro-button-gold" disabled={busy} onClick={() => setReload(x => x + 1)} style={{ marginTop: '0.75rem' }}>Reload details</button>
+      {conflict && <Link className="bistro-button-outline" to="/availability" state={{ search: updateRequest(form) }} style={{ marginLeft: '0.5rem' }}>Search other available tables</Link>}
     </div>}
-    {success && <p role="status">{success}</p>}
+    {success && <div style={{ background: '#edf7ee', border: '1px solid #c2e2c6', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '1.5rem', color: '#1e5e29' }} role="status">{success}</div>}
     {reservation && <><ReservationDetails reservation={reservation} />
-      {!reservation.canEdit && !reservation.canCancel && <p>This booking is read-only. Only upcoming Pending or Confirmed bookings can be changed.</p>}
-      {reservation.canEdit && form && <form className="availability-form" onSubmit={e => { e.preventDefault(); mutate(false); }}>
-        <h2>Edit your visit</h2><p>Times use the restaurant timezone. Availability is checked again when you save.</p>
-        <fieldset disabled={busy}><legend>Booking details</legend><div className="availability-fields">
-          <label>Table<select name="tableId" value={form.tableId} onChange={change} required aria-invalid={Boolean(errors.tableId)}>
+      {!reservation.canEdit && !reservation.canCancel && <p style={{ color: 'var(--bistro-muted)', marginTop: '1rem' }}>This booking is read-only. Only upcoming Pending or Confirmed bookings can be changed.</p>}
+      {reservation.canEdit && form && <form className="availability-form bistro-card" onSubmit={e => { e.preventDefault(); mutate(false); }} style={{ marginTop: '1.5rem' }}>
+        <h2 style={{ fontSize: '1.35rem', marginBottom: '0.25rem' }}>Edit your <em>visit</em></h2>
+        <p style={{ color: 'var(--bistro-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>Times use the restaurant timezone. Availability is checked again when you save.</p>
+        <fieldset disabled={busy} style={{ border: 'none', padding: 0, margin: 0 }}><legend style={{ display: 'none' }}>Booking details</legend><div className="availability-fields">
+          <label style={{ fontSize: '0.88rem', color: 'var(--bistro-ink)', fontWeight: 600 }}>Table<select name="tableId" value={form.tableId} onChange={change} required aria-invalid={Boolean(errors.tableId)} style={{ marginTop: '0.35rem' }}>
             {!tables.some(t => String(t.tableId) === form.tableId) && <option value={form.tableId}>Current table {reservation.tableNumber}</option>}
             {tables.map(t => <option key={t.tableId} value={t.tableId}>Table {t.tableNumber} — {t.seatingCapacity} seats</option>)}
-          </select>{errors.tableId && <span>{errors.tableId}</span>}</label>
+          </select>{errors.tableId && <span className="field-error">{errors.tableId}</span>}</label>
           {field('date', 'Visit date', 'date')}{field('startTime', 'Start time', 'time')}
           {field('durationMinutes', 'Duration (minutes)', 'number', { min: 1, step: 1 })}
           {field('guestCount', 'Guests', 'number', { min: 1, step: 1 })}
-        </div>{tableError && <p role="status">{tableError}</p>}
-          <button className="btn-jelly-primary" type="submit">Save changes</button>
+        </div>{tableError && <p role="status" style={{ color: '#991b1b', marginTop: '0.5rem' }}>{tableError}</p>}
+          <button className="bistro-button-gold" type="submit" style={{ marginTop: '1rem' }}>Save changes</button>
         </fieldset>
       </form>}
-      {reservation.canCancel && <button ref={cancelButton} type="button" disabled={busy} onClick={() => dialog.current.showModal()}>Cancel reservation</button>}
+      {reservation.canCancel && <button ref={cancelButton} className="bistro-button-outline" type="button" disabled={busy} onClick={() => dialog.current.showModal()} style={{ marginTop: '1rem', color: '#991b1b', borderColor: '#fca5a5' }}>Cancel reservation</button>}
       <dialog ref={dialog} aria-labelledby="cancel-title" onCancel={e => { if (busy) e.preventDefault(); }}
         onClose={() => cancelButton.current?.focus()}>
         <h2 id="cancel-title">Cancel this reservation?</h2><p>Your booking reference is {reservation.bookingReference}. This action releases your booking.</p>
@@ -115,5 +127,6 @@ export default function ReservationDetailPage() {
       </dialog>
     </>}
     {busy && <p role="status">Saving your change. Please do not submit again.</p>}
-  </div></main>;
+  </div>
+  );
 }

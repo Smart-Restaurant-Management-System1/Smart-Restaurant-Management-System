@@ -18,6 +18,7 @@ import ReservationReschedulePage from '../pages/availability/ReservationReschedu
 import UnauthorizedPage from '../pages/common/UnauthorizedPage';
 import LandingPage from '../pages/common/LandingPage';
 import ProtectedRoute from './ProtectedRoute';
+import AppLayout from '../components/common/AppLayout';
 import { ROLES } from './roles';
 import { useAuth } from '../context/AuthContext';
 
@@ -40,59 +41,68 @@ export default function AppRoutes() {
       <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to={getDefaultRedirect()} replace />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-      {/* Customer Protected Routes */}
+      {/* Customer & Admin Shared Protected Routes */}
       <Route
-        path="/portal"
         element={
           <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}>
-            <CustomerPortalPage />
+            <AppLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/portal" element={<CustomerPortalPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/availability" element={<AvailabilitySearchPage />} />
+      </Route>
+
+      {/* Tables Route (Customer, Kitchen, Admin) */}
       <Route
-        path="/profile"
-        element={
-          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tables"
         element={
           <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.KITCHEN_STAFF, ROLES.ADMIN]}>
-            <ActiveTablesPage />
+            <AppLayout />
           </ProtectedRoute>
         }
-      />
-      <Route path="/availability" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}><AvailabilitySearchPage /></ProtectedRoute>} />
-      <Route path="/reservations/new" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationReviewPage /></ProtectedRoute>} />
-      <Route path="/reservations/confirmation" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationConfirmationPage /></ProtectedRoute>} />
-      <Route path="/reservations/history" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationHistoryPage /></ProtectedRoute>} />
-      <Route path="/reservations/:reservationId" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationDetailPage /></ProtectedRoute>} />
-      <Route path="/reservations/reschedule" element={<ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}><ReservationReschedulePage /></ProtectedRoute>} />
+      >
+        <Route path="/tables" element={<ActiveTablesPage />} />
+      </Route>
+
+      {/* Customer-only Reservation Routes */}
+      <Route
+        element={
+          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/reservations/new" element={<ReservationReviewPage />} />
+        <Route path="/reservations/confirmation" element={<ReservationConfirmationPage />} />
+        <Route path="/reservations/history" element={<ReservationHistoryPage />} />
+        <Route path="/reservations/:reservationId" element={<ReservationDetailPage />} />
+        <Route path="/reservations/reschedule" element={<ReservationReschedulePage />} />
+      </Route>
 
       {/* Admin Protected Routes */}
       <Route
-        path="/admin"
         element={
           <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-            <AdminDashboardPage />
+            <AppLayout />
           </ProtectedRoute>
         }
-      />
-      <Route path="/admin/reservations" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><AdminReservationsPage /></ProtectedRoute>} />
-      <Route path="/admin/reports/reservations" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><ReservationReportsPage /></ProtectedRoute>} />
+      >
+        <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/admin/reservations" element={<AdminReservationsPage />} />
+        <Route path="/admin/reports/reservations" element={<ReservationReportsPage />} />
+      </Route>
 
       {/* Kitchen Staff Protected Routes */}
       <Route
-        path="/kitchen"
         element={
           <ProtectedRoute allowedRoles={[ROLES.KITCHEN_STAFF, ROLES.ADMIN]}>
-            <KitchenQueuePage />
+            <AppLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/kitchen" element={<KitchenQueuePage />} />
+      </Route>
 
       {/* Catch-all fallback: redirect unmatched URLs to Public Landing Page */}
       <Route path="*" element={<Navigate to="/" replace />} />
