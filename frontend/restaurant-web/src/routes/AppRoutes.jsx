@@ -54,7 +54,7 @@ export default function AppRoutes() {
         <Route path="/availability" element={<AvailabilitySearchPage />} />
       </Route>
 
-      {/* Tables Route (Customer, Kitchen, Admin) */}
+      {/* Tables Route (Customer & Kitchen view, or Admin redirect) */}
       <Route
         element={
           <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.KITCHEN_STAFF, ROLES.ADMIN]}>
@@ -62,7 +62,16 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="/tables" element={<ActiveTablesPage />} />
+        <Route
+          path="/tables"
+          element={
+            user?.roles?.includes(ROLES.ADMIN) ? (
+              <Navigate to="/admin" replace />
+            ) : (
+              <ActiveTablesPage />
+            )
+          }
+        />
       </Route>
 
       {/* Customer-only Reservation Routes */}
@@ -89,6 +98,7 @@ export default function AppRoutes() {
         }
       >
         <Route path="/admin" element={<AdminDashboardPage />} />
+        <Route path="/admin/tables" element={<Navigate to="/admin" replace />} />
         <Route path="/admin/reservations" element={<AdminReservationsPage />} />
         <Route path="/admin/reports/reservations" element={<ReservationReportsPage />} />
       </Route>
