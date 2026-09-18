@@ -20,6 +20,7 @@ services:
       - ./database/reservation-db/04_reservation_lifecycle.sql:/docker-entrypoint-initdb.d/05_reservation_lifecycle.sql
       - ./database/reservation-db/05_reservation_concurrency.sql:/docker-entrypoint-initdb.d/06_reservation_concurrency.sql
       - ./database/reservation-db/06_reservation_outbox.sql:/docker-entrypoint-initdb.d/07_reservation_outbox.sql
+      - ./database/reservation-db/03_menu_items.sql:/docker-entrypoint-initdb.d/08_menu_items.sql
     networks:
       - restaurant-network
     healthcheck:

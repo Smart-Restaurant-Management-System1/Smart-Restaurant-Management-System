@@ -7,13 +7,126 @@ import PageHeader from '../../components/common/PageHeader';
 import './reservationDetail.css';
 
 export function ReservationDetails({ reservation }) {
-  return <section aria-label="Server-confirmed reservation" className="reservation-history-card">
-    <h2>Booking {reservation.bookingReference}</h2>
-    <dl><dt>Table</dt><dd>{reservation.tableNumber}</dd>
-      <dt>Start (restaurant time)</dt><dd>{reservation.startDateTime.replace('T', ' ')}</dd>
-      <dt>End (restaurant time)</dt><dd>{reservation.endDateTime.replace('T', ' ')}</dd>
-      <dt>Guests</dt><dd>{reservation.guestCount}</dd><dt>Status</dt><dd>{reservation.status}</dd></dl>
-  </section>;
+  const isConfirmed = reservation.status === 'Confirmed';
+  const isPending = reservation.status === 'Pending';
+
+  return (
+    <section
+      aria-label="Server-confirmed reservation"
+      className="reservation-history-card bistro-card"
+      style={{
+        position: 'relative',
+        background: '#ffffff',
+        border: '1px solid #eedfc9',
+        borderRadius: '12px',
+        padding: '1.75rem',
+        boxShadow: '0 3px 14px rgba(40, 33, 21, 0.04)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Top Gold Accent Strip */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+        }}
+      />
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div>
+          <span
+            style={{
+              display: 'inline-block',
+              color: '#8c6736',
+              background: '#faf5ec',
+              border: '1px solid #eedfc9',
+              borderRadius: '6px',
+              padding: '0.2rem 0.6rem',
+              fontSize: '0.76rem',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              fontFamily: 'monospace',
+              marginBottom: '0.35rem',
+            }}
+          >
+            #{reservation.bookingReference}
+          </span>
+          <h2 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '1.35rem', margin: 0, color: '#282115', fontWeight: 600 }}>
+            Table {reservation.tableNumber}
+          </h2>
+        </div>
+
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.35rem',
+            padding: '0.25rem 0.75rem',
+            borderRadius: '9999px',
+            fontSize: '0.76rem',
+            fontWeight: 600,
+            background: isConfirmed ? '#ecfdf5' : isPending ? '#fffbeb' : '#f5efe6',
+            color: isConfirmed ? '#15803d' : isPending ? '#b45309' : '#78716c',
+            border: `1px solid ${isConfirmed ? '#bbf7d0' : isPending ? '#fde68a' : '#eedfc9'}`,
+          }}
+        >
+          {(isConfirmed || isPending) && (
+            <span className="profile-avatar-pulse-dot" style={{ width: '6px', height: '6px' }} />
+          )}
+          {reservation.status}
+        </span>
+      </div>
+
+      <dl
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '0.85rem',
+          margin: 0,
+        }}
+      >
+        <div style={{ background: '#fcf9f5', border: '1px solid #eedfc9', borderRadius: '8px', padding: '0.75rem 0.9rem' }}>
+          <dt style={{ color: '#78716c', fontSize: '0.74rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
+            Table Assignment
+          </dt>
+          <dd style={{ color: '#282115', fontSize: '1rem', fontWeight: 600, margin: 0 }}>
+            Table {reservation.tableNumber}
+          </dd>
+        </div>
+
+        <div style={{ background: '#fcf9f5', border: '1px solid #eedfc9', borderRadius: '8px', padding: '0.75rem 0.9rem' }}>
+          <dt style={{ color: '#78716c', fontSize: '0.74rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
+            Start Time
+          </dt>
+          <dd style={{ color: '#282115', fontSize: '0.92rem', fontWeight: 600, margin: 0 }}>
+            {reservation.startDateTime.replace('T', ' ')}
+          </dd>
+        </div>
+
+        <div style={{ background: '#fcf9f5', border: '1px solid #eedfc9', borderRadius: '8px', padding: '0.75rem 0.9rem' }}>
+          <dt style={{ color: '#78716c', fontSize: '0.74rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
+            End Time
+          </dt>
+          <dd style={{ color: '#282115', fontSize: '0.92rem', fontWeight: 600, margin: 0 }}>
+            {reservation.endDateTime.replace('T', ' ')}
+          </dd>
+        </div>
+
+        <div style={{ background: '#fcf9f5', border: '1px solid #eedfc9', borderRadius: '8px', padding: '0.75rem 0.9rem' }}>
+          <dt style={{ color: '#78716c', fontSize: '0.74rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.25rem' }}>
+            Party Size
+          </dt>
+          <dd style={{ color: '#282115', fontSize: '1rem', fontWeight: 600, margin: 0 }}>
+            {reservation.guestCount} {reservation.guestCount === 1 ? 'guest' : 'guests'}
+          </dd>
+        </div>
+      </dl>
+    </section>
+  );
 }
 
 export default function ReservationDetailPage() {
@@ -79,10 +192,36 @@ export default function ReservationDetailPage() {
     } catch (e) { if (mounted.current) { dialog.current?.close(); fail(e); } }
     finally { if (mounted.current) setBusy(false); }
   });
-  const field = (name, label, type, extras = {}) => <label>{label}<input name={name} type={type} required
-    value={form[name]} onChange={change} aria-invalid={Boolean(errors[name])}
-    aria-describedby={errors[name] ? name + '-error' : undefined} {...extras} />
-    {errors[name] && <span id={name + '-error'}>{errors[name]}</span>}</label>;
+  const field = (name, label, type, extras = {}) => (
+    <label style={{ fontSize: '0.76rem', color: '#574e3f', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      {label}
+      <input
+        name={name}
+        type={type}
+        required
+        value={form[name]}
+        onChange={change}
+        aria-invalid={Boolean(errors[name])}
+        aria-describedby={errors[name] ? name + '-error' : undefined}
+        style={{
+          marginTop: '0.35rem',
+          width: '100%',
+          height: '38px',
+          padding: '0.45rem 0.75rem',
+          fontSize: '0.86rem',
+          color: '#282115',
+          backgroundColor: '#ffffff',
+          border: '1px solid #d9d0bf',
+          borderRadius: '6px',
+          outline: 'none',
+          boxSizing: 'border-box',
+        }}
+        {...extras}
+      />
+      {errors[name] && <span id={name + '-error'} className="field-error" style={{ marginTop: '0.35rem' }}>{errors[name]}</span>}
+    </label>
+  );
+
   return (
     <div className="reservation-detail-page-content" style={{ maxWidth: '850px', margin: '0 auto' }}>
       <PageHeader
@@ -95,9 +234,35 @@ export default function ReservationDetailPage() {
           </Link>
         }
       />
-    {loading && <div className="bistro-card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--bistro-muted)' }} role="status">Loading reservation…</div>}
+    {loading && (
+      <div
+        className="bistro-card"
+        style={{
+          textAlign: 'center',
+          padding: '3rem 1.5rem',
+          color: '#78716c',
+          border: '1px solid #eedfc9',
+          borderRadius: '12px',
+          background: '#ffffff',
+        }}
+        role="status"
+      >
+        <div
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            border: '3px solid rgba(197, 160, 89, 0.25)',
+            borderTopColor: '#c5a059',
+            animation: 'spin 0.8s linear infinite',
+            margin: '0 auto 1rem',
+          }}
+        />
+        Loading reservation details…
+      </div>
+    )}
     {error && (
-      <div className="bistro-alert bistro-alert-error" role="alert" tabIndex="-1" ref={alert} style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+      <div className="bistro-alert bistro-alert-error" role="alert" tabIndex="-1" ref={alert} style={{ flexDirection: 'column', alignItems: 'flex-start', borderRadius: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
@@ -108,18 +273,18 @@ export default function ReservationDetailPage() {
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.85rem' }}>
           <button type="button" className="bistro-button-gold" disabled={busy} onClick={() => setReload(x => x + 1)}>
-            Reload details
+            Reload Details
           </button>
           {conflict && (
             <Link className="bistro-button-outline" to="/availability" state={{ search: updateRequest(form) }}>
-              Search other available tables
+              Search Other Available Tables
             </Link>
           )}
         </div>
       </div>
     )}
     {success && (
-      <div className="bistro-alert bistro-alert-success" role="status">
+      <div className="bistro-alert bistro-alert-success" role="status" style={{ borderRadius: '10px' }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
           <polyline points="22 4 12 14.01 9 11.01" />
@@ -127,23 +292,89 @@ export default function ReservationDetailPage() {
         <span>{success}</span>
       </div>
     )}
-    {reservation && <><ReservationDetails reservation={reservation} />
-      {!reservation.canEdit && !reservation.canCancel && <p style={{ color: 'var(--bistro-muted)', marginTop: '1rem' }}>This booking is read-only. Only upcoming Pending or Confirmed bookings can be changed.</p>}
-      {reservation.canEdit && form && <form className="availability-form bistro-card" onSubmit={e => { e.preventDefault(); mutate(false); }} style={{ marginTop: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.35rem', marginBottom: '0.25rem' }}>Edit your <em>visit</em></h2>
-        <p style={{ color: 'var(--bistro-muted)', fontSize: '0.9rem', marginBottom: '1.25rem' }}>Times use the restaurant timezone. Availability is checked again when you save.</p>
-        <fieldset disabled={busy} style={{ border: 'none', padding: 0, margin: 0 }}><legend style={{ display: 'none' }}>Booking details</legend><div className="availability-fields">
-          <label style={{ fontSize: '0.88rem', color: 'var(--bistro-ink)', fontWeight: 600 }}>Table<select name="tableId" value={form.tableId} onChange={change} required aria-invalid={Boolean(errors.tableId)} style={{ marginTop: '0.35rem' }}>
-            {!tables.some(t => String(t.tableId) === form.tableId) && <option value={form.tableId}>Current table {reservation.tableNumber}</option>}
-            {tables.map(t => <option key={t.tableId} value={t.tableId}>Table {t.tableNumber} — {t.seatingCapacity} seats</option>)}
-          </select>{errors.tableId && <span className="field-error">{errors.tableId}</span>}</label>
-          {field('date', 'Visit date', 'date')}{field('startTime', 'Start time', 'time')}
-          {field('durationMinutes', 'Duration (minutes)', 'number', { min: 1, step: 1 })}
-          {field('guestCount', 'Guests', 'number', { min: 1, step: 1 })}
-        </div>{tableError && <p role="status" style={{ color: '#991b1b', marginTop: '0.5rem' }}>{tableError}</p>}
-          <button className="bistro-button-gold" type="submit" style={{ marginTop: '1rem' }}>Save changes</button>
-        </fieldset>
-      </form>}
+    {reservation && <>
+      <ReservationDetails reservation={reservation} />
+      {!reservation.canEdit && !reservation.canCancel && (
+        <p style={{ color: '#78716c', marginTop: '1.25rem', fontStyle: 'italic', fontSize: '0.88rem' }}>
+          This booking is read-only. Only upcoming Pending or Confirmed bookings can be changed.
+        </p>
+      )}
+      {reservation.canEdit && form && (
+        <form
+          className="availability-form bistro-card"
+          onSubmit={e => { e.preventDefault(); mutate(false); }}
+          style={{
+            position: 'relative',
+            background: '#ffffff',
+            border: '1px solid #eedfc9',
+            borderRadius: '12px',
+            padding: '1.75rem',
+            marginTop: '1.5rem',
+            boxShadow: '0 3px 12px rgba(40, 33, 21, 0.04)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Top Gold Accent Strip */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '3px',
+              background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+            }}
+          />
+
+          <h2 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '1.35rem', marginBottom: '0.35rem', color: '#282115', fontWeight: 600 }}>
+            Modify Your <em>Visit</em>
+          </h2>
+          <p style={{ color: '#78716c', fontSize: '0.86rem', marginBottom: '1.25rem' }}>
+            Times use the restaurant timezone. Table availability will be checked again upon saving.
+          </p>
+
+          <fieldset disabled={busy} style={{ border: 'none', padding: 0, margin: 0 }}>
+            <legend style={{ display: 'none' }}>Booking details</legend>
+            <div className="availability-fields">
+              <label style={{ fontSize: '0.76rem', color: '#574e3f', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Table Choice
+                <select
+                  name="tableId"
+                  value={form.tableId}
+                  onChange={change}
+                  required
+                  aria-invalid={Boolean(errors.tableId)}
+                  style={{
+                    marginTop: '0.35rem',
+                    width: '100%',
+                    height: '38px',
+                    padding: '0.45rem 0.75rem',
+                    fontSize: '0.86rem',
+                    color: '#282115',
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #d9d0bf',
+                    borderRadius: '6px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {!tables.some(t => String(t.tableId) === form.tableId) && <option value={form.tableId}>Current table {reservation.tableNumber}</option>}
+                  {tables.map(t => <option key={t.tableId} value={t.tableId}>Table {t.tableNumber} — {t.seatingCapacity} seats ({t.location || 'Main Dining'})</option>)}
+                </select>
+                {errors.tableId && <span className="field-error" style={{ marginTop: '0.35rem' }}>{errors.tableId}</span>}
+              </label>
+              {field('date', 'Visit date', 'date')}
+              {field('startTime', 'Start time', 'time')}
+              {field('durationMinutes', 'Duration (minutes)', 'number', { min: 1, step: 1 })}
+              {field('guestCount', 'Guests', 'number', { min: 1, step: 1 })}
+            </div>
+            {tableError && <p role="status" style={{ color: '#991b1b', marginTop: '0.5rem', fontSize: '0.88rem' }}>{tableError}</p>}
+            <button className="bistro-button-gold" type="submit" style={{ marginTop: '1.25rem', padding: '0.65rem 1.5rem' }}>
+              Save Reschedule Changes
+            </button>
+          </fieldset>
+        </form>
+      )}
       {reservation.canCancel && (
         <button
           ref={cancelButton}
@@ -151,9 +382,14 @@ export default function ReservationDetailPage() {
           type="button"
           disabled={busy}
           onClick={() => dialog.current.showModal()}
-          style={{ marginTop: '1rem', color: '#991b1b', borderColor: '#fca5a5' }}
+          style={{ marginTop: '1.25rem', color: '#991b1b', borderColor: '#fca5a5', display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
         >
-          Cancel reservation
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+          <span>Cancel Reservation</span>
         </button>
       )}
       <dialog
@@ -161,11 +397,18 @@ export default function ReservationDetailPage() {
         aria-labelledby="cancel-title"
         onCancel={e => { if (busy) e.preventDefault(); }}
         onClose={() => cancelButton.current?.focus()}
+        style={{
+          border: '1px solid #eedfc9',
+          borderRadius: '14px',
+          padding: '2rem',
+          maxWidth: '440px',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
+        }}
       >
         <div
           style={{
-            width: '52px',
-            height: '52px',
+            width: '54px',
+            height: '54px',
             borderRadius: '50%',
             backgroundColor: '#fef2f2',
             color: '#dc2626',
@@ -176,17 +419,17 @@ export default function ReservationDetailPage() {
             border: '1px solid rgba(220, 38, 38, 0.25)',
           }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="10" />
             <line x1="15" y1="9" x2="9" y2="15" />
             <line x1="9" y1="9" x2="15" y2="15" />
           </svg>
         </div>
-        <h2 id="cancel-title" style={{ textAlign: 'center', marginBottom: '0.4rem' }}>
+        <h2 id="cancel-title" style={{ fontFamily: "Georgia, 'Times New Roman', serif", textAlign: 'center', marginBottom: '0.5rem', color: '#282115' }}>
           Cancel this reservation?
         </h2>
-        <p style={{ textAlign: 'center', color: 'var(--bistro-muted)', marginBottom: '1.75rem', fontSize: '0.92rem' }}>
-          Your booking reference is <strong style={{ color: 'var(--bistro-ink)', letterSpacing: '0.04em' }}>{reservation.bookingReference}</strong>. This action releases your booking.
+        <p style={{ textAlign: 'center', color: '#78716c', marginBottom: '1.75rem', fontSize: '0.9rem', lineHeight: 1.5 }}>
+          Your booking reference is <strong style={{ color: '#282115', letterSpacing: '0.04em' }}>{reservation.bookingReference}</strong>. This will release your reserved table back into open availability.
         </p>
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
           <button
@@ -197,7 +440,7 @@ export default function ReservationDetailPage() {
             className="bistro-button-outline"
             style={{ flex: 1, justifyContent: 'center' }}
           >
-            Keep reservation
+            Keep Reservation
           </button>
           <button
             type="button"
@@ -206,7 +449,7 @@ export default function ReservationDetailPage() {
             className="bistro-button-danger"
             style={{ flex: 1, justifyContent: 'center' }}
           >
-            {busy ? 'Cancelling…' : 'Confirm cancellation'}
+            {busy ? 'Cancelling…' : 'Confirm Cancellation'}
           </button>
         </div>
       </dialog>

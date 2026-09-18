@@ -20,20 +20,7 @@ export default function KitchenQueuePage() {
         }
       />
 
-      {/* Staff Info Banner */}
-      <div className="bistro-info-banner">
-        <div>
-          <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--bistro-ink)' }}>
-            <strong>Staff Member:</strong> {user?.fullName || 'Kitchen Staff'} ({user?.email || 'staff@bistro.com'})
-          </p>
-          <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--bistro-bronze)' }}>
-            <strong>Terminal:</strong> Culinary Operations Queue
-          </p>
-        </div>
-        <span className="bistro-info-tag">
-          Kitchen Session
-        </span>
-      </div>
+
 
       {/* Placeholder Queue Content */}
       <div className="bistro-card" style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
