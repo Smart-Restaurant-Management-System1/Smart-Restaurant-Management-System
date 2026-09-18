@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ReservationService.Models;
@@ -40,6 +40,7 @@ public class MenuItemsController : ControllerBase
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search = null,
         [FromQuery] string? category = null,
+        [FromQuery] string? dietaryInfo = null,
         [FromQuery] bool? isAvailable = null,
         CancellationToken cancellationToken = default)
     {
@@ -51,9 +52,18 @@ public class MenuItemsController : ControllerBase
             return BadRequest(new { message = "Invalid category." });
         }
 
+        if (!string.IsNullOrWhiteSpace(dietaryInfo) &&
+            !ValidDietaryInfo.Contains(
+                dietaryInfo.Trim(),
+                StringComparer.OrdinalIgnoreCase))
+        {
+            return BadRequest(new { message = "Invalid dietary preference." });
+        }
+
         var menuItems = await _menuItemRepository.GetAllAsync(
             search,
             category,
+            dietaryInfo,
             isAvailable,
             cancellationToken);
 
@@ -361,3 +371,4 @@ public class AvailabilityRequest
 {
     public bool IsAvailable { get; set; }
 }
+

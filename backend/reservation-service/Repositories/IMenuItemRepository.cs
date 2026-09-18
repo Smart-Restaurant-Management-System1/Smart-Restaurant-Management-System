@@ -7,6 +7,7 @@ public interface IMenuItemRepository
     Task<List<MenuItem>> GetAllAsync(
         string? search = null,
         string? category = null,
+        string? dietaryInfo = null,
         bool? isAvailable = null,
         CancellationToken cancellationToken = default);
 

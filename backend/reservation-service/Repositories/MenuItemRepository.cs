@@ -1,4 +1,3 @@
-
 using MySqlConnector;
 using ReservationService.Data;
 using ReservationService.Models;
@@ -17,6 +16,7 @@ public class MenuItemRepository : IMenuItemRepository
     public async Task<List<MenuItem>> GetAllAsync(
         string? search = null,
         string? category = null,
+        string? dietaryInfo = null,
         bool? isAvailable = null,
         CancellationToken cancellationToken = default)
     {
@@ -40,6 +40,7 @@ public class MenuItemRepository : IMenuItemRepository
                  OR ItemName LIKE CONCAT('%', @Search, '%')
                  OR Description LIKE CONCAT('%', @Search, '%'))
                 AND (@Category IS NULL OR Category = @Category)
+                AND (@DietaryInfo IS NULL OR DietaryInfo = @DietaryInfo)
                 AND (@IsAvailable IS NULL OR IsAvailable = @IsAvailable)
             ORDER BY Category, ItemName;
             """;
@@ -49,14 +50,29 @@ public class MenuItemRepository : IMenuItemRepository
 
         await using var command = new MySqlCommand(sql, connection);
 
-        command.Parameters.AddWithValue("@Search",
-            string.IsNullOrWhiteSpace(search) ? DBNull.Value : search.Trim());
+        command.Parameters.AddWithValue(
+            "@Search",
+            string.IsNullOrWhiteSpace(search)
+                ? DBNull.Value
+                : search.Trim());
 
-        command.Parameters.AddWithValue("@Category",
-            string.IsNullOrWhiteSpace(category) ? DBNull.Value : category.Trim());
+        command.Parameters.AddWithValue(
+            "@Category",
+            string.IsNullOrWhiteSpace(category)
+                ? DBNull.Value
+                : category.Trim());
 
-        command.Parameters.AddWithValue("@IsAvailable",
-            isAvailable.HasValue ? isAvailable.Value : DBNull.Value);
+        command.Parameters.AddWithValue(
+            "@DietaryInfo",
+            string.IsNullOrWhiteSpace(dietaryInfo)
+                ? DBNull.Value
+                : dietaryInfo.Trim());
+
+        command.Parameters.AddWithValue(
+            "@IsAvailable",
+            isAvailable.HasValue
+                ? isAvailable.Value
+                : DBNull.Value);
 
         await using var reader =
             await command.ExecuteReaderAsync(cancellationToken);
@@ -94,7 +110,9 @@ public class MenuItemRepository : IMenuItemRepository
 
         await using var command = new MySqlCommand(sql, connection);
 
-        command.Parameters.AddWithValue("@MenuItemId", menuItemId);
+        command.Parameters.AddWithValue(
+            "@MenuItemId",
+            menuItemId);
 
         await using var reader =
             await command.ExecuteReaderAsync(cancellationToken);
@@ -143,7 +161,8 @@ public class MenuItemRepository : IMenuItemRepository
 
         AddMenuItemParameters(command, menuItem);
 
-        var result = await command.ExecuteScalarAsync(cancellationToken);
+        var result =
+            await command.ExecuteScalarAsync(cancellationToken);
 
         return Convert.ToInt32(result);
     }
@@ -172,7 +191,10 @@ public class MenuItemRepository : IMenuItemRepository
         await using var command = new MySqlCommand(sql, connection);
 
         AddMenuItemParameters(command, menuItem);
-        command.Parameters.AddWithValue("@MenuItemId", menuItemId);
+
+        command.Parameters.AddWithValue(
+            "@MenuItemId",
+            menuItemId);
 
         var affectedRows =
             await command.ExecuteNonQueryAsync(cancellationToken);
@@ -196,8 +218,13 @@ public class MenuItemRepository : IMenuItemRepository
 
         await using var command = new MySqlCommand(sql, connection);
 
-        command.Parameters.AddWithValue("@MenuItemId", menuItemId);
-        command.Parameters.AddWithValue("@IsAvailable", isAvailable);
+        command.Parameters.AddWithValue(
+            "@MenuItemId",
+            menuItemId);
+
+        command.Parameters.AddWithValue(
+            "@IsAvailable",
+            isAvailable);
 
         var affectedRows =
             await command.ExecuteNonQueryAsync(cancellationToken);
@@ -219,7 +246,9 @@ public class MenuItemRepository : IMenuItemRepository
 
         await using var command = new MySqlCommand(sql, connection);
 
-        command.Parameters.AddWithValue("@MenuItemId", menuItemId);
+        command.Parameters.AddWithValue(
+            "@MenuItemId",
+            menuItemId);
 
         var affectedRows =
             await command.ExecuteNonQueryAsync(cancellationToken);
@@ -231,26 +260,41 @@ public class MenuItemRepository : IMenuItemRepository
         MySqlCommand command,
         MenuItem menuItem)
     {
-        command.Parameters.AddWithValue("@ItemName", menuItem.ItemName);
+        command.Parameters.AddWithValue(
+            "@ItemName",
+            menuItem.ItemName);
 
-        command.Parameters.AddWithValue("@Description",
+        command.Parameters.AddWithValue(
+            "@Description",
             string.IsNullOrWhiteSpace(menuItem.Description)
                 ? DBNull.Value
                 : menuItem.Description);
 
-        command.Parameters.AddWithValue("@Price", menuItem.Price);
-        command.Parameters.AddWithValue("@Category", menuItem.Category);
-        command.Parameters.AddWithValue("@DietaryInfo", menuItem.DietaryInfo);
+        command.Parameters.AddWithValue(
+            "@Price",
+            menuItem.Price);
 
-        command.Parameters.AddWithValue("@ImageReference",
+        command.Parameters.AddWithValue(
+            "@Category",
+            menuItem.Category);
+
+        command.Parameters.AddWithValue(
+            "@DietaryInfo",
+            menuItem.DietaryInfo);
+
+        command.Parameters.AddWithValue(
+            "@ImageReference",
             string.IsNullOrWhiteSpace(menuItem.ImageReference)
                 ? DBNull.Value
                 : menuItem.ImageReference);
 
-        command.Parameters.AddWithValue("@IsAvailable", menuItem.IsAvailable);
+        command.Parameters.AddWithValue(
+            "@IsAvailable",
+            menuItem.IsAvailable);
     }
 
-    private static MenuItem MapMenuItem(MySqlDataReader reader)
+    private static MenuItem MapMenuItem(
+        MySqlDataReader reader)
     {
         return new MenuItem
         {
@@ -258,9 +302,11 @@ public class MenuItemRepository : IMenuItemRepository
 
             ItemName = reader.GetString("ItemName"),
 
-            Description = reader.IsDBNull(reader.GetOrdinal("Description"))
-                ? null
-                : reader.GetString("Description"),
+            Description =
+                reader.IsDBNull(
+                    reader.GetOrdinal("Description"))
+                    ? null
+                    : reader.GetString("Description"),
 
             Price = reader.GetDecimal("Price"),
 
@@ -268,9 +314,11 @@ public class MenuItemRepository : IMenuItemRepository
 
             DietaryInfo = reader.GetString("DietaryInfo"),
 
-            ImageReference = reader.IsDBNull(reader.GetOrdinal("ImageReference"))
-                ? null
-                : reader.GetString("ImageReference"),
+            ImageReference =
+                reader.IsDBNull(
+                    reader.GetOrdinal("ImageReference"))
+                    ? null
+                    : reader.GetString("ImageReference"),
 
             IsAvailable = reader.GetBoolean("IsAvailable"),
 

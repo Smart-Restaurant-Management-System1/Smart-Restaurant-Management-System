@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 import LoginPage from '../pages/customer/LoginPage';
 import RegisterPage from '../pages/customer/RegisterPage';
 import CustomerPortalPage from '../pages/customer/CustomerPortalPage';
+import CustomerMenuPage from '../pages/customer/CustomerMenuPage';
 import ProfilePage from '../pages/customer/ProfilePage';
 
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
@@ -105,6 +107,12 @@ export default function AppRoutes() {
         <Route
           path="/portal"
           element={<CustomerPortalPage />}
+        />
+
+        {/* Customer Menu - SR-131 */}
+        <Route
+          path="/menu"
+          element={<CustomerMenuPage />}
         />
 
         <Route
