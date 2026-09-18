@@ -1,4 +1,4 @@
-
+﻿
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -165,10 +165,9 @@ builder.Services.AddCors(options =>
                 return false;
             }
 
-            // Allow localhost and 127.0.0.1 during local development
-            if (builder.Environment.IsDevelopment() &&
-                (uri.Host == "localhost" ||
-                 uri.Host == "127.0.0.1"))
+                        // Allow localhost and 127.0.0.1 during development and testing
+            if (uri.Host == "localhost" ||
+                uri.Host == "127.0.0.1")
             {
                 return true;
             }

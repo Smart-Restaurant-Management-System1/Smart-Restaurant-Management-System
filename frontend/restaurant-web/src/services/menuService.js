@@ -1,3 +1,4 @@
+
 import axios from 'axios';
 
 const reservationApi = axios.create({
@@ -9,6 +10,7 @@ const reservationApi = axios.create({
   },
 });
 
+// Attach the logged-in user's JWT token to every request
 reservationApi.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -22,7 +24,7 @@ reservationApi.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Get all menu items with optional filters
+// Get all menu items for admin with optional filters
 export const getMenuItems = async ({
   search = '',
   category = '',
@@ -43,6 +45,33 @@ export const getMenuItems = async ({
   }
 
   const response = await reservationApi.get('/MenuItems', {
+    params,
+  });
+
+  return response.data;
+};
+
+// Get available menu items for customers with optional filters
+export const getCustomerMenuItems = async ({
+  search = '',
+  category = '',
+  dietaryInfo = '',
+} = {}) => {
+  const params = {};
+
+  if (search.trim()) {
+    params.search = search.trim();
+  }
+
+  if (category) {
+    params.category = category;
+  }
+
+  if (dietaryInfo) {
+    params.dietaryInfo = dietaryInfo;
+  }
+
+  const response = await reservationApi.get('/customer-menu', {
     params,
   });
 
