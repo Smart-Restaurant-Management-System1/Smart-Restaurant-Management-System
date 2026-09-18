@@ -1,0 +1,27 @@
+// Kafka publisher registration
+// The real Kafka publisher is created only when publishing is enabled.
+
+var kafkaPublisherEnabled =
+    builder.Configuration.GetValue<bool>(
+        $"{KafkaOptions.SectionName}:PublisherEnabled"
+    );
+
+if (kafkaPublisherEnabled)
+{
+    builder.Services.AddSingleton<
+        ReservationService.Services.IReservationEventPublisher,
+        ReservationService.Services.ConfluentKafkaPublisher
+    >();
+}
+else
+{
+    builder.Services.AddSingleton<
+        ReservationService.Services.IReservationEventPublisher,
+        ReservationService.Services.DisabledReservationEventPublisher
+    >();
+}
+
+// Outbox background service
+builder.Services.AddHostedService<
+    ReservationService.Services.OutboxPublisherService
+>();
