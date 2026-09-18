@@ -110,6 +110,27 @@ export default function Sidebar({
 
   const customerNavItems = [
     {
+      to: '/portal',
+      label: 'Dining Dashboard',
+      icon: (
+        <svg
+          width="19"
+          height="19"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+        </svg>
+      ),
+    },
+    {
       to: '/menu',
       label: 'Browse Menu',
       icon: (
@@ -129,27 +150,6 @@ export default function Sidebar({
           <path d="M14 3v18" />
           <path d="M14 3c4 2 4 6 0 8" />
           <path d="M18 3v18" />
-        </svg>
-      ),
-    },
-    {
-      to: '/portal',
-      label: 'Dining Dashboard',
-      icon: (
-        <svg
-          width="19"
-          height="19"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="3" y="3" width="7" height="7" rx="1" />
-          <rect x="14" y="3" width="7" height="7" rx="1" />
-          <rect x="14" y="14" width="7" height="7" rx="1" />
-          <rect x="3" y="14" width="7" height="7" rx="1" />
         </svg>
       ),
     },

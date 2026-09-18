@@ -1,9 +1,12 @@
 import React from 'react';
 
-function PageHeader({ title, subtitle, children }) {
+function PageHeader({ title, subtitle, eyebrow, actions, children }) {
+  const actionContent = actions || children;
+
   return (
     <div className="page-header">
-      <div className="page-header-content">
+      <div className="page-header-info page-header-content">
+        {eyebrow && <span className="page-header-eyebrow">{eyebrow}</span>}
         <h1 className="page-header-title">{title}</h1>
 
         {subtitle && (
@@ -11,9 +14,9 @@ function PageHeader({ title, subtitle, children }) {
         )}
       </div>
 
-      {children && (
+      {actionContent && (
         <div className="page-header-actions">
-          {children}
+          {actionContent}
         </div>
       )}
     </div>

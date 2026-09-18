@@ -23,6 +23,11 @@ export default function AdminDashboardPage() {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [alertNotice, setAlertNotice] = useState(null);
 
+  // Search & Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [locationFilter, setLocationFilter] = useState('ALL');
+
   const handleOpenEditModal = (table) => {
     setSelectedTableForEdit(table);
     setIsEditModalOpen(true);
@@ -162,6 +167,39 @@ export default function AdminDashboardPage() {
     (t) => t.status === 'Available' || (t.status !== 'Occupied' && t.status !== 'Inactive' && t.isActive === true)
   ).length;
   const occupiedCount = tables.filter((t) => t.status === 'Occupied').length;
+  const inactiveCount = tables.filter((t) => t.status === 'Inactive' || t.isActive === false).length;
+
+  const locations = Array.from(new Set(tables.map((t) => t.location).filter(Boolean)));
+
+  const filteredTables = tables.filter((tbl) => {
+    const matchesSearch =
+      !searchTerm.trim() ||
+      tbl.tableNumber?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+      tbl.location?.toLowerCase().includes(searchTerm.toLowerCase().trim());
+
+    const matchesStatus =
+      statusFilter === 'ALL'
+        ? true
+        : statusFilter === 'Available'
+        ? tbl.status === 'Available' || (!tbl.status && tbl.isActive === true)
+        : statusFilter === 'Occupied'
+        ? tbl.status === 'Occupied'
+        : statusFilter === 'Inactive'
+        ? tbl.status === 'Inactive' || tbl.isActive === false
+        : true;
+
+    const matchesLocation = locationFilter === 'ALL' || tbl.location === locationFilter;
+
+    return matchesSearch && matchesStatus && matchesLocation;
+  });
+
+  const isFilterActive = searchTerm.trim() !== '' || statusFilter !== 'ALL' || locationFilter !== 'ALL';
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('ALL');
+    setLocationFilter('ALL');
+  };
 
   return (
     <div className="admin-page-content">
@@ -171,34 +209,46 @@ export default function AdminDashboardPage() {
         title={<>Restaurant Tables & <em>Seating.</em></>}
         subtitle="Digital configuration of dining tables, seat capacities, and floor layout."
         actions={
-          <button
-            type="button"
-            onClick={() => setIsAddModalOpen(true)}
-            className="bistro-button-gold"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Table
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={fetchTables}
+              className="bistro-button-outline"
+              title="Refresh tables"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                padding: '0.62rem 1rem',
+                fontSize: '0.88rem',
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+              </svg>
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="bistro-button-gold"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                padding: '0.62rem 1.25rem',
+                fontSize: '0.88rem',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Table
+            </button>
+          </div>
         }
       />
-
-      {/* Admin Info Banner */}
-      <div className="bistro-info-banner">
-        <div>
-          <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--bistro-ink)' }}>
-            <strong>Admin Session:</strong> {user?.fullName || 'Administrator'} ({user?.email || 'admin@bistro.com'})
-          </p>
-          <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--bistro-bronze)' }}>
-            <strong>Privileges:</strong> Full System Administration (Table Configuration, Staff, Reporting)
-          </p>
-        </div>
-        <span className="bistro-info-tag">
-          Active Administrator
-        </span>
-      </div>
 
       {/* Success Alert Banner */}
       {successBanner && (
@@ -208,13 +258,13 @@ export default function AdminDashboardPage() {
             border: '1px solid #c2e2c6',
             color: '#1e5e29',
             padding: '0.9rem 1.25rem',
-            borderRadius: '8px',
+            borderRadius: '10px',
             fontSize: '0.92rem',
             fontWeight: '500',
             marginBottom: '1.5rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.6rem',
+            gap: '0.65rem',
             boxShadow: '0 2px 8px rgba(40, 37, 31, 0.04)',
           }}
         >
@@ -225,7 +275,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Capacity / Overview Cards - Matching Landing Page Metric Numbers */}
+      {/* Boutique KPI Metric Cards */}
       <div
         style={{
           display: 'grid',
@@ -234,352 +284,715 @@ export default function AdminDashboardPage() {
           marginBottom: '2rem',
         }}
       >
-        <div className="bistro-metric-card">
-          <span className="bistro-metric-label">
-            Configured Tables
-          </span>
-          <div className="bistro-metric-value">
-            {tables.length}
+        {/* Total Configured Tables */}
+        <div
+          className="bistro-card"
+          style={{
+            padding: '1.25rem 1.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            position: 'relative',
+            overflow: 'hidden',
+            border: '1px solid #e8e0d0',
+            boxShadow: '0 4px 14px rgba(40, 30, 15, 0.04)',
+          }}
+        >
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '10px',
+              background: '#faf6ee',
+              border: '1px solid #dfd5c4',
+              color: 'var(--bistro-ink)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 18v3" />
+              <path d="M20 18v3" />
+              <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
+              <path d="M2 11h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z" />
+            </svg>
+          </div>
+          <div>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bistro-muted)', fontWeight: 600, display: 'block' }}>
+              Configured Tables
+            </span>
+            <div style={{ fontFamily: 'Georgia, serif', fontSize: '1.75rem', fontWeight: 700, color: 'var(--bistro-ink)', lineHeight: 1.15 }}>
+              {tables.length}
+            </div>
           </div>
         </div>
 
-        <div className="bistro-metric-card">
-          <span className="bistro-metric-label">
-            Total Seating Capacity
-          </span>
-          <div className="bistro-metric-value" style={{ color: 'var(--bistro-bronze)' }}>
-            {totalCapacity} <span style={{ fontSize: '0.95rem', color: 'var(--bistro-muted)', fontFamily: 'Poppins, sans-serif' }}>guests</span>
+        {/* Total Seating Capacity */}
+        <div
+          className="bistro-card"
+          style={{
+            padding: '1.25rem 1.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            position: 'relative',
+            overflow: 'hidden',
+            border: '1px solid #e8e0d0',
+            boxShadow: '0 4px 14px rgba(40, 30, 15, 0.04)',
+          }}
+        >
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '10px',
+              background: '#faf4eb',
+              border: '1px solid #e2d1ba',
+              color: 'var(--bistro-bronze)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+          </div>
+          <div>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--bistro-muted)', fontWeight: 600, display: 'block' }}>
+              Total Capacity
+            </span>
+            <div style={{ fontFamily: 'Georgia, serif', fontSize: '1.75rem', fontWeight: 700, color: 'var(--bistro-bronze)', lineHeight: 1.15 }}>
+              {totalCapacity} <span style={{ fontSize: '0.9rem', fontFamily: 'Poppins, sans-serif', color: 'var(--bistro-muted)', fontWeight: 400 }}>seats</span>
+            </div>
           </div>
         </div>
 
-        <div className="bistro-metric-card">
-          <span className="bistro-metric-label">
-            Available for Booking
-          </span>
-          <div className="bistro-metric-value" style={{ color: '#276732' }}>
-            {availableCount}
+        {/* Available for Booking */}
+        <div
+          className="bistro-card"
+          style={{
+            padding: '1.25rem 1.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            position: 'relative',
+            overflow: 'hidden',
+            border: '1px solid #cce8d0',
+            boxShadow: '0 4px 14px rgba(40, 30, 15, 0.04)',
+          }}
+        >
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '10px',
+              background: '#eef7ee',
+              border: '1px solid #bfe3c3',
+              color: '#1b6927',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+          <div>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#2e7d32', fontWeight: 600, display: 'block' }}>
+              Available Now
+            </span>
+            <div style={{ fontFamily: 'Georgia, serif', fontSize: '1.75rem', fontWeight: 700, color: '#1b6927', lineHeight: 1.15 }}>
+              {availableCount}
+            </div>
           </div>
         </div>
 
-        <div className="bistro-metric-card">
-          <span className="bistro-metric-label">
-            Currently Occupied
-          </span>
-          <div className="bistro-metric-value" style={{ color: '#8c6736' }}>
-            {occupiedCount}
+        {/* Currently Occupied */}
+        <div
+          className="bistro-card"
+          style={{
+            padding: '1.25rem 1.4rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            position: 'relative',
+            overflow: 'hidden',
+            border: '1px solid #f3d8b5',
+            boxShadow: '0 4px 14px rgba(40, 30, 15, 0.04)',
+          }}
+        >
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '10px',
+              background: '#fdf6ea',
+              border: '1px solid #f9dfb6',
+              color: '#b25e00',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div>
+            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#b25e00', fontWeight: 600, display: 'block' }}>
+              Currently Occupied
+            </span>
+            <div style={{ fontFamily: 'Georgia, serif', fontSize: '1.75rem', fontWeight: 700, color: '#b25e00', lineHeight: 1.15 }}>
+              {occupiedCount}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Table List / Data Card */}
-      <div className="bistro-card" style={{ padding: 0, overflow: 'hidden' }}>
-          {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: '#6b7280' }}>
+      {/* Dining Room Floor Seating Catalog Card */}
+      <div
+        className="bistro-card"
+        style={{
+          padding: 0,
+          overflow: 'hidden',
+          position: 'relative',
+          border: '1px solid #e8e0d0',
+          boxShadow: '0 6px 22px rgba(40, 30, 15, 0.06)',
+          borderRadius: '14px',
+        }}
+      >
+        {/* Luxury Gold Top Strip Accent */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+            zIndex: 1,
+          }}
+        />
+
+        {/* Integrated Toolbar / Header Bar */}
+        <div
+          style={{
+            padding: '1.25rem 1.5rem',
+            background: '#ffffff',
+            borderBottom: '1px solid #eee5d7',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '1rem',
+          }}
+        >
+          {/* Card Title and Count Pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <h2
+              style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '1.28rem',
+                fontWeight: 700,
+                color: 'var(--bistro-ink)',
+                margin: 0,
+              }}
+            >
+              Dining Room Floor Seating
+            </h2>
+            <span
+              style={{
+                display: 'inline-block',
+                padding: '0.2rem 0.65rem',
+                backgroundColor: '#f5eedf',
+                color: '#8c6736',
+                borderRadius: '9999px',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                border: '1px solid #ebdcc5',
+              }}
+            >
+              {filteredTables.length} {filteredTables.length === 1 ? 'Table' : 'Tables'}
+            </span>
+          </div>
+
+          {/* Integrated Filter Controls */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.65rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            {/* Search Input */}
+            <div style={{ position: 'relative', minWidth: '180px' }}>
               <svg
-                style={{
-                  animation: 'spin 1s linear infinite',
-                  width: '28px',
-                  height: '28px',
-                  margin: '0 auto 1rem',
-                  display: 'block',
-                  color: '#d4af37',
-                }}
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
+                stroke="#8c6736"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}
               >
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
-                <path
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                />
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
-              <p style={{ margin: 0, fontSize: '0.95rem' }}>Loading restaurant tables...</p>
-            </div>
-          ) : error ? (
-            <div style={{ padding: '2.5rem', textAlign: 'center' }}>
-              <p style={{ color: '#ef4444', fontSize: '0.95rem', marginBottom: '1rem' }}>
-                {error}
-              </p>
-              <button
-                type="button"
-                onClick={fetchTables}
-                className="bistro-button-outline"
-                style={{ padding: '0.65rem 1.25rem', fontSize: '0.88rem' }}
-              >
-                Retry
-              </button>
-            </div>
-          ) : tables.length === 0 ? (
-            <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center' }}>
-              <div
+              <input
+                type="text"
+                placeholder="Search table or section…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  background: '#fef3c7',
-                  color: '#d4af37',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 1rem',
+                  padding: '0.48rem 0.75rem 0.48rem 2.15rem',
+                  fontSize: '0.84rem',
+                  border: '1px solid #d9d0bf',
+                  borderRadius: '8px',
+                  backgroundColor: '#faf8f4',
+                  color: 'var(--bistro-ink)',
+                  outline: 'none',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+
+            {/* Location / Section Filter */}
+            {locations.length > 0 && (
+              <select
+                value={locationFilter}
+                onChange={(e) => setLocationFilter(e.target.value)}
+                style={{
+                  padding: '0.48rem 0.75rem',
+                  fontSize: '0.84rem',
+                  border: '1px solid #d9d0bf',
+                  borderRadius: '8px',
+                  backgroundColor: '#faf8f4',
+                  color: 'var(--bistro-ink)',
+                  outline: 'none',
+                  cursor: 'pointer',
                 }}
               >
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 18v3" />
-                  <path d="M20 18v3" />
-                  <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
-                  <path d="M2 11h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z" />
-                </svg>
-              </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: '#111827', marginBottom: '0.4rem' }}>
-                No tables configured yet
-              </h3>
-              <p style={{ color: '#6b7280', fontSize: '0.9rem', maxWidth: '400px', margin: '0 auto 1.5rem' }}>
-                Start configuring your dining room seating by clicking the "Add Table" button above.
-              </p>
+                <option value="ALL">All Sections</option>
+                {locations.map((loc) => (
+                  <option key={loc} value={loc}>{loc}</option>
+                ))}
+              </select>
+            )}
+
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                padding: '0.48rem 0.75rem',
+                fontSize: '0.84rem',
+                border: '1px solid #d9d0bf',
+                borderRadius: '8px',
+                backgroundColor: '#faf8f4',
+                color: 'var(--bistro-ink)',
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="Available">Available</option>
+              <option value="Occupied">Occupied</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+
+            {/* Reset Button */}
+            {isFilterActive && (
               <button
                 type="button"
-                onClick={() => setIsAddModalOpen(true)}
-                className="bistro-button-gold"
-                style={{ padding: '0.7rem 1.4rem', fontSize: '0.9rem' }}
+                onClick={handleResetFilters}
+                className="bistro-button-outline"
+                style={{
+                  padding: '0.46rem 0.75rem',
+                  fontSize: '0.82rem',
+                }}
               >
-                Add Your First Table
+                Reset
               </button>
+            )}
+          </div>
+        </div>
+
+        {/* Table Body Content */}
+        {loading ? (
+          <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center', color: '#7c7267' }}>
+            <svg
+              style={{
+                animation: 'spin 1s linear infinite',
+                width: '32px',
+                height: '32px',
+                margin: '0 auto 1rem',
+                display: 'block',
+                color: '#c5a059',
+              }}
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
+              <path
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <p style={{ margin: 0, fontSize: '0.94rem', fontFamily: 'Georgia, serif' }}>Loading restaurant tables...</p>
+          </div>
+        ) : error ? (
+          <div style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>
+            <p style={{ color: '#ef4444', fontSize: '0.95rem', marginBottom: '1.25rem' }}>
+              {error}
+            </p>
+            <button
+              type="button"
+              onClick={fetchTables}
+              className="bistro-button-outline"
+              style={{ padding: '0.65rem 1.25rem', fontSize: '0.88rem' }}
+            >
+              Retry
+            </button>
+          </div>
+        ) : tables.length === 0 ? (
+          <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center' }}>
+            <div
+              style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                background: '#faf4eb',
+                color: '#c5a059',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 1.25rem',
+                border: '1px solid #e8dec8',
+              }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 18v3" />
+                <path d="M20 18v3" />
+                <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
+                <path d="M2 11h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z" />
+              </svg>
             </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                <thead>
-                  <tr style={{ background: '#eee8dc', borderBottom: '1px solid #dfd8cb' }}>
-                    <th style={{ padding: '0.9rem 1.25rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
-                      Table
-                    </th>
-                    <th style={{ padding: '0.9rem 1.25rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
-                      Capacity
-                    </th>
-                    <th style={{ padding: '0.9rem 1.25rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
-                      Location / Section
-                    </th>
-                    <th style={{ padding: '0.9rem 1.25rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
-                      Status
-                    </th>
-                    <th style={{ padding: '0.9rem 1.25rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', textAlign: 'right' }}>
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tables.map((tbl, idx) => {
-                    const isOccupied = tbl.status === 'Occupied';
-                    const isAvailable = tbl.status === 'Available' || (!tbl.status && tbl.isActive === true);
-                    return (
-                      <tr
-                        key={tbl.id || tbl.tableNumber || idx}
-                        style={{
-                          borderBottom: idx === tables.length - 1 ? 'none' : '1px solid #eee5d7',
-                          transition: 'background-color 0.15s ease',
-                        }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fbf6ec')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                      >
-                        <td style={{ padding: '1rem 1.25rem', fontWeight: '600', color: 'var(--bistro-ink)', fontSize: '0.92rem' }}>
+            <h3 style={{ fontFamily: 'Georgia, serif', fontSize: '1.2rem', fontWeight: '700', color: 'var(--bistro-ink)', marginBottom: '0.4rem' }}>
+              No tables configured yet
+            </h3>
+            <p style={{ color: '#7c7267', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+              Start configuring your dining room seating by clicking the "Add Table" button above.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="bistro-button-gold"
+              style={{ padding: '0.7rem 1.5rem', fontSize: '0.9rem' }}
+            >
+              Add Your First Table
+            </button>
+          </div>
+        ) : filteredTables.length === 0 ? (
+          <div style={{ padding: '3.5rem 1.5rem', textAlign: 'center' }}>
+            <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--bistro-ink)', margin: '0 0 0.5rem' }}>
+              No tables match your search or filter criteria.
+            </p>
+            <p style={{ color: '#7c7267', fontSize: '0.88rem', margin: '0 0 1.25rem' }}>
+              Try clearing your search query or selecting a different status filter.
+            </p>
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="bistro-button-outline"
+              style={{ padding: '0.55rem 1.25rem', fontSize: '0.86rem' }}
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: '#f5efe6', borderBottom: '1px solid #dfd8cb' }}>
+                  <th style={{ padding: '0.95rem 1.35rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
+                    Table
+                  </th>
+                  <th style={{ padding: '0.95rem 1.35rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
+                    Seating Capacity
+                  </th>
+                  <th style={{ padding: '0.95rem 1.35rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
+                    Floor Location / Section
+                  </th>
+                  <th style={{ padding: '0.95rem 1.35rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
+                    Real-Time Status
+                  </th>
+                  <th style={{ padding: '0.95rem 1.35rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', textAlign: 'right' }}>
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTables.map((tbl, idx) => {
+                  const isOccupied = tbl.status === 'Occupied';
+                  const isAvailable = tbl.status === 'Available' || (!tbl.status && tbl.isActive === true);
+                  const isAlreadyInactive = tbl.status === 'Inactive' || tbl.isActive === false;
+                  const isDeactivateDisabled = isOccupied || isAlreadyInactive;
+
+                  return (
+                    <tr
+                      key={tbl.id || tbl.tableNumber || idx}
+                      style={{
+                        borderBottom: idx === filteredTables.length - 1 ? 'none' : '1px solid #eee5d7',
+                        transition: 'background-color 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fbf8f2')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                    >
+                      {/* Table Identifier Badge */}
+                      <td style={{ padding: '1.05rem 1.35rem', fontWeight: '600', color: 'var(--bistro-ink)', fontSize: '0.92rem' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.45rem',
+                            padding: '0.3rem 0.75rem',
+                            background: '#f8f4ec',
+                            borderRadius: '8px',
+                            fontFamily: 'Georgia, serif',
+                            fontSize: '0.95rem',
+                            fontWeight: '700',
+                            color: '#6b532f',
+                            border: '1px solid #dfd5c4',
+                            boxShadow: '0 1px 3px rgba(40, 30, 15, 0.04)',
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 18v3" />
+                            <path d="M20 18v3" />
+                            <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
+                            <path d="M2 11h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z" />
+                          </svg>
+                          {tbl.tableNumber}
+                        </span>
+                      </td>
+
+                      {/* Seating Capacity */}
+                      <td style={{ padding: '1.05rem 1.35rem', fontSize: '0.92rem', color: '#374151' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8c6736" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                          </svg>
+                          <strong style={{ fontFamily: 'Georgia, serif', fontSize: '1rem', color: 'var(--bistro-ink)' }}>{tbl.capacity}</strong>
+                          <span style={{ color: '#7c7267', fontSize: '0.85rem' }}>Guests</span>
+                        </span>
+                      </td>
+
+                      {/* Floor Location / Section */}
+                      <td style={{ padding: '1.05rem 1.35rem' }}>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            padding: '0.25rem 0.65rem',
+                            backgroundColor: '#faf6ee',
+                            borderRadius: '6px',
+                            border: '1px solid #e8e0d0',
+                            fontSize: '0.86rem',
+                            fontWeight: '500',
+                            color: '#4a3f35',
+                          }}
+                        >
+                          {tbl.location}
+                        </span>
+                      </td>
+
+                      {/* Real-Time Status */}
+                      <td style={{ padding: '1.05rem 1.35rem' }}>
+                        {isOccupied ? (
                           <span
                             style={{
-                              display: 'inline-block',
-                              padding: '0.2rem 0.6rem',
-                              background: '#eee3cf',
-                              borderRadius: '6px',
-                              fontFamily: 'Georgia, serif',
-                              fontSize: '0.92rem',
-                              fontWeight: '700',
-                              color: '#6b532f',
-                              border: '1px solid #dcd1be',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.45rem',
+                              padding: '0.28rem 0.75rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.8rem',
+                              fontWeight: '600',
+                              backgroundColor: '#fdf6ea',
+                              color: '#b25e00',
+                              border: '1px solid #f9dfb6',
                             }}
                           >
-                            {tbl.tableNumber}
+                            <span
+                              style={{
+                                width: '7px',
+                                height: '7px',
+                                borderRadius: '50%',
+                                backgroundColor: '#d97706',
+                                boxShadow: '0 0 0 3px rgba(217, 119, 6, 0.2)',
+                              }}
+                            />
+                            Occupied
                           </span>
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem', fontSize: '0.92rem', color: '#374151' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d4af37" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                              <circle cx="9" cy="7" r="4" />
-                            </svg>
-                            <strong>{tbl.capacity}</strong> seats
+                        ) : isAvailable ? (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.45rem',
+                              padding: '0.28rem 0.75rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.8rem',
+                              fontWeight: '600',
+                              backgroundColor: '#eef7ee',
+                              color: '#1b6927',
+                              border: '1px solid #bfe3c3',
+                            }}
+                          >
+                            <span
+                              style={{
+                                width: '7px',
+                                height: '7px',
+                                borderRadius: '50%',
+                                backgroundColor: '#2e7d32',
+                                boxShadow: '0 0 0 3px rgba(46, 125, 50, 0.2)',
+                              }}
+                            />
+                            Available
                           </span>
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem', fontSize: '0.92rem', color: '#4b5563' }}>
-                          {tbl.location}
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem' }}>
-                          {isOccupied ? (
+                        ) : (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.45rem',
+                              padding: '0.28rem 0.75rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.8rem',
+                              fontWeight: '600',
+                              backgroundColor: '#f3f4f6',
+                              color: '#6b7280',
+                              border: '1px solid #e5e7eb',
+                            }}
+                          >
                             <span
                               style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.35rem',
-                                padding: '0.25rem 0.65rem',
-                                borderRadius: '9999px',
-                                fontSize: '0.78rem',
-                                fontWeight: '600',
-                                backgroundColor: '#fffbeb',
-                                color: '#b45309',
-                                border: '1px solid #fcd34d',
+                                width: '7px',
+                                height: '7px',
+                                borderRadius: '50%',
+                                backgroundColor: '#9ca3af',
                               }}
-                            >
-                              <span
-                                style={{
-                                  width: '6px',
-                                  height: '6px',
-                                  borderRadius: '50%',
-                                  backgroundColor: '#f59e0b',
-                                }}
-                              />
-                              Occupied
-                            </span>
-                          ) : isAvailable ? (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.35rem',
-                                padding: '0.25rem 0.65rem',
-                                borderRadius: '9999px',
-                                fontSize: '0.78rem',
-                                fontWeight: '600',
-                                backgroundColor: '#ecfdf5',
-                                color: '#065f46',
-                                border: '1px solid #a7f3d0',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  width: '6px',
-                                  height: '6px',
-                                  borderRadius: '50%',
-                                  backgroundColor: '#10b981',
-                                }}
-                              />
-                              Available
-                            </span>
-                          ) : (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.35rem',
-                                padding: '0.25rem 0.65rem',
-                                borderRadius: '9999px',
-                                fontSize: '0.78rem',
-                                fontWeight: '600',
-                                backgroundColor: '#f3f4f6',
-                                color: '#6b7280',
-                                border: '1px solid #e5e7eb',
-                              }}
-                            >
-                              <span
-                                style={{
-                                  width: '6px',
-                                  height: '6px',
-                                  borderRadius: '50%',
-                                  backgroundColor: '#9ca3af',
-                                }}
-                              />
-                              Inactive
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ padding: '1rem 1.25rem', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center' }}>
-                            {isOccupied && (
-                              <button
-                                type="button"
-                                onClick={() => handleMakeAvailable(tbl)}
-                                className="bistro-button-outline"
-                                title={`Release table ${tbl.tableNumber} and set status to Available`}
-                                style={{
-                                  padding: '0.42rem 0.75rem',
-                                  fontSize: '0.82rem',
-                                  color: '#065f46',
-                                  borderColor: '#6ee7b7',
-                                  backgroundColor: '#ecfdf5',
-                                  fontWeight: '600',
-                                  gap: '0.35rem',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="20 6 9 17 4 12" />
-                                </svg>
-                                Make Available
-                              </button>
-                            )}
+                            />
+                            Inactive
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ padding: '1.05rem 1.35rem', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'flex-end' }}>
+                          {isOccupied && (
                             <button
                               type="button"
-                              onClick={() => handleOpenEditModal(tbl)}
+                              onClick={() => handleMakeAvailable(tbl)}
                               className="bistro-button-outline"
-                              title={isOccupied ? `Table ${tbl.tableNumber} is occupied. View or release to edit.` : `Edit table ${tbl.tableNumber}`}
+                              title={`Release table ${tbl.tableNumber} and set status to Available`}
                               style={{
                                 padding: '0.42rem 0.75rem',
                                 fontSize: '0.82rem',
+                                color: '#065f46',
+                                borderColor: '#a7f3d0',
+                                backgroundColor: '#ecfdf5',
+                                fontWeight: '600',
                                 gap: '0.35rem',
                                 display: 'inline-flex',
                                 alignItems: 'center',
+                                borderRadius: '6px',
                               }}
                             >
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
                               </svg>
-                              Edit
+                              Make Available
                             </button>
-                            {(() => {
-                              const isAlreadyInactive = tbl.status === 'Inactive' || tbl.isActive === false;
-                              const isDeactivateDisabled = isOccupied || isAlreadyInactive;
-                              return (
-                                <button
-                                  type="button"
-                                  onClick={() => !isDeactivateDisabled && handleOpenDeactivateModal(tbl)}
-                                  disabled={isDeactivateDisabled}
-                                  className="bistro-button-outline"
-                                  title={
-                                    isOccupied
-                                      ? `Table ${tbl.tableNumber} is occupied and cannot be deactivated until made available`
-                                      : isAlreadyInactive
-                                      ? `Table ${tbl.tableNumber} is already inactive`
-                                      : `Deactivate table ${tbl.tableNumber}`
-                                  }
-                                  style={{
-                                    padding: '0.42rem 0.75rem',
-                                    fontSize: '0.82rem',
-                                    color: isDeactivateDisabled ? '#9ca3af' : '#b45309',
-                                    borderColor: isDeactivateDisabled ? '#e5e7eb' : '#fcd34d',
-                                    backgroundColor: isDeactivateDisabled ? '#f9fafb' : '#fffbeb',
-                                    cursor: isDeactivateDisabled ? 'not-allowed' : 'pointer',
-                                    opacity: isDeactivateDisabled ? 0.6 : 1,
-                                    gap: '0.35rem',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                  }}
-                                >
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isDeactivateDisabled ? '#9ca3af' : '#b45309'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                                  </svg>
-                                  Deactivate
-                                </button>
-                              );
-                            })()}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(tbl)}
+                            className="bistro-button-outline"
+                            title={isOccupied ? `Table ${tbl.tableNumber} is occupied. View or release to edit.` : `Edit table ${tbl.tableNumber}`}
+                            style={{
+                              padding: '0.42rem 0.75rem',
+                              fontSize: '0.82rem',
+                              gap: '0.35rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              borderRadius: '6px',
+                            }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                            </svg>
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => !isDeactivateDisabled && handleOpenDeactivateModal(tbl)}
+                            disabled={isDeactivateDisabled}
+                            className="bistro-button-outline"
+                            title={
+                              isOccupied
+                                ? `Table ${tbl.tableNumber} is occupied and cannot be deactivated until made available`
+                                : isAlreadyInactive
+                                ? `Table ${tbl.tableNumber} is already inactive`
+                                : `Deactivate table ${tbl.tableNumber}`
+                            }
+                            style={{
+                              padding: '0.42rem 0.75rem',
+                              fontSize: '0.82rem',
+                              color: isDeactivateDisabled ? '#9ca3af' : '#b45309',
+                              borderColor: isDeactivateDisabled ? '#e5e7eb' : '#fcd34d',
+                              backgroundColor: isDeactivateDisabled ? '#f9fafb' : '#fffbeb',
+                              cursor: isDeactivateDisabled ? 'not-allowed' : 'pointer',
+                              opacity: isDeactivateDisabled ? 0.6 : 1,
+                              gap: '0.35rem',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              borderRadius: '6px',
+                            }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isDeactivateDisabled ? '#9ca3af' : '#b45309'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10" />
+                              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                            </svg>
+                            Deactivate
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Add Table Modal */}
       <AddTableModal
@@ -631,10 +1044,22 @@ export default function AdminDashboardPage() {
               width: '100%',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
               textAlign: 'center',
-              border: '1px solid #e5e7eb',
+              border: '1px solid #e8e0d0',
               animation: 'modalPopupReveal 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+              }}
+            />
             <div
               style={{
                 width: '52px',
@@ -763,10 +1188,22 @@ export default function AdminDashboardPage() {
               width: '100%',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
               textAlign: 'center',
-              border: '1px solid #e5e7eb',
+              border: '1px solid #e8e0d0',
               animation: 'modalPopupReveal 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+              }}
+            />
             <div
               style={{
                 width: '52px',
