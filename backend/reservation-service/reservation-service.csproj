@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -8,6 +8,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Suppress missing-XML-comment warnings for members that have no docs intentionally. -->
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <UserSecretsId>025600e8-3768-411b-b2bc-b32256e67f98</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

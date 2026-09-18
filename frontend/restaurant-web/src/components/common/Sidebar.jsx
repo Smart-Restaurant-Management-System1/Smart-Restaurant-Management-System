@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -16,15 +17,75 @@ export default function Sidebar({
   const isKitchen = user?.roles?.includes(ROLES.KITCHEN_STAFF);
 
   const isActive = (path) => {
-    if (path === '/portal' && location.pathname === '/portal') return true;
-    if (path === '/admin' && (location.pathname === '/admin' || location.pathname === '/admin/tables' || (isAdmin && location.pathname === '/tables'))) return true;
-    if (path === '/kitchen' && location.pathname === '/kitchen') return true;
-    if (path === '/availability' && (location.pathname === '/availability' || location.pathname === '/reservations/new' || location.pathname === '/reservations/confirmation')) return true;
-    if (path === '/reservations/history' && (location.pathname === '/reservations/history' || location.pathname.startsWith('/reservations/'))) return true;
-    if (path === '/admin/reservations' && location.pathname === '/admin/reservations') return true;
-    if (path === '/admin/reports/reservations' && location.pathname === '/admin/reports/reservations') return true;
-    if (path === '/tables' && location.pathname === '/tables') return true;
-    if (path === '/profile' && location.pathname === '/profile') return true;
+    if (path === '/portal' && location.pathname === '/portal') {
+      return true;
+    }
+
+    if (
+      path === '/admin' &&
+      (
+        location.pathname === '/admin' ||
+        location.pathname === '/admin/tables' ||
+        (isAdmin && location.pathname === '/tables')
+      )
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/admin/menu' &&
+      location.pathname.startsWith('/admin/menu')
+    ) {
+      return true;
+    }
+
+    if (path === '/kitchen' && location.pathname === '/kitchen') {
+      return true;
+    }
+
+    if (
+      path === '/availability' &&
+      (
+        location.pathname === '/availability' ||
+        location.pathname === '/reservations/new' ||
+        location.pathname === '/reservations/confirmation'
+      )
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/reservations/history' &&
+      (
+        location.pathname === '/reservations/history' ||
+        location.pathname.startsWith('/reservations/')
+      )
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/admin/reservations' &&
+      location.pathname === '/admin/reservations'
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/admin/reports/reservations' &&
+      location.pathname === '/admin/reports/reservations'
+    ) {
+      return true;
+    }
+
+    if (path === '/tables' && location.pathname === '/tables') {
+      return true;
+    }
+
+    if (path === '/profile' && location.pathname === '/profile') {
+      return true;
+    }
+
     return false;
   };
 
@@ -113,6 +174,20 @@ export default function Sidebar({
       ),
     },
     {
+      to: '/admin/menu',
+      label: 'Menu Management',
+      icon: (
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 3v18" />
+          <path d="M8 3v7a2 2 0 0 1-4 0V3" />
+          <path d="M6 10v11" />
+          <path d="M14 3v18" />
+          <path d="M14 3c4 2 4 6 0 8" />
+          <path d="M18 3v18" />
+        </svg>
+      ),
+    },
+    {
       to: '/admin/reservations',
       label: 'Manage Bookings',
       icon: (
@@ -183,18 +258,43 @@ export default function Sidebar({
     },
   ];
 
-  const navItems = isAdmin ? adminNavItems : isKitchen ? kitchenNavItems : customerNavItems;
+  const navItems = isAdmin
+    ? adminNavItems
+    : isKitchen
+      ? kitchenNavItems
+      : customerNavItems;
+
   const brandTarget = isKitchen ? '/kitchen' : '/portal';
-  const sectionLabel = isAdmin ? 'Admin Management' : isKitchen ? 'Kitchen Services' : 'Dining Services';
+
+  const sectionLabel = isAdmin
+    ? 'Admin Management'
+    : isKitchen
+      ? 'Kitchen Services'
+      : 'Dining Services';
 
   return (
-    <aside className={`app-sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}>
-      {/* Brand Header */}
-      <Link to={brandTarget} className="sidebar-brand" onClick={onCloseMobile}>
+    <aside
+      className={`app-sidebar ${
+        isCollapsed ? 'collapsed' : ''
+      } ${isMobileOpen ? 'mobile-open' : ''}`}
+    >
+      <Link
+        to={brandTarget}
+        className="sidebar-brand"
+        onClick={onCloseMobile}
+      >
         {isCollapsed ? (
-          <div className="sidebar-brand-icon" title="Cinnamon Bistro">CB</div>
+          <div className="sidebar-brand-icon" title="Cinnamon Bistro">
+            CB
+          </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
             <img
               src="/brand-logo.png"
               alt="Cinnamon Bistro"
@@ -204,7 +304,6 @@ export default function Sidebar({
         )}
       </Link>
 
-      {/* Navigation Section */}
       <div className="sidebar-section-title">
         {isCollapsed ? '•••' : sectionLabel}
       </div>
@@ -214,17 +313,23 @@ export default function Sidebar({
           <Link
             key={item.to}
             to={item.to}
-            className={`sidebar-nav-link ${isActive(item.to) ? 'active' : ''}`}
+            className={`sidebar-nav-link ${
+              isActive(item.to) ? 'active' : ''
+            }`}
             onClick={onCloseMobile}
             title={item.label}
           >
-            <span className="sidebar-nav-icon">{item.icon}</span>
-            <span className="sidebar-nav-label">{item.label}</span>
+            <span className="sidebar-nav-icon">
+              {item.icon}
+            </span>
+
+            <span className="sidebar-nav-label">
+              {item.label}
+            </span>
           </Link>
         ))}
       </nav>
 
-      {/* Public Site Link & Collapse Toggle */}
       <div className="sidebar-footer">
         <Link
           to="/"
@@ -234,12 +339,24 @@ export default function Sidebar({
           title="Back to Landing Page"
         >
           <span className="sidebar-nav-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </span>
-          <span className="sidebar-nav-label">Public Website</span>
+
+          <span className="sidebar-nav-label">
+            Public Website
+          </span>
         </Link>
 
         <button
@@ -257,15 +374,20 @@ export default function Sidebar({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            style={{ transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}
+            style={{
+              transform: isCollapsed
+                ? 'rotate(180deg)'
+                : 'rotate(0deg)',
+              transition: 'transform 0.3s ease',
+            }}
           >
             <polyline points="11 17 6 12 11 7" />
             <polyline points="18 17 13 12 18 7" />
           </svg>
+
           {!isCollapsed && <span>Collapse Menu</span>}
         </button>
       </div>
     </aside>
   );
 }
-

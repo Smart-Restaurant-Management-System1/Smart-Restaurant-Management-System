@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -55,7 +55,7 @@ public sealed class OutboxPublisherService(
             }
             catch (Exception ex)
             {
-                // Database or unexpected failure — wait before retrying.
+                // Database or unexpected failure â€” wait before retrying.
                 logger.LogError(ex, "OutboxPublisher {InstanceId} unexpected error in poll loop. Waiting {Delay}s.",
                     _instanceId, _options.PollIntervalSeconds);
             }
@@ -107,7 +107,7 @@ public sealed class OutboxPublisherService(
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            // Service stopping — do not record as failure; lease will expire and recover.
+            // Service stopping â€” do not record as failure; lease will expire and recover.
             logger.LogInformation("OutboxPublisher stopping during publish of EventId={EventId}.", outboxEvent.EventId);
         }
         catch (Exception ex)
@@ -132,7 +132,7 @@ public sealed class OutboxPublisherService(
     }
 
     /// <summary>
-    /// Bounded exponential backoff: delay = min(maxDelay, initialDelay × 2^(attempt-1)).
+    /// Bounded exponential backoff: delay = min(maxDelay, initialDelay Ã— 2^(attempt-1)).
     /// Guards against overflow by capping before exponentiation.
     /// </summary>
     internal DateTime CalculateNextAttempt(int attemptCount)
@@ -144,3 +144,4 @@ public sealed class OutboxPublisherService(
         return DateTime.UtcNow.AddSeconds(delaySecs);
     }
 }
+

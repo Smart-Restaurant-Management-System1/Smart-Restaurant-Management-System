@@ -1,22 +1,29 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+
 import LoginPage from '../pages/customer/LoginPage';
 import RegisterPage from '../pages/customer/RegisterPage';
 import CustomerPortalPage from '../pages/customer/CustomerPortalPage';
 import ProfilePage from '../pages/customer/ProfilePage';
+
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminReservationsPage from '../pages/admin/AdminReservationsPage';
 import ReservationReportsPage from '../pages/admin/ReservationReportsPage';
+import MenuManagementPage from '../pages/admin/MenuManagementPage';
+
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
 import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
+
 import AvailabilitySearchPage from '../pages/availability/AvailabilitySearchPage';
 import ReservationReviewPage from '../pages/availability/ReservationReviewPage';
 import ReservationConfirmationPage from '../pages/availability/ReservationConfirmationPage';
 import ReservationHistoryPage from '../pages/availability/ReservationHistoryPage';
 import ReservationDetailPage from '../pages/availability/ReservationDetailPage';
 import ReservationReschedulePage from '../pages/availability/ReservationReschedulePage';
+
 import UnauthorizedPage from '../pages/common/UnauthorizedPage';
 import LandingPage from '../pages/common/LandingPage';
+
 import ProtectedRoute from './ProtectedRoute';
 import AppLayout from '../components/common/AppLayout';
 import { ROLES, ALL_ROLES } from './roles';
@@ -27,8 +34,15 @@ export default function AppRoutes() {
 
   const getDefaultRedirect = () => {
     if (!isAuthenticated) return '/login';
-    if (user?.roles?.includes(ROLES.ADMIN)) return '/admin';
-    if (user?.roles?.includes(ROLES.KITCHEN_STAFF)) return '/kitchen';
+
+    if (user?.roles?.includes(ROLES.ADMIN)) {
+      return '/admin';
+    }
+
+    if (user?.roles?.includes(ROLES.KITCHEN_STAFF)) {
+      return '/kitchen';
+    }
+
     return '/portal';
   };
 
@@ -36,11 +50,35 @@ export default function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to={getDefaultRedirect()} replace />} />
-      <Route path="/register" element={!isAuthenticated ? <RegisterPage /> : <Navigate to={getDefaultRedirect()} replace />} />
-      <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-      {/* Shared Authenticated Profile Route (All Roles: Customer, KitchenStaff, Admin) */}
+      <Route
+        path="/login"
+        element={
+          !isAuthenticated ? (
+            <LoginPage />
+          ) : (
+            <Navigate to={getDefaultRedirect()} replace />
+          )
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          !isAuthenticated ? (
+            <RegisterPage />
+          ) : (
+            <Navigate to={getDefaultRedirect()} replace />
+          )
+        }
+      />
+
+      <Route
+        path="/unauthorized"
+        element={<UnauthorizedPage />}
+      />
+
+      {/* Shared Authenticated Profile Route */}
       <Route
         element={
           <ProtectedRoute allowedRoles={ALL_ROLES}>
@@ -48,25 +86,43 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route
+          path="/profile"
+          element={<ProfilePage />}
+        />
       </Route>
 
-      {/* Customer & Admin Shared Protected Routes */}
+      {/* Customer and Admin Shared Protected Routes */}
       <Route
         element={
-          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}>
+          <ProtectedRoute
+            allowedRoles={[ROLES.CUSTOMER, ROLES.ADMIN]}
+          >
             <AppLayout />
           </ProtectedRoute>
         }
       >
-        <Route path="/portal" element={<CustomerPortalPage />} />
-        <Route path="/availability" element={<AvailabilitySearchPage />} />
+        <Route
+          path="/portal"
+          element={<CustomerPortalPage />}
+        />
+
+        <Route
+          path="/availability"
+          element={<AvailabilitySearchPage />}
+        />
       </Route>
 
-      {/* Tables Route (Customer & Kitchen view, or Admin redirect) */}
+      {/* Tables Route */}
       <Route
         element={
-          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER, ROLES.KITCHEN_STAFF, ROLES.ADMIN]}>
+          <ProtectedRoute
+            allowedRoles={[
+              ROLES.CUSTOMER,
+              ROLES.KITCHEN_STAFF,
+              ROLES.ADMIN,
+            ]}
+          >
             <AppLayout />
           </ProtectedRoute>
         }
@@ -86,45 +142,102 @@ export default function AppRoutes() {
       {/* Customer-only Reservation Routes */}
       <Route
         element={
-          <ProtectedRoute allowedRoles={[ROLES.CUSTOMER]}>
+          <ProtectedRoute
+            allowedRoles={[ROLES.CUSTOMER]}
+          >
             <AppLayout />
           </ProtectedRoute>
         }
       >
-        <Route path="/reservations/new" element={<ReservationReviewPage />} />
-        <Route path="/reservations/confirmation" element={<ReservationConfirmationPage />} />
-        <Route path="/reservations/history" element={<ReservationHistoryPage />} />
-        <Route path="/reservations/:reservationId" element={<ReservationDetailPage />} />
-        <Route path="/reservations/reschedule" element={<ReservationReschedulePage />} />
+        <Route
+          path="/reservations/new"
+          element={<ReservationReviewPage />}
+        />
+
+        <Route
+          path="/reservations/confirmation"
+          element={<ReservationConfirmationPage />}
+        />
+
+        <Route
+          path="/reservations/history"
+          element={<ReservationHistoryPage />}
+        />
+
+        <Route
+          path="/reservations/:reservationId"
+          element={<ReservationDetailPage />}
+        />
+
+        <Route
+          path="/reservations/reschedule"
+          element={<ReservationReschedulePage />}
+        />
       </Route>
 
       {/* Admin Protected Routes */}
       <Route
         element={
-          <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
+          <ProtectedRoute
+            allowedRoles={[ROLES.ADMIN]}
+          >
             <AppLayout />
           </ProtectedRoute>
         }
       >
-        <Route path="/admin" element={<AdminDashboardPage />} />
-        <Route path="/admin/tables" element={<Navigate to="/admin" replace />} />
-        <Route path="/admin/reservations" element={<AdminReservationsPage />} />
-        <Route path="/admin/reports/reservations" element={<ReservationReportsPage />} />
+        {/* Admin Dashboard */}
+        <Route
+          path="/admin"
+          element={<AdminDashboardPage />}
+        />
+
+        {/* Menu Management - SR-130 */}
+        <Route
+          path="/admin/menu"
+          element={<MenuManagementPage />}
+        />
+
+        {/* Existing Admin Routes */}
+        <Route
+          path="/admin/tables"
+          element={<Navigate to="/admin" replace />}
+        />
+
+        <Route
+          path="/admin/reservations"
+          element={<AdminReservationsPage />}
+        />
+
+        <Route
+          path="/admin/reports/reservations"
+          element={<ReservationReportsPage />}
+        />
       </Route>
 
       {/* Kitchen Staff Protected Routes */}
       <Route
         element={
-          <ProtectedRoute allowedRoles={[ROLES.KITCHEN_STAFF, ROLES.ADMIN]}>
+          <ProtectedRoute
+            allowedRoles={[
+              ROLES.KITCHEN_STAFF,
+              ROLES.ADMIN,
+            ]}
+          >
             <AppLayout />
           </ProtectedRoute>
         }
       >
-        <Route path="/kitchen" element={<KitchenQueuePage />} />
+        <Route
+          path="/kitchen"
+          element={<KitchenQueuePage />}
+        />
       </Route>
 
-      {/* Catch-all fallback: redirect unmatched URLs to Public Landing Page */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* Catch-all Fallback */}
+      <Route
+        path="*"
+        element={<Navigate to="/" replace />}
+      />
     </Routes>
   );
 }

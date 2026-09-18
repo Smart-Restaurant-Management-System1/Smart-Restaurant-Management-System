@@ -1196,3 +1196,556 @@ body {
 .reservation-status { display: inline-block; padding: .3rem .65rem; border-radius: 999px; font-size: .78rem; font-weight: 700; }.reservation-status-pending { background: #fef3c7; color: #92400e; }.reservation-status-confirmed { background: #dcfce7; color: #166534; }.reservation-status-cancelled { background: #fee2e2; color: #991b1b; }.reservation-status-completed { background: #e5e7eb; color: #374151; }.reservation-cancel { margin-top: 1rem; border: 1px solid #dc2626; background: #fff; color: #b91c1c; padding: .55rem .8rem; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }.reservation-cancel:disabled { opacity: .65; cursor: wait; }.reservation-history-empty { color: #6b7280; }.reservation-pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 2rem 0; }.reservation-pagination .btn-jelly-secondary { padding: .55rem 1rem; }.admin-reservation-filters select { min-width: 0; padding: .65rem; border: 1px solid #9ca3af; border-radius: 8px; font: inherit; background: #fff; }.admin-reservation-filters .btn-jelly-secondary { margin-left: .75rem; }.admin-reservation-list { display: grid; gap: 1rem; margin-top: 1.5rem; }.admin-reservation-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }.admin-reservation-actions button { border: 1px solid #9e7d20; border-radius: 7px; background: #fff; color: #6b4f0b; font: inherit; font-weight: 700; padding: .45rem .7rem; cursor: pointer; }.admin-reservation-actions button:disabled { opacity: .65; cursor: wait; }
 @media (max-width: 720px) { .availability-fields { grid-template-columns: 1fr; } }
 
+.menu-table-heading {
+  padding: 0.9rem 1.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #443a2d;
+}
+
+.menu-table-cell {
+  padding: 1rem 1.25rem;
+  font-size: 0.92rem;
+  color: #374151;
+}
+/* ========================================================
+   SR-130 Menu Management
+   ======================================================== */
+
+.page-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: #111827;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.page-header-content {
+  flex: 1;
+}
+
+.page-header-title {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  font-weight: 700;
+}
+
+.page-header-subtitle {
+  margin: 0.5rem 0 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Buttons */
+
+.primary-button,
+.secondary-button,
+.small-button {
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.primary-button {
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, #f7e096, #d4af37);
+  color: #111827;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
+}
+
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(212, 175, 55, 0.4);
+}
+
+.secondary-button {
+  padding: 0.7rem 1.1rem;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.secondary-button:hover {
+  background: #f3f4f6;
+}
+
+.small-button {
+  padding: 0.45rem 0.75rem;
+  background: #fdf6dc;
+  color: #806315;
+  border: 1px solid #d4af37;
+  font-size: 0.8rem;
+}
+
+.small-button:hover {
+  background: #f5e5a8;
+}
+
+/* Metrics */
+
+.menu-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.menu-metric-card {
+  padding: 1.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.06);
+}
+
+.menu-metric-label {
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.menu-metric-value {
+  margin-top: 0.4rem;
+  color: #111827;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+/* Messages */
+
+.success-message,
+.error-message {
+  margin-bottom: 1.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.success-message {
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+
+.error-message {
+  color: #991b1b;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+}
+
+/* Form */
+
+.menu-form-card,
+.menu-filter-card,
+.menu-table-card {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(17, 24, 39, 0.06);
+}
+
+.menu-form-header,
+.menu-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.menu-form-header h2,
+.menu-table-header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.25rem;
+}
+
+.menu-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.menu-form-full-width {
+  grid-column: 1 / -1;
+}
+
+.menu-form-card .form-group {
+  margin-bottom: 0.75rem;
+}
+
+.menu-form-card .form-group label,
+.menu-filter-card label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.menu-form-card input,
+.menu-form-card textarea,
+.menu-form-card select,
+.menu-filter-card input,
+.menu-filter-card select {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111827;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.menu-form-card input:focus,
+.menu-form-card textarea:focus,
+.menu-form-card select:focus,
+.menu-filter-card input:focus,
+.menu-filter-card select:focus {
+  border-color: #d4af37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18);
+}
+
+.menu-form-card textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.menu-checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+  cursor: pointer;
+}
+
+.menu-checkbox-label input {
+  width: auto;
+  accent-color: #d4af37;
+}
+
+.menu-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* Filters */
+
+.menu-filter-card {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 1rem;
+  align-items: end;
+}
+
+.menu-filter-card .form-group {
+  margin: 0;
+}
+
+/* Table */
+
+.menu-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.menu-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 850px;
+}
+
+.menu-table thead {
+  background: #f9fafb;
+}
+
+.menu-table th {
+  padding: 0.9rem 1.25rem;
+  color: #443a2d;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.menu-table td {
+  padding: 1rem 1.25rem;
+  color: #374151;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.menu-table tbody tr:hover {
+  background: #fffdf5;
+}
+
+.menu-item-description {
+  max-width: 260px;
+  color: #6b7280;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.menu-status {
+  display: inline-block;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.menu-status.available {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.menu-status.unavailable {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.menu-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.menu-empty-state {
+  padding: 2rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* Responsive Design */
+
+@media (max-width: 900px) {
+  .menu-metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .menu-filter-card {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .page-header-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 650px) {
+  .page-container {
+    padding: 1rem;
+  }
+
+  .menu-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-form-full-width {
+    grid-column: auto;
+  }
+
+  .menu-form-actions {
+    flex-direction: column;
+  }
+
+  .menu-form-actions button {
+    width: 100%;
+  }
+}
+
+
+/* External menu image styles */
+
+.menu-item-image,
+.menu-image-placeholder {
+  width: 76px;
+  height: 76px;
+  border-radius: 12px;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.menu-item-image {
+  background: #f4f4f4;
+}
+
+.menu-image-placeholder {
+  background: #eeeeee;
+  color: #777777;
+  border: 1px solid #dddddd;
+  gap: 4px;
+}
+
+.menu-image-placeholder span {
+  font-size: 24px;
+}
+
+.menu-image-placeholder small {
+  font-size: 10px;
+}
+
+.menu-image-preview-container {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #dddddd;
+  background: #fafafa;
+}
+
+.menu-image-preview-label {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555555;
+}
+
+.menu-image-preview {
+  width: 180px;
+  height: 140px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.form-help-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #777777;
+  line-height: 1.5;
+}
+
+.menu-table td:first-child {
+  width: 100px;
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .menu-item-image,
+  .menu-image-placeholder {
+    width: 60px;
+    height: 60px;
+  }
+
+  .menu-image-preview {
+    width: 150px;
+    height: 120px;
+  }
+}
+
+/* ========================================================
+   SR-130 Menu Action Buttons Fix
+   ======================================================== */
+
+.menu-action-buttons {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 170px;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.menu-action-buttons .small-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 75px;
+  min-height: 36px;
+  padding: 0.5rem 0.8rem;
+  background: #fdf6dc !important;
+  color: #806315 !important;
+  border: 1px solid #d4af37 !important;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.menu-action-buttons .small-button:hover {
+  background: #f5e5a8 !important;
+  color: #5f490c !important;
+  transform: translateY(-1px);
+}
+
+.menu-action-buttons .small-button:active {
+  transform: translateY(0);
+}
+
+/* Keep the Actions column visible and readable */
+.menu-table th:last-child,
+.menu-table td:last-child {
+  min-width: 190px;
+  white-space: normal;
+}
+
+/* Make the horizontal table scroll clear */
+.menu-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Keep table action buttons visible on smaller screens */
+@media (max-width: 900px) {
+  .menu-table {
+    min-width: 950px;
+  }
+
+  .menu-action-buttons {
+    min-width: 170px;
+  }
+}
