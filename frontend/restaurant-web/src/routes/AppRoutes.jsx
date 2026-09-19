@@ -1,4 +1,5 @@
-﻿
+﻿import ReservationPreOrderPage from "../pages/customer/ReservationPreOrderPage";
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -127,6 +128,22 @@ export default function AppRoutes() {
         <Route
           path="/availability"
           element={<AvailabilitySearchPage />}
+        />
+      </Route>
+
+      {/* Customer Reservation Pre-Order - SR-134 */}
+      <Route
+        element={
+          <ProtectedRoute
+            allowedRoles={[ROLES.CUSTOMER]}
+          >
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route
+          path="/reservation-pre-order"
+          element={<ReservationPreOrderPage />}
         />
       </Route>
 
@@ -274,6 +291,5 @@ export default function AppRoutes() {
     </Routes>
   );
 }
-
 
 

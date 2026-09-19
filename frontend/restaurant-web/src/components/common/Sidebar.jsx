@@ -1,4 +1,4 @@
-
+﻿
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -445,7 +445,7 @@ export default function Sidebar({
       </Link>
 
       <div className="sidebar-section-title">
-        {isCollapsed ? '•••' : sectionLabel}
+        {isCollapsed ? 'â€¢â€¢â€¢' : sectionLabel}
       </div>
 
       <nav className="sidebar-nav">

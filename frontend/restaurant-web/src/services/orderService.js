@@ -39,3 +39,27 @@ export const submitDineInOrder = async (request) => {
 
   return response.data;
 };
+
+export const submitReservationPreOrder = async (
+  reservationId,
+  items,
+  idempotencyKey
+) => {
+  const response = await orderApi.post(
+    '/orders/reservation-pre-order',
+    {
+      reservationId,
+      items: items.map((item) => ({
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+      })),
+    },
+    {
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
+    }
+  );
+
+  return response.data;
+};
