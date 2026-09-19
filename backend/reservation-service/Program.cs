@@ -165,7 +165,7 @@ builder.Services.AddCors(options =>
                 return false;
             }
 
-                        // Allow localhost and 127.0.0.1 during development and testing
+            // Allow localhost and 127.0.0.1 during development and testing
             if (uri.Host == "localhost" ||
                 uri.Host == "127.0.0.1")
             {
@@ -203,6 +203,14 @@ builder.Services.AddScoped<
     ReservationService.Repositories.MenuItemRepository
 >();
 
+// Order cart repository
+// Required by the customer order cart service and controller
+builder.Services.AddScoped<
+    ReservationService.Repositories.IOrderCartRepository,
+    ReservationService.Repositories.OrderCartRepository
+>();
+
+// Availability configuration
 builder.Services.Configure<AvailabilityRulesOptions>(
     builder.Configuration.GetSection(
         AvailabilityRulesOptions.SectionName
@@ -215,11 +223,13 @@ builder.Services.AddScoped<
     ReservationService.Services.ReservationMaintenancePolicy
 >();
 
+// Availability repository
 builder.Services.AddScoped<
     ReservationService.Repositories.IAvailabilityRepository,
     ReservationService.Repositories.AvailabilityRepository
 >();
 
+// Availability search services
 builder.Services.AddScoped<
     ReservationService.Services.IAvailabilitySearchService,
     ReservationService.Services.AvailabilitySearchService
@@ -230,6 +240,7 @@ builder.Services.AddScoped<
     ReservationService.Services.AvailabilitySearchValidator
 >();
 
+// Booking reference generator
 builder.Services.AddSingleton<
     ReservationService.Services.IBookingReferenceGenerator,
     ReservationService.Services.BookingReferenceGenerator
@@ -241,16 +252,19 @@ builder.Services.AddSingleton<
 // Therefore, the outbox repository is registered as singleton so that the
 // singleton OutboxPublisherService can consume it safely.
 
+// Outbox repository
 builder.Services.AddSingleton<
     ReservationService.Repositories.IOutboxRepository,
     ReservationService.Repositories.OutboxRepository
 >();
 
+// Reservation repository
 builder.Services.AddScoped<
     ReservationService.Repositories.IReservationRepository,
     ReservationService.Repositories.ReservationRepository
 >();
 
+// Reservation services
 builder.Services.AddScoped<
     ReservationService.Services.IReservationCreationService,
     ReservationService.Services.ReservationCreationService
@@ -279,6 +293,13 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     ReservationService.Services.IAdminReservationService,
     ReservationService.Services.AdminReservationService
+>();
+
+// Order cart service
+// Handles cart validation and customer cart operations
+builder.Services.AddScoped<
+    ReservationService.Services.IOrderCartService,
+    ReservationService.Services.OrderCartService
 >();
 
 // SR-112: Kafka configuration

@@ -6,6 +6,7 @@ import LoginPage from '../pages/customer/LoginPage';
 import RegisterPage from '../pages/customer/RegisterPage';
 import CustomerPortalPage from '../pages/customer/CustomerPortalPage';
 import CustomerMenuPage from '../pages/customer/CustomerMenuPage';
+import CustomerCartPage from '../pages/customer/CustomerCartPage';
 import ProfilePage from '../pages/customer/ProfilePage';
 
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
@@ -118,6 +119,22 @@ export default function AppRoutes() {
         <Route
           path="/availability"
           element={<AvailabilitySearchPage />}
+        />
+      </Route>
+
+      {/* Customer Order Cart - SR-132 */}
+      <Route
+        element={
+          <ProtectedRoute
+            allowedRoles={[ROLES.CUSTOMER]}
+          >
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route
+          path="/cart"
+          element={<CustomerCartPage />}
         />
       </Route>
 
