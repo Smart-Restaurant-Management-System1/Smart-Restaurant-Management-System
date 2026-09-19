@@ -131,6 +131,22 @@ export default function AppRoutes() {
         />
       </Route>
 
+      {/* Customer Reservation Pre-Order - SR-134 */}
+      <Route
+        element={
+          <ProtectedRoute
+            allowedRoles={[ROLES.CUSTOMER]}
+          >
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route
+          path="/reservation-pre-order"
+          element={<ReservationPreOrderPage />}
+        />
+      </Route>
+
       {/* Customer Order Cart - SR-132 */}
       <Route
         element={
@@ -275,4 +291,5 @@ export default function AppRoutes() {
     </Routes>
   );
 }
+
 
