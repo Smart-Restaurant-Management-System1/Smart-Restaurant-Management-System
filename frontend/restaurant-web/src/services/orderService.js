@@ -1,0 +1,41 @@
+﻿import axios from 'axios';
+
+const ORDER_API_BASE =
+  import.meta.env.VITE_ORDER_API_URL ||
+  import.meta.env.VITE_RESERVATION_API_URL ||
+  'http://localhost:5000/api';
+
+const orderApi = axios.create({
+  baseURL: ORDER_API_BASE,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+orderApi.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+export const submitDineInOrder = async (request) => {
+  const idempotencyKey =
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random()}`;
+
+  const response = await orderApi.post('/orders/dine-in', request, {
+    headers: {
+      'Idempotency-Key': idempotencyKey,
+    },
+  });
+
+  return response.data;
+};

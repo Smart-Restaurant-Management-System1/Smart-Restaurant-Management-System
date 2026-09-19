@@ -848,33 +848,20 @@ function CustomerCartPage() {
                   </strong>
                 </div>
 
-                <button
-                  type="button"
-                  disabled
+                <Link
+                  to="/order-review"
                   className="bistro-button-gold"
                   style={{
+                    display: 'flex',
                     width: '100%',
-                    opacity: 0.6,
-                    cursor: 'not-allowed',
-                    border: 'none',
-                  }}
-                  title="Order submission will be implemented in a later task"
-                >
-                  Continue to Order
-                </button>
-
-                <p
-                  style={{
-                    color: '#a8a29e',
-                    fontSize: '0.72rem',
-                    lineHeight: 1.5,
-                    textAlign: 'center',
-                    margin: '0.75rem 0 0',
+                    boxSizing: 'border-box',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    textDecoration: 'none',
                   }}
                 >
-                  Order submission will be enabled in the next development
-                  stage.
-                </p>
+                  Continue to Order <span aria-hidden="true">→</span>
+                </Link>
 
                 <Link
                   to="/menu"

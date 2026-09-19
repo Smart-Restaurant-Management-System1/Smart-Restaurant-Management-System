@@ -1,4 +1,4 @@
-
+﻿
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -19,6 +19,7 @@ import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
 
 import AvailabilitySearchPage from '../pages/availability/AvailabilitySearchPage';
 import ReservationReviewPage from '../pages/availability/ReservationReviewPage';
+import OrderReviewPage from '../pages/customer/OrderReviewPage';
 import ReservationConfirmationPage from '../pages/availability/ReservationConfirmationPage';
 import ReservationHistoryPage from '../pages/availability/ReservationHistoryPage';
 import ReservationDetailPage from '../pages/availability/ReservationDetailPage';
@@ -114,6 +115,13 @@ export default function AppRoutes() {
         <Route
           path="/menu"
           element={<CustomerMenuPage />}
+        />
+
+        <Route
+          path="/order-review"
+          element={
+          <OrderReviewPage />
+        }
         />
 
         <Route
@@ -266,3 +274,6 @@ export default function AppRoutes() {
     </Routes>
   );
 }
+
+
+
