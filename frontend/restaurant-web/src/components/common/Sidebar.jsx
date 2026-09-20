@@ -372,6 +372,11 @@ export default function Sidebar({
       label: 'Menu Management',
       icon: menuIcon,
     },
+      {
+    to: '/kitchen',
+    label: 'Kitchen Management',
+    icon: kitchenIcon,
+  },
     {
       to: '/admin/reservations',
       label: 'Manage Bookings',

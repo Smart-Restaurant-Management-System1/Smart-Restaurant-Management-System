@@ -1,4 +1,4 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 
 const ORDER_API_BASE =
   import.meta.env.VITE_ORDER_API_URL ||
@@ -68,6 +68,12 @@ export const getMyOrders = async (params = {}) => {
   const response = await orderApi.get('/orders/my-orders', {
     params,
   });
+
+  return response.data;
+};
+
+export const getKitchenQueue = async () => {
+  const response = await orderApi.get('/kitchen/queue');
 
   return response.data;
 };
