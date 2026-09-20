@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
-import { getKitchenQueue } from '../../services/orderService';
+import { getKitchenQueue, updateKitchenOrderStatus } from '../../services/orderService';
 
 const REFRESH_INTERVAL = 10000;
 
@@ -281,7 +281,21 @@ function MetaItem({ label, value }) {
    ORDER TICKET
    ========================================================= */
 
-function QueueOrderCard({ order }) {
+const actionButtonStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '38px',
+  padding: '0 12px',
+  border: '1px solid transparent',
+  borderRadius: '8px',
+  fontSize: '11px',
+  fontWeight: 800,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+};
+
+function QueueOrderCard({ order, onStatusUpdate, updatingOrder }) {
   const statusConfig =
     STATUS_CONFIG[order.status] || STATUS_CONFIG.Pending;
 
@@ -571,13 +585,58 @@ function QueueOrderCard({ order }) {
 
         <div
           style={{
-            color: '#998573',
-            fontSize: '11px',
-            textAlign: 'right',
-            whiteSpace: 'nowrap',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '10px',
           }}
         >
-          {formatTime(order.submittedAt)}
+          {order.status === 'Pending' && (
+            <button
+              type="button"
+              style={{
+                ...actionButtonStyle,
+                minHeight: '38px',
+                padding: '0 12px',
+                background: COLORS.preparing,
+                borderColor: COLORS.preparing,
+                color: '#ffffff',
+              }}
+              disabled={updatingOrder === order.orderReference}
+              onClick={() => onStatusUpdate(order.orderReference, 'Preparing')}
+            >
+              {updatingOrder === order.orderReference ? 'Updating...' : 'Start Preparing'}
+            </button>
+          )}
+
+          {order.status === 'Preparing' && (
+            <button
+              type="button"
+              style={{
+                ...actionButtonStyle,
+                minHeight: '38px',
+                padding: '0 12px',
+                background: COLORS.ready,
+                borderColor: COLORS.ready,
+                color: '#ffffff',
+              }}
+              disabled={updatingOrder === order.orderReference}
+              onClick={() => onStatusUpdate(order.orderReference, 'Ready')}
+            >
+              {updatingOrder === order.orderReference ? 'Updating...' : 'Mark Ready'}
+            </button>
+          )}
+
+          <div
+            style={{
+              color: '#998573',
+              fontSize: '11px',
+              textAlign: 'right',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {formatTime(order.submittedAt)}
+          </div>
         </div>
       </div>
     </article>
@@ -588,7 +647,14 @@ function QueueOrderCard({ order }) {
    ORDER SECTION
    ========================================================= */
 
-function QueueSection({ title, description, orders, accentColor }) {
+function QueueSection({
+  title,
+  description,
+  orders,
+  accentColor,
+  onStatusUpdate,
+  updatingOrder,
+}) {
   return (
     <section style={{ width: '100%', minWidth: 0 }}>
       <div
@@ -668,6 +734,8 @@ function QueueSection({ title, description, orders, accentColor }) {
             <QueueOrderCard
               key={order.orderReference}
               order={order}
+              onStatusUpdate={onStatusUpdate}
+              updatingOrder={updatingOrder}
             />
           ))}
         </div>
@@ -743,6 +811,7 @@ export default function KitchenQueuePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [orderTypeFilter, setOrderTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [updatingOrder, setUpdatingOrder] = useState('');
 
   const loadQueue = useCallback(async (isManualRefresh = false) => {
     try {
@@ -800,6 +869,23 @@ export default function KitchenQueuePage() {
     return () => {
       window.clearInterval(intervalId);
     };
+  }, [loadQueue]);
+
+  const handleStatusUpdate = useCallback(async (orderReference, status) => {
+    try {
+      setUpdatingOrder(orderReference);
+      setError('');
+      await updateKitchenOrderStatus(orderReference, status);
+      await loadQueue(true);
+    } catch (requestError) {
+      console.error('Failed to update kitchen order status:', requestError);
+      setError(
+        requestError?.response?.data?.message ||
+          'Unable to update the order status. Please try again.'
+      );
+    } finally {
+      setUpdatingOrder('');
+    }
   }, [loadQueue]);
 
   const filteredQueue = useMemo(() => {
@@ -1290,6 +1376,8 @@ export default function KitchenQueuePage() {
                 description="Orders waiting to be prepared"
                 orders={groupedOrders.pending}
                 accentColor={COLORS.pending}
+                onStatusUpdate={handleStatusUpdate}
+                updatingOrder={updatingOrder}
               />
 
               <QueueSection
@@ -1297,6 +1385,8 @@ export default function KitchenQueuePage() {
                 description="Orders currently being prepared"
                 orders={groupedOrders.preparing}
                 accentColor={COLORS.preparing}
+                onStatusUpdate={handleStatusUpdate}
+                updatingOrder={updatingOrder}
               />
 
               <QueueSection
@@ -1304,6 +1394,8 @@ export default function KitchenQueuePage() {
                 description="Orders ready for collection or serving"
                 orders={groupedOrders.ready}
                 accentColor={COLORS.ready}
+                onStatusUpdate={handleStatusUpdate}
+                updatingOrder={updatingOrder}
               />
             </div>
           )}
