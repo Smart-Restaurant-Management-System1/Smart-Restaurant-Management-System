@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using ReservationService.Data;
 using ReservationService.DTOs;
+using ReservationService.Events;
 using ReservationService.Models;
+using ReservationService.Repositories;
+using ReservationService.Services;
 
 namespace ReservationService.Controllers;
 
@@ -14,13 +17,16 @@ public sealed class KitchenQueueController : ControllerBase
 {
     private readonly DatabaseHelper _databaseHelper;
     private readonly ILogger<KitchenQueueController> _logger;
+    private readonly IOutboxRepository _outboxRepository;
 
     public KitchenQueueController(
         DatabaseHelper databaseHelper,
-        ILogger<KitchenQueueController> logger)
+        ILogger<KitchenQueueController> logger,
+        IOutboxRepository outboxRepository)
     {
         _databaseHelper = databaseHelper;
         _logger = logger;
+        _outboxRepository = outboxRepository;
     }
 
     [HttpGet("queue")]
@@ -190,12 +196,12 @@ public sealed class KitchenQueueController : ControllerBase
 
         var targetStatus = request.Status.Trim();
 
-        if (targetStatus is not ("Preparing" or "Ready"))
+        if (targetStatus is not ("Preparing" or "Ready" or "Served" or "Cancelled"))
         {
             return BadRequest(new
             {
                 message =
-                    "The target status must be Preparing or Ready."
+                    "The target status must be Preparing, Ready, Served, or Cancelled."
             });
         }
 
@@ -240,14 +246,23 @@ public sealed class KitchenQueueController : ControllerBase
                 ? "DineInOrders"
                 : "ReservationPreOrders";
 
-            var selectSql = $"""
-                SELECT Status
-                FROM {tableName}
-                WHERE OrderId = @OrderId
-                FOR UPDATE;
-                """;
+            var selectSql = isDineIn
+                ? $"""
+                    SELECT Status, TableId
+                    FROM {tableName}
+                    WHERE OrderId = @OrderId
+                    FOR UPDATE;
+                    """
+                : $"""
+                    SELECT Status, ReservationId
+                    FROM {tableName}
+                    WHERE OrderId = @OrderId
+                    FOR UPDATE;
+                    """;
 
             string? currentStatus;
+            int? tableId = null;
+            int? reservationId = null;
 
             await using (var selectCommand = new MySqlCommand(
                 selectSql,
@@ -258,11 +273,33 @@ public sealed class KitchenQueueController : ControllerBase
                     "@OrderId",
                     orderId);
 
-                var result =
-                    await selectCommand.ExecuteScalarAsync(
+                await using var reader =
+                    await selectCommand.ExecuteReaderAsync(
                         cancellationToken);
 
-                currentStatus = result?.ToString();
+                if (await reader.ReadAsync(cancellationToken))
+                {
+                    currentStatus = reader.IsDBNull(0)
+                        ? null
+                        : reader.GetString(0);
+
+                    if (isDineIn)
+                    {
+                        tableId = reader.IsDBNull(1)
+                            ? null
+                            : reader.GetInt32(1);
+                    }
+                    else
+                    {
+                        reservationId = reader.IsDBNull(1)
+                            ? null
+                            : reader.GetInt32(1);
+                    }
+                }
+                else
+                {
+                    currentStatus = null;
+                }
             }
 
             if (currentStatus is null)
@@ -285,7 +322,11 @@ public sealed class KitchenQueueController : ControllerBase
                 (normalizedCurrentStatus == "Pending" &&
                  targetStatus == "Preparing") ||
                 (normalizedCurrentStatus == "Preparing" &&
-                 targetStatus == "Ready");
+                 targetStatus == "Ready") ||
+                (normalizedCurrentStatus == "Ready" &&
+                 targetStatus == "Served") ||
+                (normalizedCurrentStatus is "Pending" or "Preparing" or "Ready" &&
+                 targetStatus == "Cancelled");
 
             if (!isValidTransition)
             {
@@ -340,6 +381,31 @@ public sealed class KitchenQueueController : ControllerBase
                     });
                 }
             }
+
+            var lifecycleEventType = targetStatus switch
+            {
+                "Preparing" => OrderLifecycleEventTypes.OrderPreparing,
+                "Ready" => OrderLifecycleEventTypes.OrderReady,
+                "Served" => OrderLifecycleEventTypes.OrderServed,
+                "Cancelled" => OrderLifecycleEventTypes.OrderCancelled,
+                _ => throw new InvalidOperationException(
+                    $"Unsupported order lifecycle target status: {targetStatus}.")
+            };
+
+            await OrderLifecycleOutboxHelper.InsertAsync(
+                connection,
+                transaction,
+                _outboxRepository,
+                lifecycleEventType,
+                orderId,
+                orderReference,
+                isDineIn ? "DineIn" : "PreOrder",
+                targetStatus,
+                tableId,
+                reservationId,
+                normalizedCurrentStatus,
+                null,
+                cancellationToken);
 
             await transaction.CommitAsync(
                 cancellationToken);

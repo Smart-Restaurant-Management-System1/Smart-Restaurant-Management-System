@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using ReservationService.Data;
 using ReservationService.DTOs;
+using ReservationService.Events;
 using ReservationService.Models;
+using ReservationService.Repositories;
+using ReservationService.Services;
 
 namespace ReservationService.Controllers;
 
@@ -16,12 +19,16 @@ public sealed class ReservationPreOrdersController : ControllerBase
     private readonly DatabaseHelper _databaseHelper;
     private readonly ILogger<ReservationPreOrdersController> _logger;
 
+
+    private readonly IOutboxRepository _outboxRepository;
     public ReservationPreOrdersController(
         DatabaseHelper databaseHelper,
-        ILogger<ReservationPreOrdersController> logger)
+        ILogger<ReservationPreOrdersController> logger,
+        IOutboxRepository outboxRepository)
     {
         _databaseHelper = databaseHelper;
         _logger = logger;
+        _outboxRepository = outboxRepository;
     }
 
     [HttpPost("reservation-pre-order")]
@@ -187,6 +194,21 @@ public sealed class ReservationPreOrdersController : ControllerBase
                 orderId,
                 request.Items,
                 menuItems,
+                cancellationToken);
+
+            await OrderLifecycleOutboxHelper.InsertAsync(
+                connection,
+                transaction,
+                _outboxRepository,
+                OrderLifecycleEventTypes.OrderCreated,
+                orderId,
+                $"PRE-{orderId:D6}",
+                "PreOrder",
+                "Pending",
+                null,
+                reservation.ReservationId,
+                null,
+                idempotencyKey,
                 cancellationToken);
 
             var response = new ReservationPreOrderResponse(
@@ -480,4 +502,3 @@ public sealed class ReservationPreOrdersController : ControllerBase
         decimal TotalAmount,
         int ReservationId);
 }
-

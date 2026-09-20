@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -55,7 +55,7 @@ public sealed class OutboxPublisherService(
             }
             catch (Exception ex)
             {
-                // Database or unexpected failure â€” wait before retrying.
+                // Database or unexpected failure Ã¢â‚¬â€ wait before retrying.
                 logger.LogError(ex, "OutboxPublisher {InstanceId} unexpected error in poll loop. Waiting {Delay}s.",
                     _instanceId, _options.PollIntervalSeconds);
             }
@@ -90,11 +90,13 @@ public sealed class OutboxPublisherService(
     {
         try
         {
-            var (partition, offset) = await publisher.PublishAsync(
-                _options.ReservationTopic,
-                outboxEvent.MessageKey,
-                outboxEvent.Payload,
-                cancellationToken);
+            var topic = string.Equals(outboxEvent.AggregateType, "Order", StringComparison.OrdinalIgnoreCase) ? _options.OrderLifecycleTopic : _options.ReservationTopic;
+
+                var (partition, offset) = await publisher.PublishAsync(
+                    topic,
+                    outboxEvent.MessageKey,
+                    outboxEvent.Payload,
+                    cancellationToken);
 
             // Mark processed ONLY after broker acknowledgement.
             await outboxRepository.MarkProcessedAsync(outboxEvent.Id, cancellationToken);
@@ -103,11 +105,11 @@ public sealed class OutboxPublisherService(
                 "OutboxPublisher published EventId={EventId} EventType={EventType} ReservationId={ReservationId} " +
                 "Topic={Topic} Partition={Partition} Offset={Offset}",
                 outboxEvent.EventId, outboxEvent.EventType, outboxEvent.AggregateId,
-                _options.ReservationTopic, partition, offset);
+                topic, partition, offset);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            // Service stopping â€” do not record as failure; lease will expire and recover.
+            // Service stopping Ã¢â‚¬â€ do not record as failure; lease will expire and recover.
             logger.LogInformation("OutboxPublisher stopping during publish of EventId={EventId}.", outboxEvent.EventId);
         }
         catch (Exception ex)
@@ -132,7 +134,7 @@ public sealed class OutboxPublisherService(
     }
 
     /// <summary>
-    /// Bounded exponential backoff: delay = min(maxDelay, initialDelay Ã— 2^(attempt-1)).
+    /// Bounded exponential backoff: delay = min(maxDelay, initialDelay Ãƒâ€” 2^(attempt-1)).
     /// Guards against overflow by capping before exponentiation.
     /// </summary>
     internal DateTime CalculateNextAttempt(int attemptCount)
@@ -144,4 +146,3 @@ public sealed class OutboxPublisherService(
         return DateTime.UtcNow.AddSeconds(delaySecs);
     }
 }
-
