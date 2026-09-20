@@ -1,5 +1,6 @@
 ﻿import React, { useCallback, useEffect, useState } from 'react';
 import { getMyOrders } from '../../services/orderService';
+import './orderTracking.css';
 
 const STATUS_STEPS = ['Pending', 'Preparing', 'Ready', 'Served'];
 
@@ -226,3 +227,4 @@ export default function OrderTrackingPage() {
     </main>
   );
 }
+

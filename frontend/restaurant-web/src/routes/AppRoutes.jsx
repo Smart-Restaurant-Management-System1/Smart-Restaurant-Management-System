@@ -113,6 +113,12 @@ export default function AppRoutes() {
           element={<CustomerPortalPage />}
         />
 
+        {/* Customer Order Tracking - SR-135 */}
+        <Route
+          path="/orders"
+          element={<OrderTrackingPage />}
+        />
+
         {/* Customer Menu - SR-131 */}
         <Route
           path="/menu"
@@ -292,6 +298,10 @@ export default function AppRoutes() {
     </Routes>
   );
 }
+
+
+
+
 
 
 
