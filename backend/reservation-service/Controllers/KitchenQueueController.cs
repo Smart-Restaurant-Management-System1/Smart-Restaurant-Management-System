@@ -24,7 +24,9 @@ public sealed class KitchenQueueController : ControllerBase
     }
 
     [HttpGet("queue")]
-    [ProducesResponseType(typeof(KitchenQueueResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(
+        typeof(KitchenQueueResponseDto),
+        StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -86,7 +88,8 @@ public sealed class KitchenQueueController : ControllerBase
                 new MySqlCommand(orderSql, connection))
             {
                 await using var reader =
-                    await command.ExecuteReaderAsync(cancellationToken);
+                    await command.ExecuteReaderAsync(
+                        cancellationToken);
 
                 while (await reader.ReadAsync(cancellationToken))
                 {
@@ -161,6 +164,216 @@ public sealed class KitchenQueueController : ControllerBase
         }
     }
 
+    [HttpPatch("orders/{orderReference}/status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateOrderStatus(
+        string orderReference,
+        [FromBody] UpdateKitchenOrderStatusRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (request is null ||
+            string.IsNullOrWhiteSpace(request.Status))
+        {
+            return BadRequest(new
+            {
+                message = "A target status is required."
+            });
+        }
+
+        orderReference = orderReference.Trim();
+
+        var targetStatus = request.Status.Trim();
+
+        if (targetStatus is not ("Preparing" or "Ready"))
+        {
+            return BadRequest(new
+            {
+                message =
+                    "The target status must be Preparing or Ready."
+            });
+        }
+
+        var isDineIn = orderReference.StartsWith(
+            "DIN-",
+            StringComparison.OrdinalIgnoreCase);
+
+        var isPreOrder = orderReference.StartsWith(
+            "PRE-",
+            StringComparison.OrdinalIgnoreCase);
+
+        if (!isDineIn && !isPreOrder)
+        {
+            return BadRequest(new
+            {
+                message = "The order reference is invalid."
+            });
+        }
+
+        if (!int.TryParse(
+                orderReference[4..],
+                out var orderId) ||
+            orderId <= 0)
+        {
+            return BadRequest(new
+            {
+                message = "The order reference is invalid."
+            });
+        }
+
+        try
+        {
+            await using var connection =
+                await _databaseHelper.CreateConnectionAsync(
+                    cancellationToken);
+
+            await using var transaction =
+                await connection.BeginTransactionAsync(
+                    cancellationToken);
+
+            var tableName = isDineIn
+                ? "DineInOrders"
+                : "ReservationPreOrders";
+
+            var selectSql = $"""
+                SELECT Status
+                FROM {tableName}
+                WHERE OrderId = @OrderId
+                FOR UPDATE;
+                """;
+
+            string? currentStatus;
+
+            await using (var selectCommand = new MySqlCommand(
+                selectSql,
+                connection,
+                transaction))
+            {
+                selectCommand.Parameters.AddWithValue(
+                    "@OrderId",
+                    orderId);
+
+                var result =
+                    await selectCommand.ExecuteScalarAsync(
+                        cancellationToken);
+
+                currentStatus = result?.ToString();
+            }
+
+            if (currentStatus is null)
+            {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+
+                return NotFound(new
+                {
+                    message = "The order was not found."
+                });
+            }
+
+            var normalizedCurrentStatus =
+                isDineIn && currentStatus == "Received"
+                    ? "Pending"
+                    : currentStatus;
+
+            var isValidTransition =
+                (normalizedCurrentStatus == "Pending" &&
+                 targetStatus == "Preparing") ||
+                (normalizedCurrentStatus == "Preparing" &&
+                 targetStatus == "Ready");
+
+            if (!isValidTransition)
+            {
+                await transaction.RollbackAsync(
+                    cancellationToken);
+
+                return Conflict(new
+                {
+                    message =
+                        $"The order cannot move from {normalizedCurrentStatus} to {targetStatus}."
+                });
+            }
+
+            var updateSql = $"""
+                UPDATE {tableName}
+                SET Status = @TargetStatus,
+                    UpdatedAt = CURRENT_TIMESTAMP
+                WHERE OrderId = @OrderId
+                  AND Status = @CurrentStatus;
+                """;
+
+            await using (var updateCommand = new MySqlCommand(
+                updateSql,
+                connection,
+                transaction))
+            {
+                updateCommand.Parameters.AddWithValue(
+                    "@TargetStatus",
+                    targetStatus);
+
+                updateCommand.Parameters.AddWithValue(
+                    "@CurrentStatus",
+                    currentStatus);
+
+                updateCommand.Parameters.AddWithValue(
+                    "@OrderId",
+                    orderId);
+
+                var affectedRows =
+                    await updateCommand.ExecuteNonQueryAsync(
+                        cancellationToken);
+
+                if (affectedRows != 1)
+                {
+                    await transaction.RollbackAsync(
+                        cancellationToken);
+
+                    return Conflict(new
+                    {
+                        message =
+                            "The order was changed by another request. Refresh the queue and try again."
+                    });
+                }
+            }
+
+            await transaction.CommitAsync(
+                cancellationToken);
+
+            return Ok(new
+            {
+                orderReference,
+                previousStatus = normalizedCurrentStatus,
+                status = targetStatus,
+                updatedAt = DateTime.UtcNow
+            });
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Unable to update kitchen order status for {OrderReference}.",
+                orderReference);
+
+            return StatusCode(
+                StatusCodes.Status500InternalServerError,
+                new
+                {
+                    message =
+                        "Unable to update the order status. Please try again later."
+                });
+        }
+    }
+
     private static async Task<List<KitchenQueueItemDto>>
         GetOrderItemsAsync(
             MySqlConnection connection,
@@ -221,7 +434,8 @@ public sealed class KitchenQueueController : ControllerBase
             order.OrderReference);
 
         await using var reader =
-            await command.ExecuteReaderAsync(cancellationToken);
+            await command.ExecuteReaderAsync(
+                cancellationToken);
 
         while (await reader.ReadAsync(cancellationToken))
         {

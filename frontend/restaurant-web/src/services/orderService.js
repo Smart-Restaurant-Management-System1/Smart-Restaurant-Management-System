@@ -77,3 +77,17 @@ export const getKitchenQueue = async () => {
 
   return response.data;
 };
+
+export const updateKitchenOrderStatus = async (
+  orderReference,
+  status
+) => {
+  const response = await orderApi.patch(
+    `/kitchen/orders/${encodeURIComponent(orderReference)}/status`,
+    {
+      status,
+    }
+  );
+
+  return response.data;
+};
