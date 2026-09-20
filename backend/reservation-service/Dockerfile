@@ -19,3 +19,4 @@ ENV ASPNETCORE_ENVIRONMENT=Development
 EXPOSE 5000
 
 ENTRYPOINT ["dotnet", "reservation-service.dll"]
+

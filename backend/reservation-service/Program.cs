@@ -1,4 +1,4 @@
-﻿
+
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -341,12 +341,29 @@ else
     >();
 }
 
+// Image storage service (hybrid Azure Blob + local storage)
+builder.Services.AddScoped<
+    ReservationService.Services.IImageStorageService,
+    ReservationService.Services.ImageStorageService
+>();
+
 // Outbox background service
 builder.Services.AddHostedService<
     ReservationService.Services.OutboxPublisherService
 >();
 
 var app = builder.Build();
+
+// Ensure local static uploads directory exists
+var webRoot = app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+var uploadsDir = Path.Combine(webRoot, "uploads", "menu-images");
+if (!Directory.Exists(uploadsDir))
+{
+    Directory.CreateDirectory(uploadsDir);
+}
+
+// Serve static files for uploaded dish images
+app.UseStaticFiles();
 
 // Configure HTTP request pipeline
 

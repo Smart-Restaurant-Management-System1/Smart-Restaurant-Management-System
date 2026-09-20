@@ -70,7 +70,7 @@ test('validateMenuItemPayload rejects zero or negative price', () => {
   assert.equal(nonNumericPrice.error, 'Please enter a valid price greater than zero.');
 });
 
-test('validateMenuItemPayload validates image URL protocol', () => {
+test('validateMenuItemPayload validates image URL protocol and supports relative upload paths', () => {
   const invalidUrl = validateMenuItemPayload({
     itemName: 'Soup',
     price: '500',
@@ -85,6 +85,16 @@ test('validateMenuItemPayload validates image URL protocol', () => {
     imageReference: 'not a url at all',
   });
   assert.equal(malformedUrl.isValid, false);
-  assert.equal(malformedUrl.error, 'Please enter a valid image URL.');
+  assert.equal(malformedUrl.error, 'Please enter a valid image URL or upload a photo.');
+
+  // Direct upload relative path
+  const uploadPath = validateMenuItemPayload({
+    itemName: 'Spiced Salmon',
+    price: '2800',
+    imageReference: '/uploads/menu-images/dish_abc123.webp',
+  });
+  assert.equal(uploadPath.isValid, true);
+  assert.equal(uploadPath.error, null);
 });
+
 

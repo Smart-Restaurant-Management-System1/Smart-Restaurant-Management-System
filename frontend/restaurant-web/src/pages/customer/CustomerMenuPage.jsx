@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
-import { getCustomerMenuItems } from '../../services/menuService';
+import { getCustomerMenuItems, resolveImageUrl } from '../../services/menuService';
 import { addCartItem } from '../../services/cartService';
 
 const CATEGORIES = [
@@ -225,7 +225,11 @@ const getDietaryBadge = (dietary) => {
 
 function CustomerMenuImage({ src, alt, category }) {
   const [imageError, setImageError] = useState(false);
-  const imageUrl = typeof src === 'string' ? src.trim() : '';
+  const imageUrl = resolveImageUrl(src);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [src]);
 
   if (!imageUrl || imageError) {
     return (
@@ -391,27 +395,56 @@ function CustomerMenuPage() {
         }
         subtitle="Discover handcrafted dishes, daily specials, and curated beverages prepared for your dining experience."
         actions={
-          <Link
-            to="/availability"
-            className="bistro-button-gold"
-            style={{ textDecoration: 'none' }}
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Link
+              to="/cart"
+              className="bistro-button-outline"
+              style={{
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+              }}
             >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="9" cy="21" r="1" />
+                <circle cx="20" cy="21" r="1" />
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+              </svg>
+              <span>View Cart</span>
+            </Link>
 
-            <span>Book a Table</span>
-          </Link>
+            <Link
+              to="/availability"
+              className="bistro-button-gold"
+              style={{ textDecoration: 'none' }}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+
+              <span>Book a Table</span>
+            </Link>
+          </div>
         }
       />
 
@@ -608,15 +641,57 @@ function CustomerMenuPage() {
           role="status"
           style={{
             background: '#ecfdf5',
-            border: '1px solid #bbf7d0',
-            borderRadius: '8px',
+            border: '1px solid #a7f3d0',
+            borderRadius: '10px',
             padding: '0.85rem 1.25rem',
-            marginBottom: '1rem',
-            color: '#166534',
+            marginBottom: '1.25rem',
+            color: '#065f46',
             fontSize: '0.88rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)',
           }}
         >
-          {cartMessage}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#059669"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ flexShrink: 0 }}
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <span style={{ fontWeight: 500 }}>{cartMessage}</span>
+          </div>
+
+          <Link
+            to="/cart"
+            style={{
+              fontWeight: 600,
+              color: '#065f46',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.3rem 0.75rem',
+              background: '#ffffff',
+              border: '1px solid #a7f3d0',
+              borderRadius: '6px',
+              fontSize: '0.82rem',
+              whiteSpace: 'nowrap',
+              transition: 'background 0.2s ease',
+            }}
+          >
+            <span>View Cart</span>
+            <span>&rarr;</span>
+          </Link>
         </div>
       )}
 

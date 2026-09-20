@@ -28,13 +28,18 @@ export function validateMenuItemPayload(formData) {
   }
 
   if (formData.imageReference && formData.imageReference.trim()) {
+    const ref = formData.imageReference.trim();
+    if (ref.startsWith('/uploads/')) {
+      return { isValid: true, error: null };
+    }
+
     try {
-      const imageUrl = new URL(formData.imageReference.trim());
+      const imageUrl = new URL(ref);
       if (!['http:', 'https:'].includes(imageUrl.protocol)) {
         return { isValid: false, error: 'Image URL must begin with http:// or https://.' };
       }
     } catch {
-      return { isValid: false, error: 'Please enter a valid image URL.' };
+      return { isValid: false, error: 'Please enter a valid image URL or upload a photo.' };
     }
   }
 

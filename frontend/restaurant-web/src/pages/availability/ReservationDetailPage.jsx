@@ -39,6 +39,7 @@ export function ReservationDetails({ reservation }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', gap: '0.75rem', flexWrap: 'wrap' }}>
         <div>
           <span
+            className="reservation-reference"
             style={{
               display: 'inline-block',
               color: '#8c6736',
@@ -51,11 +52,13 @@ export function ReservationDetails({ reservation }) {
               letterSpacing: '0.06em',
               fontFamily: 'monospace',
               marginBottom: '0.35rem',
+              whiteSpace: 'nowrap',
+              wordBreak: 'keep-all',
             }}
           >
             #{reservation.bookingReference}
           </span>
-          <h2 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '1.35rem', margin: 0, color: '#282115', fontWeight: 600 }}>
+          <h2 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '1.35rem', margin: 0, color: '#282115', fontWeight: 600, whiteSpace: 'nowrap' }}>
             Table {reservation.tableNumber}
           </h2>
         </div>
