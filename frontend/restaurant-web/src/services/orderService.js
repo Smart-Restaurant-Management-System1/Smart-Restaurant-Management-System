@@ -63,3 +63,11 @@ export const submitReservationPreOrder = async (
 
   return response.data;
 };
+
+export const getMyOrders = async (params = {}) => {
+  const response = await orderApi.get('/orders/my-orders', {
+    params,
+  });
+
+  return response.data;
+};

@@ -32,6 +32,13 @@ export default function Sidebar({
     }
 
     if (
+      path === '/orders' &&
+      location.pathname.startsWith('/orders')
+    ) {
+      return true;
+    }
+
+    if (
       path === '/cart' &&
       location.pathname.startsWith('/cart')
     ) {
@@ -323,6 +330,11 @@ export default function Sidebar({
       icon: cartIcon,
     },
     {
+      to: '/orders',
+      label: 'My Orders',
+      icon: cartIcon,
+    },
+    {
       to: '/availability',
       label: 'Find a Table',
       icon: searchIcon,
@@ -525,3 +537,4 @@ export default function Sidebar({
     </aside>
   );
 }
+
