@@ -31,6 +31,7 @@ function ReservationTable({ reservations }) {
         borderRadius: '12px',
         overflow: 'hidden',
         boxShadow: '0 3px 12px rgba(40, 33, 21, 0.04)',
+        padding: 0,
       }}
     >
       {/* Top Gold Gradient Accent Line */}
@@ -46,26 +47,26 @@ function ReservationTable({ reservations }) {
         }}
       />
 
-      <div style={{ overflowX: 'auto' }}>
+      <div style={{ overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: '#f5efe6', borderBottom: '1px solid #dfd8cb' }}>
-              <th style={{ padding: '0.85rem 1.15rem', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
+              <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', whiteSpace: 'nowrap' }}>
                 Reference & Table
               </th>
-              <th style={{ padding: '0.85rem 1.15rem', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
+              <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', whiteSpace: 'nowrap' }}>
                 Visit Schedule
               </th>
-              <th style={{ padding: '0.85rem 1.15rem', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
+              <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', whiteSpace: 'nowrap' }}>
                 Party Size
               </th>
-              <th style={{ padding: '0.85rem 1.15rem', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
+              <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', whiteSpace: 'nowrap' }}>
                 Booked On
               </th>
-              <th style={{ padding: '0.85rem 1.15rem', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>
+              <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', whiteSpace: 'nowrap' }}>
                 Status
               </th>
-              <th style={{ padding: '0.85rem 1.15rem', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', textAlign: 'right' }}>
+              <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', textAlign: 'right', whiteSpace: 'nowrap' }}>
                 Action
               </th>
             </tr>
@@ -74,6 +75,10 @@ function ReservationTable({ reservations }) {
             {reservations.map((reservation, idx) => {
               const isConfirmed = reservation.status === 'Confirmed';
               const isPending = reservation.status === 'Pending';
+              const bookedDate = reservation.createdAt
+                ? formatReservationDateTime(reservation.createdAt).slice(0, 10)
+                : '—';
+
               return (
                 <tr
                   key={reservation.reservationId}
@@ -85,12 +90,12 @@ function ReservationTable({ reservations }) {
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
                   {/* Reference & Table */}
-                  <td style={{ padding: '0.9rem 1.15rem', verticalAlign: 'middle' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <td style={{ padding: '0.8rem 0.85rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                       <div
                         style={{
-                          width: '36px',
-                          height: '36px',
+                          width: '34px',
+                          height: '34px',
                           borderRadius: '8px',
                           background: 'linear-gradient(135deg, #faf5ec 0%, #f4ebd9 100%)',
                           border: '1px solid #eedfc9',
@@ -101,7 +106,7 @@ function ReservationTable({ reservations }) {
                           flexShrink: 0,
                         }}
                       >
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M4 18v3" />
                           <path d="M20 18v3" />
                           <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
@@ -122,7 +127,9 @@ function ReservationTable({ reservations }) {
                             fontWeight: 700,
                             letterSpacing: '0.05em',
                             fontFamily: 'monospace',
-                            marginBottom: '0.2rem',
+                            marginBottom: '0.15rem',
+                            whiteSpace: 'nowrap',
+                            wordBreak: 'keep-all',
                           }}
                         >
                           #{reservation.bookingReference}
@@ -130,9 +137,10 @@ function ReservationTable({ reservations }) {
                         <div
                           style={{
                             fontFamily: "Georgia, 'Times New Roman', serif",
-                            fontSize: '1rem',
+                            fontSize: '0.96rem',
                             fontWeight: 600,
                             color: '#282115',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           Table {reservation.tableNumber}
@@ -142,21 +150,20 @@ function ReservationTable({ reservations }) {
                   </td>
 
                   {/* Visit Schedule */}
-                  <td style={{ padding: '0.9rem 1.15rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#282115', fontWeight: 600, fontSize: '0.88rem' }}>
+                  <td style={{ padding: '0.8rem 0.85rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#282115', fontWeight: 600, fontSize: '0.86rem' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                         <line x1="16" y1="2" x2="16" y2="6" />
                         <line x1="8" y1="2" x2="8" y2="6" />
-                        <line x1="3" y1="10" x2="21" y2="10" />
                       </svg>
                       <span>{formatScheduleWindow(reservation.startDateTime, reservation.endDateTime)}</span>
                     </div>
                   </td>
 
                   {/* Party Size */}
-                  <td style={{ padding: '0.9rem 1.15rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.86rem', color: '#443a2d' }}>
+                  <td style={{ padding: '0.8rem 0.85rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.84rem', color: '#443a2d' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                         <circle cx="9" cy="7" r="4" />
@@ -166,25 +173,25 @@ function ReservationTable({ reservations }) {
                   </td>
 
                   {/* Booked On */}
-                  <td style={{ padding: '0.9rem 1.15rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', color: '#78716c' }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <td style={{ padding: '0.8rem 0.85rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', color: '#78716c' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#a89a87" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                       </svg>
-                      <span>{formatReservationDateTime(reservation.createdAt)}</span>
+                      <span>{bookedDate}</span>
                     </div>
                   </td>
 
                   {/* Status */}
-                  <td style={{ padding: '0.9rem 1.15rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '0.8rem 0.85rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
                     <span
                       className={statusClassName(reservation.status)}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '0.35rem',
-                        padding: '0.25rem 0.75rem',
+                        padding: '0.22rem 0.65rem',
                         borderRadius: '9999px',
                         fontSize: '0.74rem',
                         fontWeight: 600,
@@ -198,22 +205,46 @@ function ReservationTable({ reservations }) {
                   </td>
 
                   {/* Action */}
-                  <td style={{ padding: '0.9rem 1.15rem', verticalAlign: 'middle', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <Link
-                      className="bistro-button-outline"
-                      to={'/reservations/' + reservation.reservationId}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        padding: '0.42rem 0.85rem',
-                        fontSize: '0.82rem',
-                        textDecoration: 'none',
-                      }}
-                    >
-                      <span>Manage Booking</span>
-                      <span aria-hidden="true">→</span>
-                    </Link>
+                  <td style={{ padding: '0.8rem 0.85rem', verticalAlign: 'middle', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'inline-flex', gap: '0.45rem', alignItems: 'center' }}>
+                      {(isConfirmed || isPending) && (
+                        <Link
+                          className="bistro-button-gold"
+                          to={`/reservation-pre-order?reservationId=${reservation.reservationId}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            padding: '0.36rem 0.7rem',
+                            fontSize: '0.78rem',
+                            textDecoration: 'none',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                          </svg>
+                          <span>Pre-Order</span>
+                        </Link>
+                      )}
+                      <Link
+                        className="bistro-button-outline"
+                        to={'/reservations/' + reservation.reservationId}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.36rem 0.7rem',
+                          fontSize: '0.78rem',
+                          textDecoration: 'none',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <span>Manage</span>
+                        <span aria-hidden="true">→</span>
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               );
@@ -275,6 +306,8 @@ function ReservationCard({ reservation }) {
                 letterSpacing: '0.06em',
                 fontFamily: 'monospace',
                 marginBottom: '0.4rem',
+                whiteSpace: 'nowrap',
+                wordBreak: 'keep-all',
               }}
             >
               #{reservation.bookingReference}
@@ -286,6 +319,7 @@ function ReservationCard({ reservation }) {
                 margin: 0,
                 color: '#282115',
                 fontWeight: 600,
+                whiteSpace: 'nowrap',
               }}
             >
               Table {reservation.tableNumber}
@@ -349,21 +383,46 @@ function ReservationCard({ reservation }) {
         </dl>
       </div>
 
-      <Link
-        className="bistro-button-outline"
-        to={'/reservations/' + reservation.reservationId}
-        style={{
-          width: '100%',
-          boxSizing: 'border-box',
-          justifyContent: 'center',
-          textDecoration: 'none',
-          padding: '0.55rem 1rem',
-          fontSize: '0.84rem',
-        }}
-      >
-        <span>Manage Booking</span>
-        <span aria-hidden="true">→</span>
-      </Link>
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+        {(isConfirmed || isPending) && (
+          <Link
+            className="bistro-button-gold"
+            to={`/reservation-pre-order?reservationId=${reservation.reservationId}`}
+            style={{
+              flex: 1,
+              boxSizing: 'border-box',
+              justifyContent: 'center',
+              textDecoration: 'none',
+              padding: '0.55rem 0.75rem',
+              fontSize: '0.82rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+            </svg>
+            <span>Pre-Order</span>
+          </Link>
+        )}
+        <Link
+          className="bistro-button-outline"
+          to={'/reservations/' + reservation.reservationId}
+          style={{
+            flex: 1,
+            boxSizing: 'border-box',
+            justifyContent: 'center',
+            textDecoration: 'none',
+            padding: '0.55rem 0.75rem',
+            fontSize: '0.82rem',
+          }}
+        >
+          <span>Manage Booking</span>
+          <span aria-hidden="true">→</span>
+        </Link>
+      </div>
     </article>
   );
 }

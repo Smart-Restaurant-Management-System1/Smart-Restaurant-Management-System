@@ -1,8 +1,10 @@
 
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ReservationService.Models;
 using ReservationService.Repositories;
+using ReservationService.Services;
 
 namespace ReservationService.Controllers;
 
@@ -12,6 +14,7 @@ namespace ReservationService.Controllers;
 public class MenuItemsController : ControllerBase
 {
     private readonly IMenuItemRepository _menuItemRepository;
+    private readonly IImageStorageService _imageStorageService;
 
     private static readonly string[] ValidCategories =
     {
@@ -31,9 +34,63 @@ public class MenuItemsController : ControllerBase
         "Gluten-Free"
     };
 
-    public MenuItemsController(IMenuItemRepository menuItemRepository)
+    public MenuItemsController(
+        IMenuItemRepository menuItemRepository,
+        IImageStorageService imageStorageService)
     {
         _menuItemRepository = menuItemRepository;
+        _imageStorageService = imageStorageService;
+    }
+
+    [HttpPost("upload-image")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadImage(
+        IFormFile? file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return BadRequest(new { message = "Please select an image file to upload." });
+        }
+
+        // Max 5 MB
+        const long maxSizeBytes = 5 * 1024 * 1024;
+        if (file.Length > maxSizeBytes)
+        {
+            return BadRequest(new { message = "Image file size cannot exceed 5 MB." });
+        }
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowedExtensions.Contains(extension))
+        {
+            return BadRequest(new { message = "Only JPG, PNG, and WEBP image formats are supported." });
+        }
+
+        var allowedContentTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+        if (!string.IsNullOrEmpty(file.ContentType) &&
+            !allowedContentTypes.Contains(file.ContentType.ToLowerInvariant()))
+        {
+            return BadRequest(new { message = "Invalid image content type." });
+        }
+
+        try
+        {
+            var imageUrl = await _imageStorageService.SaveImageAsync(file, cancellationToken);
+            return Ok(new
+            {
+                message = "Image uploaded successfully.",
+                imageUrl,
+                fileName = Path.GetFileName(imageUrl)
+            });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new
+            {
+                message = "An error occurred while uploading the image. Please try again."
+            });
+        }
     }
 
     [HttpGet]

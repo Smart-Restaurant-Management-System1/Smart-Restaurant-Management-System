@@ -123,4 +123,35 @@ export const deleteMenuItem = async (id) => {
   return response.data;
 };
 
+// Upload menu item image file (returns imageUrl and fileName)
+export const uploadMenuItemImage = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await reservationApi.post('/MenuItems/upload-image', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return response.data;
+};
+
+// Resolve image URL for both local uploads and external CDN links
+export const resolveImageUrl = (imageRef) => {
+  if (!imageRef || typeof imageRef !== 'string') return '';
+  const trimmed = imageRef.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed;
+  }
+  if (trimmed.startsWith('/')) {
+    const apiBase =
+      (typeof import.meta !== 'undefined' && import.meta.env?.VITE_RESERVATION_API_URL) ||
+      'http://localhost:5000/api';
+    const origin = apiBase.replace(/\/api\/?$/, '');
+    return `${origin}${trimmed}`;
+  }
+  return trimmed;
+};
+
 export default reservationApi;

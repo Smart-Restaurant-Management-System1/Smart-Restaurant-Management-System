@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import PageHeader from '../../components/common/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -7,6 +7,8 @@ import {
   updateMenuItem,
   updateMenuItemAvailability,
   deleteMenuItem,
+  uploadMenuItemImage,
+  resolveImageUrl,
 } from '../../services/menuService';
 
 const CATEGORIES = [
@@ -37,7 +39,11 @@ const EMPTY_FORM = {
 
 function MenuImageThumbnail({ src, alt }) {
   const [imageError, setImageError] = useState(false);
-  const imageUrl = typeof src === 'string' ? src.trim() : '';
+  const imageUrl = resolveImageUrl(src);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [src]);
 
   if (!imageUrl || imageError) {
     return (
@@ -111,6 +117,13 @@ export default function MenuManagementPage() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [deleteConfirmItem, setDeleteConfirmItem] = useState(null);
 
+  const [imageUploadMode, setImageUploadMode] = useState('upload'); // 'upload' | 'url'
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef(null);
+
   const loadMenuItems = async () => {
     try {
       setLoading(true);
@@ -148,11 +161,87 @@ export default function MenuManagementPage() {
     }));
   };
 
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+
+    const maxSizeBytes = 5 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      setUploadError('Image size exceeds 5 MB. Please choose a smaller photo.');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setUploadError('Please select a valid image file (JPG, PNG, or WEBP).');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      setUploadError('');
+      setSelectedFileName(file.name);
+
+      const result = await uploadMenuItemImage(file);
+      if (result?.imageUrl) {
+        setFormData((prev) => ({
+          ...prev,
+          imageReference: result.imageUrl,
+        }));
+      }
+    } catch (err) {
+      console.error('Photo upload failed:', err);
+      setUploadError(
+        err.response?.data?.message ||
+          'Failed to upload image. Please verify reservation service is running.'
+      );
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const removeSelectedImage = () => {
+    setFormData((prev) => ({ ...prev, imageReference: '' }));
+    setSelectedFileName('');
+    setUploadError('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const openAddForm = () => {
     setEditingItem(null);
     setFormData({ ...EMPTY_FORM });
     setError('');
     setSuccessMessage('');
+    setUploadError('');
+    setSelectedFileName('');
+    setImageUploadMode('upload');
     setShowForm(true);
   };
 
@@ -169,14 +258,20 @@ export default function MenuManagementPage() {
     });
     setError('');
     setSuccessMessage('');
+    setUploadError('');
+    setSelectedFileName(item.imageReference ? item.imageReference.split('/').pop() : '');
+    setImageUploadMode(item.imageReference?.startsWith('http') ? 'url' : 'upload');
     setShowForm(true);
   };
 
   const closeForm = () => {
-    if (saving) return;
+    if (saving || uploadingImage) return;
     setShowForm(false);
     setEditingItem(null);
     setFormData({ ...EMPTY_FORM });
+    setUploadError('');
+    setSelectedFileName('');
+    setIsDragging(false);
   };
 
   const handleSubmit = async (event) => {
@@ -1320,43 +1415,288 @@ export default function MenuManagementPage() {
                     />
                   </div>
 
-                  {/* Image Reference */}
+                  {/* Dish Photo Uploader (Direct File Upload & URL Toggle) */}
                   <div>
-                    <label
-                      htmlFor="formImageReference"
-                      style={{
-                        display: 'block',
-                        fontSize: '0.84rem',
-                        fontWeight: '600',
-                        color: 'var(--bistro-ink)',
-                        marginBottom: '0.3rem',
-                      }}
-                    >
-                      Image Reference (Direct URL)
-                    </label>
-                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      <input
-                        id="formImageReference"
-                        name="imageReference"
-                        type="url"
-                        value={formData.imageReference}
-                        onChange={handleInputChange}
-                        placeholder="https://images.unsplash.com/photo-..."
-                        maxLength="500"
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                      <label
                         style={{
-                          flex: 1,
-                          padding: '0.62rem 0.8rem',
-                          fontSize: '0.88rem',
-                          border: '1px solid #d1d5db',
-                          borderRadius: '6px',
-                          boxSizing: 'border-box',
+                          fontSize: '0.84rem',
+                          fontWeight: '600',
+                          color: 'var(--bistro-ink)',
+                          margin: 0,
                         }}
-                      />
-                      <MenuImageThumbnail src={formData.imageReference} alt="Preview" />
+                      >
+                        Dish Photo
+                      </label>
+
+                      {/* Mode Toggle Switch */}
+                      <div
+                        style={{
+                          display: 'inline-flex',
+                          background: '#f3efe8',
+                          border: '1px solid #e2d8c7',
+                          borderRadius: '6px',
+                          padding: '2px',
+                          gap: '2px',
+                        }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => { setImageUploadMode('upload'); setUploadError(''); }}
+                          style={{
+                            border: 0,
+                            padding: '0.2rem 0.65rem',
+                            fontSize: '0.74rem',
+                            fontWeight: 600,
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            background: imageUploadMode === 'upload' ? '#ffffff' : 'transparent',
+                            color: imageUploadMode === 'upload' ? '#8c6736' : '#78716c',
+                            boxShadow: imageUploadMode === 'upload' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          Upload File
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setImageUploadMode('url'); setUploadError(''); }}
+                          style={{
+                            border: 0,
+                            padding: '0.2rem 0.65rem',
+                            fontSize: '0.74rem',
+                            fontWeight: 600,
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            background: imageUploadMode === 'url' ? '#ffffff' : 'transparent',
+                            color: imageUploadMode === 'url' ? '#8c6736' : '#78716c',
+                            boxShadow: imageUploadMode === 'url' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          Paste URL
+                        </button>
+                      </div>
                     </div>
-                    <small style={{ display: 'block', color: '#6b7280', fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                      Paste image URL (jpg, webp, png) for live preview thumbnail.
-                    </small>
+
+                    {uploadError && (
+                      <div
+                        style={{
+                          marginBottom: '0.6rem',
+                          padding: '0.45rem 0.75rem',
+                          borderRadius: '6px',
+                          background: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          color: '#991b1b',
+                          fontSize: '0.78rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                        }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        <span>{uploadError}</span>
+                      </div>
+                    )}
+
+                    {imageUploadMode === 'upload' ? (
+                      <div>
+                        {/* Hidden file input */}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleFileChange}
+                          style={{ display: 'none' }}
+                        />
+
+                        {formData.imageReference ? (
+                          /* Uploaded / Selected Image Preview Box */
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '0.65rem 0.85rem',
+                              background: '#fcfaf6',
+                              border: '1px solid #eedfc9',
+                              borderRadius: '8px',
+                              gap: '0.85rem',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                              <MenuImageThumbnail src={formData.imageReference} alt="Dish photo" />
+                              <div style={{ overflow: 'hidden' }}>
+                                <div
+                                  style={{
+                                    fontSize: '0.84rem',
+                                    fontWeight: 600,
+                                    color: 'var(--bistro-ink)',
+                                    whiteSpace: 'nowrap',
+                                    textOverflow: 'ellipsis',
+                                    overflow: 'hidden',
+                                    maxWidth: '200px',
+                                  }}
+                                  title={selectedFileName || formData.imageReference}
+                                >
+                                  {selectedFileName || 'Uploaded photo'}
+                                </div>
+                                <span
+                                  style={{
+                                    fontSize: '0.72rem',
+                                    color: '#15803d',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="20 6 9 17 4 12" />
+                                  </svg>
+                                  Photo ready for save
+                                </span>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                              <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={uploadingImage}
+                                style={{
+                                  border: '1px solid #d4cbbd',
+                                  background: '#ffffff',
+                                  borderRadius: '5px',
+                                  padding: '0.35rem 0.65rem',
+                                  fontSize: '0.76rem',
+                                  fontWeight: 600,
+                                  color: 'var(--bistro-ink)',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Replace
+                              </button>
+                              <button
+                                type="button"
+                                onClick={removeSelectedImage}
+                                disabled={uploadingImage}
+                                style={{
+                                  border: '1px solid #fecaca',
+                                  background: '#fff5f5',
+                                  borderRadius: '5px',
+                                  padding: '0.35rem 0.65rem',
+                                  fontSize: '0.76rem',
+                                  fontWeight: 600,
+                                  color: '#dc2626',
+                                  cursor: 'pointer',
+                                }}
+                                title="Remove photo"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Drag & Drop Zone */
+                          <div
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onClick={() => !uploadingImage && fileInputRef.current?.click()}
+                            style={{
+                              border: isDragging
+                                ? '2px dashed #c5a059'
+                                : '2px dashed #d6cbba',
+                              borderRadius: '8px',
+                              padding: '1.25rem 1rem',
+                              textAlign: 'center',
+                              background: isDragging
+                                ? '#fefdf9'
+                                : '#faf7f0',
+                              cursor: uploadingImage ? 'wait' : 'pointer',
+                              transition: 'all 0.2s ease',
+                            }}
+                          >
+                            {uploadingImage ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: '#8c6736' }}>
+                                <div
+                                  style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    borderRadius: '50%',
+                                    border: '2px solid rgba(197, 160, 89, 0.3)',
+                                    borderTopColor: '#c5a059',
+                                    animation: 'spin 0.8s linear infinite',
+                                  }}
+                                />
+                                <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>Uploading photo…</span>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem' }}>
+                                <div
+                                  style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '50%',
+                                    background: '#ffffff',
+                                    border: '1px solid #eedfc9',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#c5a059',
+                                    boxShadow: '0 2px 6px rgba(197, 160, 89, 0.15)',
+                                  }}
+                                >
+                                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                  </svg>
+                                </div>
+                                <div style={{ fontSize: '0.84rem', color: 'var(--bistro-ink)', fontWeight: 500 }}>
+                                  Drag & drop photo here, or <span style={{ color: '#8c6736', fontWeight: 700, textDecoration: 'underline' }}>Browse</span>
+                                </div>
+                                <span style={{ fontSize: '0.72rem', color: '#78716c' }}>
+                                  Supports JPG, PNG, or WEBP (Max 5 MB)
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* URL Input Mode */
+                      <div>
+                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                          <input
+                            id="formImageReference"
+                            name="imageReference"
+                            type="url"
+                            value={formData.imageReference}
+                            onChange={handleInputChange}
+                            placeholder="https://images.unsplash.com/photo-..."
+                            maxLength="500"
+                            style={{
+                              flex: 1,
+                              padding: '0.62rem 0.8rem',
+                              fontSize: '0.88rem',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '6px',
+                              boxSizing: 'border-box',
+                            }}
+                          />
+                          <MenuImageThumbnail src={formData.imageReference} alt="Preview" />
+                        </div>
+                        <small style={{ display: 'block', color: '#6b7280', fontSize: '0.74rem', marginTop: '0.25rem' }}>
+                          Paste an external image link (JPG, PNG, WEBP).
+                        </small>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

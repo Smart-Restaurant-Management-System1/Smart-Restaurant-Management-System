@@ -42,6 +42,9 @@
 .app-shell {
   display: flex;
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: clip;
   background-color: var(--layout-bg);
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   color: var(--bistro-ink);
@@ -276,16 +279,22 @@
    ======================================================== */
 
 .app-main-viewport {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
+  width: calc(100% - var(--sidebar-width));
+  max-width: calc(100% - var(--sidebar-width));
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   margin-left: var(--sidebar-width);
-  transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1), max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   background-color: var(--layout-bg);
 }
 
 .app-main-viewport.sidebar-collapsed {
+  width: calc(100% - var(--sidebar-collapsed-width));
+  max-width: calc(100% - var(--sidebar-collapsed-width));
   margin-left: var(--sidebar-collapsed-width);
 }
 
@@ -295,6 +304,9 @@
 
 .app-topbar {
   height: var(--topbar-height);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: var(--topbar-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -302,7 +314,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
+  padding: 0 1.75rem;
   position: sticky;
   top: 0;
   z-index: 990;
@@ -850,6 +862,8 @@ tbody tr:hover {
 
   .app-main-viewport {
     margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .topbar-mobile-toggle {

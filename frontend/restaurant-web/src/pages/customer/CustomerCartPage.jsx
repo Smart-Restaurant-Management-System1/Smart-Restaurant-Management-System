@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
@@ -10,22 +9,10 @@ import {
 } from '../../services/cartService';
 
 const getCartItems = (cartData) => {
-  if (Array.isArray(cartData)) {
-    return cartData;
-  }
-
-  if (Array.isArray(cartData?.items)) {
-    return cartData.items;
-  }
-
-  if (Array.isArray(cartData?.cartItems)) {
-    return cartData.cartItems;
-  }
-
-  if (Array.isArray(cartData?.orderItems)) {
-    return cartData.orderItems;
-  }
-
+  if (Array.isArray(cartData)) return cartData;
+  if (Array.isArray(cartData?.items)) return cartData.items;
+  if (Array.isArray(cartData?.cartItems)) return cartData.cartItems;
+  if (Array.isArray(cartData?.orderItems)) return cartData.orderItems;
   return [];
 };
 
@@ -288,30 +275,66 @@ function CustomerCartPage() {
             Your <em>Order Cart</em>
           </>
         }
-        subtitle="Review your selected dishes and adjust quantities before continuing with your order."
+        subtitle="Review your selected dishes and choose whether to dine-in now or pre-order for an upcoming reservation."
         actions={
-          <Link
-            to="/menu"
-            className="bistro-button-outline"
-            style={{ textDecoration: 'none' }}
-          >
-            Continue Shopping
-          </Link>
+          <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <Link
+              to="/menu"
+              className="bistro-button-outline"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 3v18" />
+                <path d="M8 3v7a2 2 0 0 1-4 0V3" />
+                <path d="M6 10v11" />
+                <path d="M14 3v18" />
+                <path d="M14 3c4 2 4 6 0 8" />
+                <path d="M18 3v18" />
+              </svg>
+              <span>Explore Menu</span>
+            </Link>
+          </div>
         }
       />
 
       {loading && (
         <div
+          className="bistro-card"
           style={{
+            position: 'relative',
             background: '#ffffff',
             border: '1px solid #eedfc9',
-            borderRadius: '12px',
-            padding: '3rem 1.5rem',
+            borderRadius: '14px',
+            padding: '3.5rem 1.5rem',
             textAlign: 'center',
             color: '#78716c',
+            overflow: 'hidden',
           }}
         >
-          Loading your cart...
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '3px',
+              background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+            }}
+          />
+          <div
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              border: '3px solid rgba(197, 160, 89, 0.25)',
+              borderTopColor: '#c5a059',
+              animation: 'spin 0.8s linear infinite',
+              margin: '0 auto 1rem',
+            }}
+          />
+          <p style={{ margin: 0, fontSize: '0.92rem', fontStyle: 'italic' }}>
+            Loading your culinary selection…
+          </p>
         </div>
       )}
 
@@ -321,14 +344,14 @@ function CustomerCartPage() {
           style={{
             background: '#fff5f5',
             border: '1px solid #fecaca',
-            borderRadius: '10px',
-            padding: '1rem 1.25rem',
+            borderRadius: '12px',
+            padding: '1.25rem 1.5rem',
             color: '#991b1b',
-            marginBottom: '1rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center',
           }}
         >
-          <p style={{ margin: '0 0 0.75rem' }}>{error}</p>
-
+          <p style={{ margin: '0 0 0.85rem', fontSize: '0.9rem' }}>{error}</p>
           <button
             type="button"
             className="bistro-button-gold"
@@ -347,14 +370,18 @@ function CustomerCartPage() {
               style={{
                 background: '#ecfdf5',
                 border: '1px solid #bbf7d0',
-                borderRadius: '8px',
-                padding: '0.85rem 1rem',
+                borderRadius: '10px',
+                padding: '0.85rem 1.15rem',
                 color: '#166534',
                 fontSize: '0.88rem',
-                marginBottom: '1rem',
+                marginBottom: '1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
               }}
             >
-              {successMessage}
+              <span style={{ fontSize: '1.1rem' }}>✓</span>
+              <span>{successMessage}</span>
             </div>
           )}
 
@@ -364,11 +391,11 @@ function CustomerCartPage() {
               style={{
                 background: '#fff5f5',
                 border: '1px solid #fecaca',
-                borderRadius: '8px',
-                padding: '0.85rem 1rem',
+                borderRadius: '10px',
+                padding: '0.85rem 1.15rem',
                 color: '#991b1b',
                 fontSize: '0.88rem',
-                marginBottom: '1rem',
+                marginBottom: '1.25rem',
               }}
             >
               {actionError}
@@ -377,24 +404,40 @@ function CustomerCartPage() {
 
           {items.length === 0 ? (
             <div
+              className="bistro-card"
               style={{
+                position: 'relative',
                 background: '#ffffff',
                 border: '1px solid #eedfc9',
-                borderRadius: '12px',
+                borderRadius: '14px',
                 padding: '4rem 1.5rem',
                 textAlign: 'center',
+                overflow: 'hidden',
+                boxShadow: '0 4px 16px rgba(40, 33, 21, 0.04)',
               }}
             >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '3px',
+                  background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+                }}
+              />
+
               <div
                 style={{
                   width: '68px',
                   height: '68px',
                   borderRadius: '50%',
-                  background: '#f5efe6',
+                  background: 'linear-gradient(135deg, #faf5ec 0%, #f4ebd9 100%)',
+                  border: '1px solid #eedfc9',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  margin: '0 auto 1rem',
+                  margin: '0 auto 1.25rem',
                 }}
               >
                 <svg
@@ -417,8 +460,9 @@ function CustomerCartPage() {
                 style={{
                   fontFamily: "Georgia, 'Times New Roman', serif",
                   color: '#282115',
-                  fontSize: '1.4rem',
+                  fontSize: '1.45rem',
                   margin: '0 0 0.6rem',
+                  fontWeight: 600,
                 }}
               >
                 Your Cart Is Empty
@@ -427,42 +471,58 @@ function CustomerCartPage() {
               <p
                 style={{
                   color: '#78716c',
-                  fontSize: '0.9rem',
-                  margin: '0 auto 1.5rem',
-                  maxWidth: '420px',
+                  fontSize: '0.92rem',
+                  margin: '0 auto 1.75rem',
+                  maxWidth: '440px',
                   lineHeight: 1.6,
                 }}
               >
-                You have not added any dishes yet. Explore our menu and choose
-                something delicious.
+                You have not selected any artisanal dishes yet. Explore our curated menu to begin curating your dining experience.
               </p>
 
               <Link
                 to="/menu"
                 className="bistro-button-gold"
-                style={{ textDecoration: 'none' }}
+                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.4rem' }}
               >
-                Explore Menu
+                <span>Browse Menu</span>
+                <span aria-hidden="true">→</span>
               </Link>
             </div>
           ) : (
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) 320px',
-                gap: '1.5rem',
+                gridTemplateColumns: 'minmax(0, 1.45fr) minmax(340px, 380px)',
+                gap: '1.75rem',
                 alignItems: 'start',
               }}
             >
-              {/* Cart Items */}
+              {/* Cart Items List */}
               <section
+                className="bistro-card"
                 style={{
+                  position: 'relative',
                   background: '#ffffff',
                   border: '1px solid #eedfc9',
-                  borderRadius: '12px',
-                  padding: '1.25rem',
+                  borderRadius: '14px',
+                  padding: '1.5rem',
+                  overflow: 'hidden',
+                  boxShadow: '0 3px 12px rgba(40, 33, 21, 0.04)',
                 }}
               >
+                {/* Top Gold Gradient Accent Line */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+                  }}
+                />
+
                 <div
                   style={{
                     display: 'flex',
@@ -470,28 +530,38 @@ function CustomerCartPage() {
                     justifyContent: 'space-between',
                     gap: '1rem',
                     flexWrap: 'wrap',
-                    marginBottom: '1rem',
+                    marginBottom: '1.25rem',
+                    paddingBottom: '0.85rem',
+                    borderBottom: '1px solid #f0e7db',
                   }}
                 >
-                  <h2
-                    style={{
-                      fontFamily: "Georgia, 'Times New Roman', serif",
-                      color: '#282115',
-                      fontSize: '1.25rem',
-                      margin: 0,
-                    }}
-                  >
-                    Selected Items
-                  </h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    <h2
+                      style={{
+                        fontFamily: "Georgia, 'Times New Roman', serif",
+                        color: '#282115',
+                        fontSize: '1.3rem',
+                        fontWeight: 600,
+                        margin: 0,
+                      }}
+                    >
+                      Selected Culinary Items
+                    </h2>
+                  </div>
 
                   <span
                     style={{
+                      background: '#faf5ec',
                       color: '#8c6736',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
+                      border: '1px solid #eedfc9',
+                      borderRadius: '9999px',
+                      padding: '0.2rem 0.65rem',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.04em',
                     }}
                   >
-                    {items.length} {items.length === 1 ? 'Item' : 'Items'}
+                    {items.length} {items.length === 1 ? 'Dish' : 'Dishes'}
                   </span>
                 </div>
 
@@ -499,7 +569,7 @@ function CustomerCartPage() {
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '1rem',
+                    gap: '1.25rem',
                   }}
                 >
                   {items.map((item, index) => {
@@ -519,25 +589,28 @@ function CustomerCartPage() {
                         key={menuItemId ?? index}
                         style={{
                           display: 'flex',
-                          gap: '1rem',
-                          paddingBottom: '1rem',
+                          gap: '1.15rem',
+                          paddingBottom: '1.25rem',
                           borderBottom:
                             index === items.length - 1
                               ? 'none'
                               : '1px solid #f0e7db',
                           opacity: isRemoving ? 0.55 : 1,
+                          transition: 'opacity 0.2s ease',
+                          alignItems: 'center',
                         }}
                       >
                         {/* Item Image */}
                         <div
                           style={{
-                            width: '100px',
-                            height: '100px',
+                            width: '92px',
+                            height: '92px',
                             flexShrink: 0,
-                            borderRadius: '8px',
+                            borderRadius: '10px',
                             overflow: 'hidden',
                             background:
                               'linear-gradient(135deg, #f7f1e7, #ebe2d3)',
+                            border: '1px solid #eedfc9',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -558,12 +631,12 @@ function CustomerCartPage() {
                             />
                           ) : (
                             <svg
-                              width="30"
-                              height="30"
+                              width="32"
+                              height="32"
                               viewBox="0 0 24 24"
                               fill="none"
                               stroke="#c5a059"
-                              strokeWidth="1.5"
+                              strokeWidth="1.8"
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             >
@@ -582,7 +655,7 @@ function CustomerCartPage() {
                             minWidth: 0,
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '0.35rem',
+                            gap: '0.3rem',
                           }}
                         >
                           <h3
@@ -590,7 +663,7 @@ function CustomerCartPage() {
                               fontFamily:
                                 "Georgia, 'Times New Roman', serif",
                               color: '#282115',
-                              fontSize: '1rem',
+                              fontSize: '1.05rem',
                               margin: 0,
                               fontWeight: 600,
                             }}
@@ -601,9 +674,13 @@ function CustomerCartPage() {
                           <p
                             style={{
                               color: '#78716c',
-                              fontSize: '0.78rem',
+                              fontSize: '0.82rem',
                               margin: 0,
                               lineHeight: 1.4,
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
                             }}
                           >
                             {itemDescription}
@@ -612,73 +689,94 @@ function CustomerCartPage() {
                           <span
                             style={{
                               color: '#8c6736',
-                              fontSize: '0.8rem',
-                              fontWeight: 600,
+                              fontSize: '0.84rem',
+                              fontWeight: 700,
                             }}
                           >
                             {formatCurrency(itemPrice)} each
                           </span>
 
-                          {/* Quantity Controls */}
+                          {/* Luxury Quantity Controls */}
                           <div
                             style={{
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '0.5rem',
+                              gap: '0.45rem',
                               marginTop: '0.35rem',
                               flexWrap: 'wrap',
                             }}
                           >
-                            <button
-                              type="button"
-                              aria-label={`Decrease quantity of ${itemName}`}
-                              disabled={isUpdating || isRemoving}
-                              onClick={() => handleDecreaseQuantity(item)}
+                            <div
                               style={{
-                                width: '30px',
-                                height: '30px',
-                                borderRadius: '6px',
-                                border: '1px solid #d8c7ad',
-                                background: '#ffffff',
-                                color: '#6b4e2e',
-                                cursor: 'pointer',
-                                fontSize: '1rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                background: '#faf5ec',
+                                border: '1px solid #e2d1ba',
+                                borderRadius: '8px',
+                                padding: '2px',
                               }}
                             >
-                              −
-                            </button>
+                              <button
+                                type="button"
+                                aria-label={`Decrease quantity of ${itemName}`}
+                                disabled={isUpdating || isRemoving}
+                                onClick={() => handleDecreaseQuantity(item)}
+                                style={{
+                                  width: '30px',
+                                  height: '30px',
+                                  borderRadius: '6px',
+                                  border: 'none',
+                                  background: '#ffffff',
+                                  color: '#6b4e2e',
+                                  cursor: 'pointer',
+                                  fontSize: '1.05rem',
+                                  fontWeight: 700,
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                −
+                              </button>
 
-                            <span
-                              aria-label={`Quantity: ${itemQuantity}`}
-                              style={{
-                                minWidth: '28px',
-                                textAlign: 'center',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                color: '#282115',
-                              }}
-                            >
-                              {itemQuantity}
-                            </span>
+                              <span
+                                aria-label={`Quantity: ${itemQuantity}`}
+                                style={{
+                                  minWidth: '32px',
+                                  textAlign: 'center',
+                                  fontSize: '0.88rem',
+                                  fontWeight: 700,
+                                  color: '#282115',
+                                }}
+                              >
+                                {itemQuantity}
+                              </span>
 
-                            <button
-                              type="button"
-                              aria-label={`Increase quantity of ${itemName}`}
-                              disabled={isUpdating || isRemoving}
-                              onClick={() => handleIncreaseQuantity(item)}
-                              style={{
-                                width: '30px',
-                                height: '30px',
-                                borderRadius: '6px',
-                                border: '1px solid #d8c7ad',
-                                background: '#ffffff',
-                                color: '#6b4e2e',
-                                cursor: 'pointer',
-                                fontSize: '1rem',
-                              }}
-                            >
-                              +
-                            </button>
+                              <button
+                                type="button"
+                                aria-label={`Increase quantity of ${itemName}`}
+                                disabled={isUpdating || isRemoving}
+                                onClick={() => handleIncreaseQuantity(item)}
+                                style={{
+                                  width: '30px',
+                                  height: '30px',
+                                  borderRadius: '6px',
+                                  border: 'none',
+                                  background: '#ffffff',
+                                  color: '#6b4e2e',
+                                  cursor: 'pointer',
+                                  fontSize: '1.05rem',
+                                  fontWeight: 700,
+                                  boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                              >
+                                +
+                              </button>
+                            </div>
 
                             <button
                               type="button"
@@ -687,14 +785,21 @@ function CustomerCartPage() {
                               style={{
                                 border: 'none',
                                 background: 'transparent',
-                                color: '#b45309',
+                                color: '#b91c1c',
                                 cursor: 'pointer',
-                                fontSize: '0.75rem',
-                                textDecoration: 'underline',
-                                marginLeft: '0.25rem',
+                                fontSize: '0.78rem',
+                                marginLeft: '0.4rem',
+                                fontWeight: 600,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem',
                               }}
                             >
-                              {isRemoving ? 'Removing...' : 'Remove'}
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                              </svg>
+                              <span>{isRemoving ? 'Removing...' : 'Remove'}</span>
                             </button>
                           </div>
                         </div>
@@ -702,20 +807,23 @@ function CustomerCartPage() {
                         {/* Item Subtotal */}
                         <div
                           style={{
-                            minWidth: '95px',
+                            minWidth: '100px',
                             textAlign: 'right',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'flex-end',
-                            gap: '0.4rem',
+                            gap: '0.3rem',
                           }}
                         >
+                          <span style={{ fontSize: '0.72rem', color: '#78716c', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Subtotal
+                          </span>
                           <strong
                             style={{
                               color: '#282115',
                               fontFamily:
                                 "Georgia, 'Times New Roman', serif",
-                              fontSize: '0.95rem',
+                              fontSize: '1.08rem',
                             }}
                           >
                             {formatCurrency(itemSubtotal)}
@@ -725,10 +833,11 @@ function CustomerCartPage() {
                             <span
                               style={{
                                 color: '#8c6736',
-                                fontSize: '0.7rem',
+                                fontSize: '0.72rem',
+                                fontStyle: 'italic',
                               }}
                             >
-                              Updating...
+                              Updating…
                             </span>
                           )}
                         </div>
@@ -737,12 +846,12 @@ function CustomerCartPage() {
                   })}
                 </div>
 
-                {/* Clear Cart */}
+                {/* Clear Cart Action */}
                 <div
                   style={{
                     display: 'flex',
                     justifyContent: 'flex-end',
-                    marginTop: '1rem',
+                    marginTop: '1.5rem',
                     paddingTop: '1rem',
                     borderTop: '1px solid #f0e7db',
                   }}
@@ -752,37 +861,62 @@ function CustomerCartPage() {
                     onClick={handleClearCart}
                     disabled={clearingCart}
                     style={{
-                      border: '1px solid #e5caca',
-                      borderRadius: '7px',
-                      background: '#fffafa',
+                      border: '1px solid #fca5a5',
+                      borderRadius: '8px',
+                      background: '#fff5f5',
                       color: '#b91c1c',
-                      padding: '0.55rem 0.85rem',
-                      fontSize: '0.78rem',
+                      padding: '0.48rem 0.9rem',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
                       cursor: clearingCart ? 'wait' : 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
                     }}
                   >
-                    {clearingCart ? 'Clearing...' : 'Clear Cart'}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="15" y1="9" x2="9" y2="15" />
+                      <line x1="9" y1="9" x2="15" y2="15" />
+                    </svg>
+                    <span>{clearingCart ? 'Clearing…' : 'Clear All Items'}</span>
                   </button>
                 </div>
               </section>
 
-              {/* Cart Summary */}
+              {/* Order Summary & Dual Checkout Actions */}
               <aside
+                className="bistro-card"
                 style={{
-                  background: '#ffffff',
-                  border: '1px solid #eedfc9',
-                  borderRadius: '12px',
-                  padding: '1.25rem',
                   position: 'sticky',
                   top: '1rem',
+                  background: '#ffffff',
+                  border: '1px solid #eedfc9',
+                  borderRadius: '14px',
+                  padding: '1.5rem',
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 16px rgba(40, 33, 21, 0.05)',
                 }}
               >
+                {/* Top Gold Gradient Accent Line */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '3px',
+                    background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+                  }}
+                />
+
                 <h2
                   style={{
                     fontFamily: "Georgia, 'Times New Roman', serif",
                     color: '#282115',
                     fontSize: '1.25rem',
                     margin: '0 0 1.25rem',
+                    fontWeight: 600,
                   }}
                 >
                   Order Summary
@@ -795,11 +929,11 @@ function CustomerCartPage() {
                     gap: '1rem',
                     marginBottom: '0.75rem',
                     color: '#78716c',
-                    fontSize: '0.85rem',
+                    fontSize: '0.88rem',
                   }}
                 >
-                  <span>Items</span>
-                  <span>{items.length}</span>
+                  <span>Selected Dishes</span>
+                  <span style={{ fontWeight: 600, color: '#282115' }}>{items.length}</span>
                 </div>
 
                 <div
@@ -809,21 +943,21 @@ function CustomerCartPage() {
                     gap: '1rem',
                     marginBottom: '1rem',
                     color: '#78716c',
-                    fontSize: '0.85rem',
+                    fontSize: '0.88rem',
                   }}
                 >
-                  <span>Subtotal</span>
-                  <span>{formatCurrency(total)}</span>
+                  <span>Estimated Total</span>
+                  <span style={{ fontWeight: 600, color: '#282115' }}>{formatCurrency(total)}</span>
                 </div>
 
                 <div
                   style={{
                     borderTop: '1px solid #eedfc9',
-                    paddingTop: '1rem',
-                    marginBottom: '1.25rem',
+                    paddingTop: '1.15rem',
+                    marginBottom: '1.5rem',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
+                    alignItems: 'baseline',
                     gap: '1rem',
                   }}
                 >
@@ -831,62 +965,110 @@ function CustomerCartPage() {
                     style={{
                       color: '#282115',
                       fontFamily: "Georgia, 'Times New Roman', serif",
-                      fontSize: '1rem',
+                      fontSize: '1.1rem',
+                      fontWeight: 600,
                     }}
                   >
-                    Total
+                    Grand Total
                   </strong>
 
                   <strong
                     style={{
                       color: '#8c6736',
                       fontFamily: "Georgia, 'Times New Roman', serif",
-                      fontSize: '1.15rem',
+                      fontSize: '1.35rem',
+                      fontWeight: 700,
                     }}
                   >
                     {formatCurrency(total)}
                   </strong>
                 </div>
 
-                <Link
-                  to="/order-review"
-                  className="bistro-button-gold"
+                {/* Dual Checkout Action Buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {/* Primary: Dine-In Order */}
+                  <Link
+                    to="/order-review"
+                    className="bistro-button-gold"
+                    style={{
+                      display: 'flex',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      textDecoration: 'none',
+                      padding: '0.75rem 1.15rem',
+                      fontSize: '0.88rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 18v3" />
+                      <path d="M20 18v3" />
+                      <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
+                      <path d="M2 11h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z" />
+                    </svg>
+                    <span>Dine-In Order Now</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+
+                  {/* Secondary: Pre-Order for Reservation */}
+                  <Link
+                    to="/reservation-pre-order"
+                    className="bistro-button-outline"
+                    style={{
+                      display: 'flex',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      textDecoration: 'none',
+                      padding: '0.7rem 1.15rem',
+                      fontSize: '0.86rem',
+                      fontWeight: 600,
+                      background: '#faf5ec',
+                    }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    <span>Pre-Order for Booking</span>
+                  </Link>
+                </div>
+
+                {/* Reassurance note */}
+                <div
                   style={{
                     display: 'flex',
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    justifyContent: 'center',
                     alignItems: 'center',
-                    textDecoration: 'none',
+                    gap: '0.45rem',
+                    color: '#78716c',
+                    fontSize: '0.78rem',
+                    marginTop: '1.25rem',
+                    justifyContent: 'center',
                   }}
                 >
-                  Continue to Order <span aria-hidden="true">→</span>
-                </Link>
-
-                <Link
-                  to="/menu"
-                  style={{
-                    display: 'block',
-                    textAlign: 'center',
-                    marginTop: '1rem',
-                    color: '#8c6736',
-                    fontSize: '0.8rem',
-                    textDecoration: 'underline',
-                  }}
-                >
-                  Continue browsing menu
-                </Link>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                  <span>Fresh artisanal preparation guaranteed</span>
+                </div>
               </aside>
             </div>
           )}
         </>
       )}
 
-      {/* Responsive Layout Adjustment */}
+      {/* Responsive Styles */}
       <style>
         {`
           @media (max-width: 850px) {
-            .customer-cart-page > div > div {
+            .customer-cart-page > div[style*="grid-template-columns"] {
               grid-template-columns: minmax(0, 1fr) !important;
             }
 
@@ -895,13 +1077,16 @@ function CustomerCartPage() {
             }
           }
 
-          @media (max-width: 480px) {
+          @media (max-width: 520px) {
             .customer-cart-page article {
-              flex-wrap: wrap;
+              flex-direction: column;
+              align-items: flex-start !important;
             }
 
             .customer-cart-page article > div:last-child {
-              margin-left: auto;
+              align-items: flex-start !important;
+              text-align: left !important;
+              margin-top: 0.5rem;
             }
           }
         `}

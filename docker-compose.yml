@@ -21,6 +21,9 @@ services:
       - ./database/reservation-db/05_reservation_concurrency.sql:/docker-entrypoint-initdb.d/06_reservation_concurrency.sql
       - ./database/reservation-db/06_reservation_outbox.sql:/docker-entrypoint-initdb.d/07_reservation_outbox.sql
       - ./database/reservation-db/03_menu_items.sql:/docker-entrypoint-initdb.d/08_menu_items.sql
+      - ./database/reservation-db/07_order_cart.sql:/docker-entrypoint-initdb.d/09_order_cart.sql
+      - ./database/reservation-db/08_dine_in_orders.sql:/docker-entrypoint-initdb.d/10_dine_in_orders.sql
+      - ./database/reservation-db/09_reservation_pre_orders.sql:/docker-entrypoint-initdb.d/11_reservation_pre_orders.sql
     networks:
       - restaurant-network
     healthcheck:
@@ -111,6 +114,8 @@ services:
       - Kafka__ReservationTopic=restaurant.reservations.v1
       - Kafka__SecurityProtocol=plaintext
       - Kafka__PublisherEnabled=true
+    volumes:
+      - reservation_uploads:/app/wwwroot/uploads
     depends_on:
       mysql:
         condition: service_healthy
@@ -141,3 +146,4 @@ networks:
 volumes:
   mysql_data:
   kafka_data:
+  reservation_uploads:
