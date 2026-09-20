@@ -21,6 +21,7 @@ import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
 import AvailabilitySearchPage from '../pages/availability/AvailabilitySearchPage';
 import ReservationReviewPage from '../pages/availability/ReservationReviewPage';
 import OrderReviewPage from '../pages/customer/OrderReviewPage';
+import OrderTrackingPage from '../pages/customer/OrderTrackingPage';
 import ReservationConfirmationPage from '../pages/availability/ReservationConfirmationPage';
 import ReservationHistoryPage from '../pages/availability/ReservationHistoryPage';
 import ReservationDetailPage from '../pages/availability/ReservationDetailPage';
@@ -291,5 +292,6 @@ export default function AppRoutes() {
     </Routes>
   );
 }
+
 
 
