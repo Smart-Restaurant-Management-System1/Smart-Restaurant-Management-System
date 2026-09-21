@@ -19,6 +19,10 @@ public sealed class KafkaOptions
     /// <summary>Topic name for reservation lifecycle events.</summary>
     [Required]
     public string ReservationTopic { get; set; } = "restaurant.reservations.v1";
+    /// <summary>Topic name for order lifecycle events.</summary>
+    [Required]
+    public string OrderLifecycleTopic { get; set; } = "order-lifecycle-events";
+
 
     /// <summary>Kafka producer client ID shown in broker logs.</summary>
     public string ClientId { get; set; } = "smart-restaurant-reservation-service";

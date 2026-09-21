@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using MySqlConnector;
 using ReservationService.Data;
 using ReservationService.DTOs;
+using ReservationService.Events;
+using ReservationService.Repositories;
+using ReservationService.Services;
 using ReservationService.Models;
 
 namespace ReservationService.Controllers;
@@ -16,12 +19,16 @@ public sealed class OrdersController : ControllerBase
     private readonly DatabaseHelper _databaseHelper;
     private readonly ILogger<OrdersController> _logger;
 
+
+    private readonly IOutboxRepository _outboxRepository;
     public OrdersController(
         DatabaseHelper databaseHelper,
-        ILogger<OrdersController> logger)
+        ILogger<OrdersController> logger,
+        IOutboxRepository outboxRepository)
     {
         _databaseHelper = databaseHelper;
         _logger = logger;
+        _outboxRepository = outboxRepository;
     }
 
     [HttpPost("dine-in")]
@@ -82,9 +89,23 @@ public sealed class OrdersController : ControllerBase
                 return Conflict(new { message = "One or more selected menu items are unavailable." });
             }
 
-            var total = request.Items.Sum(item => menuItems[item.MenuItemId].Price * item.Quantity);
-            var orderId = await InsertOrderAsync(connection, transaction, customerId, request.TableId, idempotencyKey, total, cancellationToken);
+            var total = request.Items.Sum(item => menuItems[item.MenuItemId].Price * item.Quantity);            var orderId = await InsertOrderAsync(connection, transaction, customerId, request.TableId, idempotencyKey, total, cancellationToken);
             await InsertOrderItemsAsync(connection, transaction, orderId, request.Items, menuItems, cancellationToken);
+
+            await OrderLifecycleOutboxHelper.InsertAsync(
+                connection,
+                transaction,
+                _outboxRepository,
+                OrderLifecycleEventTypes.OrderCreated,
+                orderId,
+                $"DIN-{orderId:D6}",
+                "DineIn",
+                "Received",
+                request.TableId,
+                null,
+                null,
+                idempotencyKey,
+                cancellationToken);
 
             var response = new DineInOrderResponse(orderId, $"DIN-{orderId:D6}", "Received", total);
             await transaction.CommitAsync(cancellationToken);
