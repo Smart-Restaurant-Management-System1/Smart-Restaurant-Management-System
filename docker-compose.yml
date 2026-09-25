@@ -24,6 +24,7 @@ services:
       - ./database/reservation-db/07_order_cart.sql:/docker-entrypoint-initdb.d/09_order_cart.sql
       - ./database/reservation-db/08_dine_in_orders.sql:/docker-entrypoint-initdb.d/10_dine_in_orders.sql
       - ./database/reservation-db/09_reservation_pre_orders.sql:/docker-entrypoint-initdb.d/11_reservation_pre_orders.sql
+      - ./database/reservation-db/10_order_lifecycle_events.sql:/docker-entrypoint-initdb.d/12_order_lifecycle_events.sql
     networks:
       - restaurant-network
     healthcheck:
@@ -112,6 +113,7 @@ services:
       # SR-112: Kafka outbox publisher settings. SaslUsername/SaslPassword are empty for plaintext local dev.
       - Kafka__BootstrapServers=kafka:9092
       - Kafka__ReservationTopic=restaurant.reservations.v1
+      - Kafka__OrderLifecycleTopic=order-lifecycle-events
       - Kafka__SecurityProtocol=plaintext
       - Kafka__PublisherEnabled=true
     volumes:
