@@ -87,6 +87,15 @@ test('validateMenuItemPayload validates image URL protocol and supports relative
   assert.equal(malformedUrl.isValid, false);
   assert.equal(malformedUrl.error, 'Please enter a valid image URL or upload a photo.');
 
+  // QA Bug: malformed imageReference '%%%INVALID_IMAGE%%%!!'
+  const qaMalformedImage = validateMenuItemPayload({
+    itemName: 'Soup',
+    price: '500',
+    imageReference: '%%%INVALID_IMAGE%%%!!',
+  });
+  assert.equal(qaMalformedImage.isValid, false);
+  assert.equal(qaMalformedImage.error, 'Please enter a valid image URL or upload a photo.');
+
   // Direct upload relative path
   const uploadPath = validateMenuItemPayload({
     itemName: 'Spiced Salmon',
