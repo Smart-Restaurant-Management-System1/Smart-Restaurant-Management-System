@@ -164,9 +164,9 @@ function SummaryCard({
           position: 'absolute',
           top: 0,
           left: 0,
-          width: '100%',
-          height: '4px',
-          background: accentColor,
+          right: 0,
+          height: '3px',
+          background: `linear-gradient(90deg, ${accentColor} 0%, #ecd6aa 50%, ${accentColor} 100%)`,
         }}
       />
 
@@ -214,7 +214,7 @@ function SummaryCard({
           <strong
             style={{
               color: COLORS.dark,
-              fontFamily: 'Georgia, "Times New Roman", serif',
+              fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: '35px',
               fontWeight: 700,
               lineHeight: 1,
@@ -327,9 +327,9 @@ function QueueOrderCard({ order, onStatusUpdate, updatingOrder }) {
       {/* Ticket top accent */}
       <div
         style={{
-          height: '5px',
+          height: '4px',
           flexShrink: 0,
-          background: statusConfig.color,
+          background: `linear-gradient(90deg, ${statusConfig.color} 0%, #ecd6aa 50%, ${statusConfig.color} 100%)`,
         }}
       />
 
@@ -349,7 +349,7 @@ function QueueOrderCard({ order, onStatusUpdate, updatingOrder }) {
             style={{
               marginBottom: '7px',
               color: COLORS.dark,
-              fontFamily: 'Georgia, "Times New Roman", serif',
+              fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: '20px',
               fontWeight: 700,
               lineHeight: 1.2,
@@ -574,7 +574,7 @@ function QueueOrderCard({ order, onStatusUpdate, updatingOrder }) {
           <span
             style={{
               color: COLORS.dark,
-              fontFamily: 'Georgia, "Times New Roman", serif',
+              fontFamily: "'Playfair Display', Georgia, serif",
               fontSize: '19px',
               fontWeight: 700,
             }}
@@ -679,7 +679,7 @@ function QueueSection({
               style={{
                 margin: 0,
                 color: COLORS.dark,
-                fontFamily: 'Georgia, "Times New Roman", serif',
+                fontFamily: "'Playfair Display', Georgia, serif",
                 fontSize: '25px',
                 fontWeight: 700,
                 lineHeight: 1.2,
@@ -1116,7 +1116,7 @@ export default function KitchenQueuePage() {
                 style={{
                   margin: 0,
                   color: COLORS.dark,
-                  fontFamily: 'Georgia, "Times New Roman", serif',
+                  fontFamily: "'Playfair Display', Georgia, serif",
                   fontSize: '25px',
                   fontWeight: 700,
                 }}
@@ -1255,7 +1255,7 @@ export default function KitchenQueuePage() {
                 style={{
                   margin: 0,
                   color: COLORS.brown,
-                  fontFamily: 'Georgia, "Times New Roman", serif',
+                  fontFamily: "'Playfair Display', Georgia, serif",
                   fontSize: '21px',
                   fontWeight: 700,
                 }}
