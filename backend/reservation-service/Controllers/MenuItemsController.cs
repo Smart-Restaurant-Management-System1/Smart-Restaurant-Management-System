@@ -398,9 +398,28 @@ public class MenuItemsController : ControllerBase
             return "Invalid dietary information.";
         }
 
-        if (request.ImageReference?.Length > 500)
+        if (!string.IsNullOrWhiteSpace(request.ImageReference))
         {
-            return "Image reference cannot exceed 500 characters.";
+            var imageRef = request.ImageReference.Trim();
+
+            if (imageRef.Length > 500)
+            {
+                return "Image reference cannot exceed 500 characters.";
+            }
+
+            var isValidUrl = Uri.TryCreate(imageRef, UriKind.Absolute, out var uriResult) &&
+                             (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps) &&
+                             !string.IsNullOrWhiteSpace(uriResult.Host);
+
+            var isRelativeUpload = (imageRef.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase) ||
+                                    imageRef.StartsWith("uploads/", StringComparison.OrdinalIgnoreCase)) &&
+                                   !imageRef.Contains("..") &&
+                                   imageRef.IndexOfAny(Path.GetInvalidPathChars()) == -1;
+
+            if (!isValidUrl && !isRelativeUpload)
+            {
+                return "Image reference must be a valid HTTP or HTTPS URL, or a valid uploaded image path.";
+            }
         }
 
         return null;
