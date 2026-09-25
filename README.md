@@ -536,3 +536,4 @@ Git history follows feature branch workflows merged into integration branches th
 - Submit PRs into `develop` with completed pull request templates, user story references, and technical descriptions.
 - Code merges require passing CI workflows (build checks and unit tests).
 - Pushes to `develop` automatically trigger the continuous deployment pipeline to Azure Container Apps.
+- 
