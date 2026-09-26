@@ -51,3 +51,23 @@ test('hasAnyRole supports multiple allowed roles', () => {
   assert.equal(hasAnyRole(kitchenUser, staffOnly), true);
   assert.equal(hasAnyRole(customerUser, staffOnly), false);
 });
+
+test('customer ordering pages are Customer-only: Admin and KitchenStaff are not allowed', async () => {
+  const { CUSTOMER_ORDERING_ROLES } = await import('./roles.js');
+  assert.equal(hasAnyRole({ roles: [ROLES.CUSTOMER] }, CUSTOMER_ORDERING_ROLES), true);
+  assert.equal(hasAnyRole({ roles: [ROLES.ADMIN] }, CUSTOMER_ORDERING_ROLES), false);
+  assert.equal(hasAnyRole({ roles: [ROLES.KITCHEN_STAFF] }, CUSTOMER_ORDERING_ROLES), false);
+});
+
+test('AppRoutes only exposes cart-backed pages through the Customer-only guard', async () => {
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('./AppRoutes.jsx', import.meta.url), 'utf8');
+  // Split into <Route element={<ProtectedRoute ...>} groups and find the guard that precedes each path.
+  const groups = src.split(/<ProtectedRoute/).slice(1);
+  for (const path of ['/orders', '/menu', '/order-review', '/cart', '/reservation-pre-order']) {
+    const g = groups.find((x) => x.includes(`path="${path}"`));
+    assert.ok(g, `route ${path} not found`);
+    const guard = g.slice(0, g.indexOf('</ProtectedRoute>'));
+    assert.doesNotMatch(guard, /ROLES\.ADMIN|ROLES\.KITCHEN_STAFF|ALL_ROLES/, `${path} must not allow Admin/Kitchen`);
+  }
+});

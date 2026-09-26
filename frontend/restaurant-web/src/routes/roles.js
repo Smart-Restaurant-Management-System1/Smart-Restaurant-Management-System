@@ -16,3 +16,7 @@ export const hasAnyRole = (user, requiredRoles = []) => {
 
   return requiredRoles.some((role) => userRoles.includes(role));
 };
+
+// The order cart, customer menu, order review/tracking and pre-order APIs (reservation-service) are Customer-only.
+// Admin and KitchenStaff receive 403 from them, so they must never be routed into those pages.
+export const CUSTOMER_ORDERING_ROLES = [ROLES.CUSTOMER];

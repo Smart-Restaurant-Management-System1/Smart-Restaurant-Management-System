@@ -32,7 +32,7 @@ import LandingPage from '../pages/common/LandingPage';
 
 import ProtectedRoute from './ProtectedRoute';
 import AppLayout from '../components/common/AppLayout';
-import { ROLES, ALL_ROLES } from './roles';
+import { ROLES, ALL_ROLES, CUSTOMER_ORDERING_ROLES } from './roles';
 import { useAuth } from '../context/AuthContext';
 
 export default function AppRoutes() {
@@ -113,6 +113,22 @@ export default function AppRoutes() {
           element={<CustomerPortalPage />}
         />
 
+        <Route
+          path="/availability"
+          element={<AvailabilitySearchPage />}
+        />
+      </Route>
+
+      {/* Customer-only ordering routes (their APIs are Customer-only; Admin/Kitchen would get 403) */}
+      <Route
+        element={
+          <ProtectedRoute
+            allowedRoles={CUSTOMER_ORDERING_ROLES}
+          >
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
         {/* Customer Order Tracking - SR-135 */}
         <Route
           path="/orders"
@@ -125,16 +141,10 @@ export default function AppRoutes() {
           element={<CustomerMenuPage />}
         />
 
+        {/* Dine-in Order Review - SR-159 */}
         <Route
           path="/order-review"
-          element={
-          <OrderReviewPage />
-        }
-        />
-
-        <Route
-          path="/availability"
-          element={<AvailabilitySearchPage />}
+          element={<OrderReviewPage />}
         />
       </Route>
 

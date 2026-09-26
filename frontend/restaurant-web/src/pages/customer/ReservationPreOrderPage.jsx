@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { getApiErrorMessage } from '../../services/apiErrorMessage';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import { getCart, clearCart } from '../../services/cartService';
@@ -158,8 +159,7 @@ function ReservationPreOrderPage() {
       } catch (err) {
         console.error('Unable to load reservation pre-order data:', err);
         setError(
-          err.response?.data?.message ||
-            'Unable to load your cart and reservations. Please try again.'
+          getApiErrorMessage(err, 'Unable to load your cart and reservations. Please try again.')
         );
       } finally {
         setLoading(false);

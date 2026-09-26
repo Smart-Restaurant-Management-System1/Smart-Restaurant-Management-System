@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { getApiErrorMessage } from '../../services/apiErrorMessage';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import {
@@ -103,8 +104,7 @@ function CustomerCartPage() {
       console.error('Error loading cart:', err);
 
       setError(
-        err.response?.data?.message ||
-          'Unable to load your cart. Please try again.'
+        getApiErrorMessage(err, 'Unable to load your cart. Please try again.')
       );
     } finally {
       setLoading(false);

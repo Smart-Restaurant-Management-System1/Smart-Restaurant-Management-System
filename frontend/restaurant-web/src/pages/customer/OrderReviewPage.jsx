@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import { getApiErrorMessage } from '../../services/apiErrorMessage';
 import { getCart, clearCart } from '../../services/cartService';
 import { getActiveTables } from '../../services/tableService';
 import { submitDineInOrder } from '../../services/orderService';
@@ -108,8 +109,7 @@ function OrderReviewPage() {
         console.error('Unable to load order review data:', err);
 
         setError(
-          err.response?.data?.message ||
-            'Unable to load your order review information.'
+          getApiErrorMessage(err, 'Unable to load your order review information.')
         );
       } finally {
         setLoading(false);
