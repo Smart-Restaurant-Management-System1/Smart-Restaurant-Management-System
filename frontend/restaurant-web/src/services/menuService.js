@@ -137,21 +137,7 @@ export const uploadMenuItemImage = async (file) => {
   return response.data;
 };
 
-// Resolve image URL for both local uploads and external CDN links
-export const resolveImageUrl = (imageRef) => {
-  if (!imageRef || typeof imageRef !== 'string') return '';
-  const trimmed = imageRef.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return trimmed;
-  }
-  if (trimmed.startsWith('/')) {
-    const apiBase =
-      (typeof import.meta !== 'undefined' && import.meta.env?.VITE_RESERVATION_API_URL) ||
-      'http://localhost:5000/api';
-    const origin = apiBase.replace(/\/api\/?$/, '');
-    return `${origin}${trimmed}`;
-  }
-  return trimmed;
-};
+// Image reference helpers live in menuImageUrl.js (pure, unit tested); re-exported here for existing importers.
+export { resolveImageUrl, isLegacyLocalUploadRef } from './menuImageUrl';
 
 export default reservationApi;

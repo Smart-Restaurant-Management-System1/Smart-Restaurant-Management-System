@@ -9,6 +9,7 @@ import {
   deleteMenuItem,
   uploadMenuItemImage,
   resolveImageUrl,
+  isLegacyLocalUploadRef,
 } from '../../services/menuService';
 
 const CATEGORIES = [
@@ -62,7 +63,11 @@ function MenuImageThumbnail({ src, alt }) {
           flexShrink: 0,
           boxShadow: '0 2px 5px rgba(0,0,0,0.04)',
         }}
-        title="No image preview"
+        title={
+          isLegacyLocalUploadRef(src)
+            ? 'This photo was saved before cloud storage was configured and is no longer available. Please upload it again.'
+            : 'No image preview'
+        }
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
