@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import loginIllustration from '../../assets/images/login.png';
+import { resolvePostLoginPath } from '../../routes/postLoginRedirect';
 
 export default function Login({ onNavigateToRegister }) {
   const { login } = useAuth();
@@ -79,25 +80,8 @@ export default function Login({ onNavigateToRegister }) {
       setIsSubmitted(false);
 
       const roles = result?.roles || [];
-      const isAdmin = roles.includes('Admin');
-      const isKitchenStaff = roles.includes('KitchenStaff');
       const fromPath = location.state?.from?.pathname;
-
-      let targetPath = '/portal';
-      if (isAdmin) {
-        targetPath = (fromPath && !fromPath.startsWith('/kitchen') && fromPath !== '/unauthorized' && fromPath !== '/login' && fromPath !== '/register') ? fromPath : '/admin';
-      } else if (isKitchenStaff) {
-        targetPath = (fromPath && (fromPath.startsWith('/kitchen') || fromPath.startsWith('/tables'))) ? fromPath : '/kitchen';
-      } else {
-        // Customer: only allow legitimate customer routes, never redirect to admin, kitchen, or unauthorized
-        const isCustomerSafePath = fromPath &&
-          !fromPath.startsWith('/admin') &&
-          !fromPath.startsWith('/kitchen') &&
-          fromPath !== '/unauthorized' &&
-          fromPath !== '/login' &&
-          fromPath !== '/register';
-        targetPath = isCustomerSafePath ? fromPath : '/portal';
-      }
+      const targetPath = resolvePostLoginPath(roles, fromPath);
 
       setTimeout(() => {
         navigate(targetPath, { replace: true });
