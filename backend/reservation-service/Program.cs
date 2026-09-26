@@ -341,7 +341,11 @@ else
     >();
 }
 
-// Image storage service (hybrid Azure Blob + local storage)
+// Image storage service (Azure Blob Storage; local disk fallback for Development only)
+builder.Services.AddSingleton<
+    ReservationService.Services.IBlobImageUploader,
+    ReservationService.Services.AzureBlobImageUploader
+>();
 builder.Services.AddScoped<
     ReservationService.Services.IImageStorageService,
     ReservationService.Services.ImageStorageService
@@ -353,6 +357,15 @@ builder.Services.AddHostedService<
 >();
 
 var app = builder.Build();
+
+// Make a missing Blob configuration visible at startup (never logs the value).
+if (!app.Environment.IsDevelopment()
+    && !ReservationService.Services.ImageStorageService.IsBlobConfigured(app.Configuration))
+{
+    app.Logger.LogWarning(
+        "Azure Blob Storage is not configured (AZURE_STORAGE_CONNECTION_STRING is missing or empty). " +
+        "Menu image uploads will return HTTP 503 until it is configured and the app is restarted.");
+}
 
 // Ensure local static uploads directory exists
 var webRoot = app.Environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");

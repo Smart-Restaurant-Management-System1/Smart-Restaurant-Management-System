@@ -13,6 +13,10 @@ env:
   ACR_NAME: ${{ vars.ACR_NAME }}
   ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
   RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+  # Menu-image storage for reservation-api. These are NAMES only: the storage connection string itself lives in the
+  # Container App secret below and must never be written to this repository or to GitHub secrets/logs.
+  BLOB_SECRET_NAME: storage-connection-string
+  BLOB_CONTAINER_NAME: menu-images
 
 jobs:
   deploy:
@@ -79,10 +83,79 @@ jobs:
 
       - name: Deploy Reservation Service
         run: |
+          set -euo pipefail
+
+          # The Blob settings are asserted in the SAME update as the image, so every deployment keeps them and the
+          # replica that is created loads them. The secret is only referenced (secretref), never read or printed.
+          secrets="$(az containerapp secret list \
+            --name reservation-api \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "[].name" -o tsv)"
+          if ! grep -qx "$BLOB_SECRET_NAME" <<<"$secrets"; then
+            echo "::error::Container App secret '$BLOB_SECRET_NAME' does not exist on reservation-api. Create it in Azure first (never in this repository)."
+            exit 1
+          fi
+
+          echo "RESERVATION_DEPLOY_STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
           az containerapp update \
             --name reservation-api \
             --resource-group "$RESOURCE_GROUP" \
-            --image "$ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}"
+            --image "$ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}" \
+            --set-env-vars \
+              "ASPNETCORE_ENVIRONMENT=Production" \
+              "AZURE_STORAGE_CONNECTION_STRING=secretref:$BLOB_SECRET_NAME" \
+              "Storage__BlobContainerName=$BLOB_CONTAINER_NAME"
+
+      - name: Verify Reservation Service configuration (names and references only)
+        run: |
+          set -euo pipefail
+          APP=reservation-api
+
+          show() { az containerapp show --name "$APP" --resource-group "$RESOURCE_GROUP" --query "$1" -o tsv | sed 's/^None$//'; }
+          env_field() { show "properties.template.containers[0].env[?name=='$1'].$2 | [0]"; }
+
+          fail=0
+          check() {
+            if [ "$2" = "$3" ]; then echo "OK    $1"; else echo "::error::$1 (expected '$2', found '$3')"; fail=1; fi
+          }
+
+          check "image is the deployed commit" \
+            "$ACR_LOGIN_SERVER/reservation-service:${{ github.sha }}" "$(show 'properties.template.containers[0].image')"
+          check "AZURE_STORAGE_CONNECTION_STRING is a reference to secret $BLOB_SECRET_NAME" \
+            "$BLOB_SECRET_NAME" "$(env_field AZURE_STORAGE_CONNECTION_STRING secretRef)"
+          # A plain-text value here would be a leaked secret: report only that it exists, never what it is.
+          plain="$(env_field AZURE_STORAGE_CONNECTION_STRING value)"
+          if [ -n "$plain" ]; then
+            echo "::error::AZURE_STORAGE_CONNECTION_STRING has a plain-text value (value not shown). It must only be a secret reference."
+            fail=1
+          else
+            echo "OK    AZURE_STORAGE_CONNECTION_STRING has no plain-text value"
+          fi
+          unset plain
+          check "Storage__BlobContainerName" \
+            "$BLOB_CONTAINER_NAME" "$(env_field Storage__BlobContainerName value)"
+          check "ASPNETCORE_ENVIRONMENT" \
+            "Production" "$(env_field ASPNETCORE_ENVIRONMENT value)"
+
+          if [ "$fail" -ne 0 ]; then exit 1; fi
+
+          # A correct template is not proof that the running replica loaded it. Wait (bounded) for a replica that was
+          # created after this deployment started; if none appears, warn loudly instead of failing the release.
+          started_s="$(date -d "$RESERVATION_DEPLOY_STARTED" +%s)"
+          newest=""
+          replaced=false
+          for _ in $(seq 1 30); do
+            newest="$(az containerapp replica list --name "$APP" --resource-group "$RESOURCE_GROUP" \
+              --query "max_by([], &properties.createdTime).properties.createdTime" -o tsv 2>/dev/null | sed 's/^None$//' || true)"
+            if [ -n "$newest" ] && [ "$(date -d "$newest" +%s)" -ge "$started_s" ]; then replaced=true; break; fi
+            sleep 10
+          done
+          if [ "$replaced" = true ]; then
+            echo "OK    a replica created after this deployment started is running ($newest)"
+          else
+            echo "::warning::No replica created after this deployment started (newest: ${newest:-none}). The running replica may still hold the OLD environment, so menu-image uploads could keep failing. Stop and start the app (az containerapp stop, then az containerapp start) and confirm the variables in the running container."
+          fi
 
       - name: Deploy Frontend
         run: |

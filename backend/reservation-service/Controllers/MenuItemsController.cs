@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ReservationService.Exceptions;
 using ReservationService.Models;
 using ReservationService.Repositories;
 using ReservationService.Services;
@@ -82,6 +83,15 @@ public class MenuItemsController : ControllerBase
                 message = "Image uploaded successfully.",
                 imageUrl,
                 fileName = Path.GetFileName(imageUrl)
+            });
+        }
+        catch (ImageStorageUnavailableException ex)
+        {
+            // Blob Storage is not configured or the upload failed, and local-disk fallback is disabled outside Development.
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                code = "IMAGE_STORAGE_UNAVAILABLE",
+                message = ex.Message
             });
         }
         catch (Exception)
