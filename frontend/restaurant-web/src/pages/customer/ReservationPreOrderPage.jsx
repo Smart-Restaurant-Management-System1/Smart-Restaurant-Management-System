@@ -118,6 +118,7 @@ function ReservationPreOrderPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
+  const [preOrderIdempotencyKey, setPreOrderIdempotencyKey] = useState(null);
 
   const items = useMemo(() => getCartItems(cart), [cart]);
 
@@ -167,7 +168,13 @@ function ReservationPreOrderPage() {
     };
 
     loadPageData();
-  }, [queryReservationId]);
+    }, [queryReservationId]);
+
+  useEffect(() => {
+    setPreOrderIdempotencyKey(null);
+    setSuccess(null);
+    setError('');
+  }, [selectedReservationId]);
 
   const selectedReservation = useMemo(() => {
     if (!selectedReservationId) return null;
@@ -202,10 +209,15 @@ function ReservationPreOrderPage() {
       return;
     }
 
-    const idempotencyKey =
-      typeof crypto !== 'undefined' && crypto.randomUUID
+       const idempotencyKey =
+      preOrderIdempotencyKey ||
+      (typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random()}`;
+        : `${Date.now()}-${Math.random()}`);
+
+    if (!preOrderIdempotencyKey) {
+      setPreOrderIdempotencyKey(idempotencyKey);
+    }
 
     try {
       setSubmitting(true);
