@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ReservationService.Events;
 using ReservationService.Models;
 using ReservationService.Repositories;
 
@@ -34,8 +35,11 @@ public sealed class OutboxPublisherService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("OutboxPublisher {InstanceId} starting. Topic={Topic} Enabled={Enabled}",
-            _instanceId, _options.ReservationTopic, _options.PublisherEnabled);
+        logger.LogInformation(
+            "OutboxPublisher {InstanceId} starting. ReservationTopic={ReservationTopic} " +
+            "OrderLifecycleTopic={OrderLifecycleTopic} Enabled={Enabled}",
+            _instanceId, _options.ReservationTopic, _options.OrderLifecycleTopic,
+            _options.PublisherEnabled);
 
         if (!_options.PublisherEnabled)
         {
@@ -82,6 +86,11 @@ public sealed class OutboxPublisherService(
         foreach (var outboxEvent in batch)
         {
             if (cancellationToken.IsCancellationRequested) break;
+            logger.LogInformation(
+                "OutboxPublisher {InstanceId} dispatching EventId={EventId} EventType={EventType} " +
+                "AggregateType={AggregateType} AggregateId={AggregateId} MessageKey={MessageKey}",
+                _instanceId, outboxEvent.EventId, outboxEvent.EventType,
+                outboxEvent.AggregateType, outboxEvent.AggregateId, outboxEvent.MessageKey);
             await PublishOneAsync(outboxEvent, cancellationToken);
         }
     }
@@ -90,7 +99,9 @@ public sealed class OutboxPublisherService(
     {
         try
         {
-            var topic = string.Equals(outboxEvent.AggregateType, "Order", StringComparison.OrdinalIgnoreCase) ? _options.OrderLifecycleTopic : _options.ReservationTopic;
+            var topic = IsOrderLifecycleEvent(outboxEvent)
+                ? _options.OrderLifecycleTopic
+                : _options.ReservationTopic;
 
                 var (partition, offset) = await publisher.PublishAsync(
                     topic,
@@ -102,7 +113,7 @@ public sealed class OutboxPublisherService(
             await outboxRepository.MarkProcessedAsync(outboxEvent.Id, cancellationToken);
 
             logger.LogInformation(
-                "OutboxPublisher published EventId={EventId} EventType={EventType} ReservationId={ReservationId} " +
+                "OutboxPublisher published EventId={EventId} EventType={EventType} AggregateId={AggregateId} " +
                 "Topic={Topic} Partition={Partition} Offset={Offset}",
                 outboxEvent.EventId, outboxEvent.EventType, outboxEvent.AggregateId,
                 topic, partition, offset);
@@ -132,6 +143,15 @@ public sealed class OutboxPublisherService(
                 nextAttempt.ToString("o"), ex.GetType().Name);
         }
     }
+
+    private static bool IsOrderLifecycleEvent(OutboxEvent outboxEvent) =>
+        string.Equals(outboxEvent.AggregateType, "Order", StringComparison.OrdinalIgnoreCase) ||
+        outboxEvent.EventType.StartsWith("Order", StringComparison.OrdinalIgnoreCase) ||
+        outboxEvent.EventType is OrderLifecycleEventTypes.OrderCreated
+            or OrderLifecycleEventTypes.OrderPreparing
+            or OrderLifecycleEventTypes.OrderReady
+            or OrderLifecycleEventTypes.OrderServed
+            or OrderLifecycleEventTypes.OrderCancelled;
 
     /// <summary>
     /// Bounded exponential backoff: delay = min(maxDelay, initialDelay Ãƒâ€” 2^(attempt-1)).
