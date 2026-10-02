@@ -14,4 +14,5 @@ public interface IUserRepository
     Task<bool> UpdateUserStatusAsync(int userId, string status, bool isActive);
     Task<bool> SoftDeleteUserAsync(int userId);
     Task<int> GetActiveAdminCountAsync();
+    Task<bool> IsUserActiveAsync(int userId);
 }

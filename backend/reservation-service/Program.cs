@@ -62,6 +62,24 @@ builder.Services.AddAuthentication(options =>
         NameClaimType =
             System.Security.Claims.ClaimTypes.NameIdentifier
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var validator = context.HttpContext.RequestServices.GetService<ReservationService.Services.IUserAccountStatusValidator>();
+            if (validator != null)
+            {
+                var userIdClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                    ?? context.Principal?.FindFirst("sub")?.Value;
+
+                if (!int.TryParse(userIdClaim, out var userId) || !await validator.IsUserActiveAsync(userId, context.HttpContext.RequestAborted))
+                {
+                    context.Fail("User account is inactive or blocked.");
+                }
+            }
+        }
+    };
 });
 
 builder.Services.AddAuthorization(options =>
@@ -188,6 +206,12 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddSingleton<
     ReservationService.Data.DatabaseHelper
+>();
+
+// User account status validator (SR-225 / SR-257)
+builder.Services.AddScoped<
+    ReservationService.Services.IUserAccountStatusValidator,
+    ReservationService.Services.DatabaseUserAccountStatusValidator
 >();
 
 // Table repository

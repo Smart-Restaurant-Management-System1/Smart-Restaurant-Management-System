@@ -104,12 +104,12 @@ public class AuthService : IAuthService
         if (user.Status.Equals("Blocked", StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Login blocked: User {Email} is blocked by administration.", request.Email);
-            throw new UnauthorizedAccessException("Your account has been blocked by restaurant administration. Please contact support.");
+            throw new UnauthorizedAccessException("Invalid email or password.");
         }
 
-        if (!user.IsActive)
+        if (!user.IsActive || user.DeletedAt != null || user.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogWarning("Login failed: User {Email} not found or inactive.", request.Email);
+            _logger.LogWarning("Login failed: User {Email} is inactive or deleted.", request.Email);
             throw new UnauthorizedAccessException("Invalid email or password.");
         }
 

@@ -39,6 +39,21 @@ builder.Services.AddAuthentication(options =>
         RoleClaimType = System.Security.Claims.ClaimTypes.Role,
         NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var userRepo = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+            var userIdClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Principal?.FindFirst("sub")?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId) || !await userRepo.IsUserActiveAsync(userId))
+            {
+                context.Fail("User account is inactive or blocked.");
+            }
+        }
+    };
 });
 
 builder.Services.AddAuthorization(options =>

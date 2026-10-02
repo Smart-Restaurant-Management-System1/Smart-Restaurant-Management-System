@@ -319,6 +319,26 @@ public class UserRepository : IUserRepository
         return countObj != null ? Convert.ToInt32(countObj) : 0;
     }
 
+    public async Task<bool> IsUserActiveAsync(int userId)
+    {
+        if (userId <= 0) return false;
+
+        using var connection = await _dbHelper.CreateConnectionAsync();
+        const string query = @"SELECT 1 
+                               FROM Users 
+                               WHERE UserId = @UserId 
+                                 AND Status = 'Active' 
+                                 AND IsActive = 1 
+                                 AND DeletedAt IS NULL 
+                               LIMIT 1;";
+
+        using var cmd = new MySqlCommand(query, connection);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+
+        var result = await cmd.ExecuteScalarAsync();
+        return result != null && result != DBNull.Value;
+    }
+
     private static User MapUser(MySqlDataReader reader)
     {
         var user = new User
