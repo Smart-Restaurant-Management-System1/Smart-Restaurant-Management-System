@@ -257,6 +257,16 @@ builder.Services.AddScoped<
     ReservationService.Repositories.OrderCartRepository
 >();
 
+// Feedback repository and service (SR-219 / SR-234)
+builder.Services.AddScoped<
+    ReservationService.Repositories.IFeedbackRepository,
+    ReservationService.Repositories.FeedbackRepository
+>();
+builder.Services.AddScoped<
+    ReservationService.Services.IFeedbackService,
+    ReservationService.Services.FeedbackService
+>();
+
 // Availability configuration
 builder.Services.Configure<AvailabilityRulesOptions>(
     builder.Configuration.GetSection(

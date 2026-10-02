@@ -26,6 +26,7 @@ services:
       - ./database/reservation-db/08_dine_in_orders.sql:/docker-entrypoint-initdb.d/10_dine_in_orders.sql
       - ./database/reservation-db/09_reservation_pre_orders.sql:/docker-entrypoint-initdb.d/11_reservation_pre_orders.sql
       - ./database/reservation-db/10_order_lifecycle_events.sql:/docker-entrypoint-initdb.d/12_order_lifecycle_events.sql
+      - ./database/reservation-db/11_customer_feedback.sql:/docker-entrypoint-initdb.d/13_customer_feedback.sql
     networks:
       - restaurant-network
     healthcheck:
