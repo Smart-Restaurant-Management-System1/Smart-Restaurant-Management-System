@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PageHeader from '../../components/common/PageHeader';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 import { submitFeedback, getMyFeedback, updateFeedback, deleteFeedback } from '../../services/feedbackService';
 import { validateFeedback } from '../../utils/feedbackValidation';
 
@@ -95,6 +96,11 @@ export default function CustomerFeedbackPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Delete Confirmation Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [feedbackToDelete, setFeedbackToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const ratingDescriptions = {
     1: '1 Star — Disappointing, needs major improvement',
     2: '2 Stars — Below expectations, several shortcomings',
@@ -140,23 +146,29 @@ export default function CustomerFeedbackPage() {
     setErrorMessage('');
   };
 
-  const handleDeleteClick = async (feedbackId) => {
-    if (!window.confirm('Are you sure you want to delete this dining review? This action cannot be undone.')) {
-      return;
-    }
+  const handleDeleteClick = (feedbackId) => {
+    setFeedbackToDelete(feedbackId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!feedbackToDelete) return;
 
     try {
-      setLoading(true);
-      await deleteFeedback(feedbackId);
+      setDeleteLoading(true);
+      await deleteFeedback(feedbackToDelete);
       setSuccessMessage('Your feedback review has been removed.');
-      if (editingId === feedbackId) {
+      if (editingId === feedbackToDelete) {
         handleCancelEdit();
       }
+      setDeleteModalOpen(false);
+      setFeedbackToDelete(null);
       await fetchPreviousFeedbacks();
     } catch (err) {
       setErrorMessage(err.response?.data?.message || 'Failed to delete review.');
+      setDeleteModalOpen(false);
     } finally {
-      setLoading(false);
+      setDeleteLoading(false);
     }
   };
 
@@ -1046,6 +1058,24 @@ export default function CustomerFeedbackPage() {
           </section>
         </div>
       </div>
+
+      {/* Luxury Confirmation Modal for Review Deletion */}
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          if (!deleteLoading) {
+            setDeleteModalOpen(false);
+            setFeedbackToDelete(null);
+          }
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete Dining Review"
+        message="Are you sure you want to delete this dining review? This action cannot be undone and will permanently remove your critique from restaurant archives."
+        confirmText="Yes, Delete Review"
+        cancelText="Keep Review"
+        variant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 }

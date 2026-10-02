@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PageHeader from '../../components/common/PageHeader';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 import {
   getAdminFeedback,
   getAdminFeedbackSummary,
@@ -133,6 +134,11 @@ export default function AdminFeedbackPage() {
   const [replyText, setReplyText] = useState('');
   const [replyLoading, setReplyLoading] = useState(false);
 
+  // Delete Confirmation Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [feedbackToDelete, setFeedbackToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
   const fetchSummary = useCallback(async () => {
     try {
       setSummaryLoading(true);
@@ -207,22 +213,28 @@ export default function AdminFeedbackPage() {
     }
   };
 
-  const handleDeleteFeedback = async (feedbackId) => {
-    if (!window.confirm('Are you sure you want to permanently delete this customer review?')) {
-      return;
-    }
+  const handleDeleteFeedback = (feedbackId) => {
+    setFeedbackToDelete(feedbackId);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDeleteFeedback = async () => {
+    if (!feedbackToDelete) return;
 
     try {
-      setProcessingId(feedbackId);
+      setDeleteLoading(true);
       setActionError('');
       setActionSuccess('');
-      await adminDeleteFeedback(feedbackId);
+      await adminDeleteFeedback(feedbackToDelete);
       setActionSuccess('Review permanently deleted.');
+      setDeleteModalOpen(false);
+      setFeedbackToDelete(null);
       await Promise.all([fetchFeedbackList(), fetchSummary()]);
     } catch (err) {
       setActionError(err.response?.data?.message || 'Failed to delete review.');
+      setDeleteModalOpen(false);
     } finally {
-      setProcessingId(null);
+      setDeleteLoading(false);
     }
   };
 
@@ -1519,6 +1531,24 @@ export default function AdminFeedbackPage() {
           </div>
         </div>
       )}
+
+      {/* Luxury Confirmation Modal for Review Deletion */}
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          if (!deleteLoading) {
+            setDeleteModalOpen(false);
+            setFeedbackToDelete(null);
+          }
+        }}
+        onConfirm={handleConfirmDeleteFeedback}
+        title="Delete Customer Review"
+        message="Are you sure you want to permanently delete this customer review from restaurant archives? This moderation action cannot be reversed."
+        confirmText="Yes, Delete Review"
+        cancelText="Cancel"
+        variant="danger"
+        loading={deleteLoading}
+      />
     </div>
   );
 }
