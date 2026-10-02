@@ -54,9 +54,55 @@ export const getAdminFeedback = async (params = {}) => {
 };
 
 /**
- * Admin: retrieve feedback aggregate metrics and rating distribution.
+ * Update feedback as a customer (SR-219).
+ * @param {number} id
+ * @param {Object} payload - { rating, comment }
+ */
+export const updateFeedback = async (id, payload) => {
+  const response = await feedbackApi.put(`/feedback/${id}`, payload);
+  return response.data;
+};
+
+/**
+ * Delete feedback as a customer (SR-219).
+ * @param {number} id
+ */
+export const deleteFeedback = async (id) => {
+  await feedbackApi.delete(`/feedback/${id}`);
+};
+
+/**
+ * Admin: retrieve aggregate metrics and rating distribution.
  */
 export const getAdminFeedbackSummary = async () => {
   const response = await feedbackApi.get('/feedback/admin/summary');
+  return response.data;
+};
+
+/**
+ * Admin: delete feedback (SR-219).
+ * @param {number} id
+ */
+export const adminDeleteFeedback = async (id) => {
+  await feedbackApi.delete(`/feedback/admin/${id}`);
+};
+
+/**
+ * Admin: mark feedback as read or unread (SR-219).
+ * @param {number} id
+ * @param {boolean} isRead
+ */
+export const adminMarkAsRead = async (id, isRead = true) => {
+  const response = await feedbackApi.patch(`/feedback/admin/${id}/read`, { isRead });
+  return response.data;
+};
+
+/**
+ * Admin: reply to customer feedback (SR-219).
+ * @param {number} id
+ * @param {string} reply
+ */
+export const adminReplyFeedback = async (id, reply) => {
+  const response = await feedbackApi.post(`/feedback/admin/${id}/reply`, { reply });
   return response.data;
 };

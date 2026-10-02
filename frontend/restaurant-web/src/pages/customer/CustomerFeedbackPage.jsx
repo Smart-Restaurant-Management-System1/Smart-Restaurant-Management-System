@@ -1,9 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import PageHeader from '../../components/common/PageHeader';
-import { submitFeedback, getMyFeedback } from '../../services/feedbackService';
+import { submitFeedback, getMyFeedback, updateFeedback, deleteFeedback } from '../../services/feedbackService';
 import { validateFeedback } from '../../utils/feedbackValidation';
 
 // SVG Icons matching Cinnamon Bistro luxury tokens
+const IconEdit = ({ size = 14, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const IconTrash = ({ size = 14, color = '#be123c' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    <line x1="10" y1="11" x2="10" y2="17" />
+    <line x1="14" y1="11" x2="14" y2="17" />
+  </svg>
+);
+
 const IconStar = ({ filled = false, size = 22, color = '#d4af37' }) => (
   <svg
     width={size}
@@ -63,6 +79,7 @@ const IconReceipt = ({ size = 15, color = 'currentColor' }) => (
 );
 
 export default function CustomerFeedbackPage() {
+  const [editingId, setEditingId] = useState(null);
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -102,6 +119,47 @@ export default function CustomerFeedbackPage() {
     fetchPreviousFeedbacks();
   }, []);
 
+  const handleEditClick = (fb) => {
+    setEditingId(fb.feedbackId);
+    setRating(fb.rating);
+    setComment(fb.comment || '');
+    setFieldErrors({});
+    setErrorMessage('');
+    setSuccessMessage('');
+    window.scrollTo({ top: 100, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setRating(5);
+    setComment('');
+    setReservationId('');
+    setOrderId('');
+    setLinkType('none');
+    setFieldErrors({});
+    setErrorMessage('');
+  };
+
+  const handleDeleteClick = async (feedbackId) => {
+    if (!window.confirm('Are you sure you want to delete this dining review? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await deleteFeedback(feedbackId);
+      setSuccessMessage('Your feedback review has been removed.');
+      if (editingId === feedbackId) {
+        handleCancelEdit();
+      }
+      await fetchPreviousFeedbacks();
+    } catch (err) {
+      setErrorMessage(err.response?.data?.message || 'Failed to delete review.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
@@ -114,23 +172,31 @@ export default function CustomerFeedbackPage() {
       return;
     }
 
-    const payload = {
-      rating,
-      comment: validation.sanitizedComment,
-      reservationId: linkType === 'reservation' && reservationId ? parseInt(reservationId, 10) : null,
-      orderId: linkType === 'order' && orderId ? parseInt(orderId, 10) : null,
-      orderType: linkType === 'order' ? orderType : null,
-    };
-
     setLoading(true);
     try {
-      await submitFeedback(payload);
-      setSuccessMessage('Thank you for your valuable feedback! Your review helps Cinnamon Bistro continuously refine its culinary craftsmanship.');
-      setComment('');
-      setReservationId('');
-      setOrderId('');
-      setLinkType('none');
-      setRating(5);
+      if (editingId) {
+        await updateFeedback(editingId, {
+          rating,
+          comment: validation.sanitizedComment,
+        });
+        setSuccessMessage('Your feedback has been successfully updated! Thank you for helping us maintain perfection.');
+        handleCancelEdit();
+      } else {
+        const payload = {
+          rating,
+          comment: validation.sanitizedComment,
+          reservationId: linkType === 'reservation' && reservationId ? parseInt(reservationId, 10) : null,
+          orderId: linkType === 'order' && orderId ? parseInt(orderId, 10) : null,
+          orderType: linkType === 'order' ? orderType : null,
+        };
+        await submitFeedback(payload);
+        setSuccessMessage('Thank you for your valuable feedback! Your review helps Cinnamon Bistro continuously refine its culinary craftsmanship.');
+        setComment('');
+        setReservationId('');
+        setOrderId('');
+        setLinkType('none');
+        setRating(5);
+      }
       await fetchPreviousFeedbacks();
     } catch (err) {
       const msg = err.response?.data?.message || 'Failed to submit feedback. Please verify your details.';
@@ -291,20 +357,39 @@ export default function CustomerFeedbackPage() {
               <IconUtensils size={22} color="#a87942" />
             </div>
             <div>
-              <h2
-                style={{
-                  fontFamily: 'Georgia, serif',
-                  fontSize: '1.38rem',
-                  fontWeight: 700,
-                  color: 'var(--bistro-ink, #28251f)',
-                  margin: 0,
-                  lineHeight: 1.2,
-                }}
-              >
-                Rate Your Experience
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <h2
+                  style={{
+                    fontFamily: 'Georgia, serif',
+                    fontSize: '1.38rem',
+                    fontWeight: 700,
+                    color: 'var(--bistro-ink, #28251f)',
+                    margin: 0,
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {editingId ? 'Edit Your Review' : 'Rate Your Experience'}
+                </h2>
+                {editingId && (
+                  <span
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      backgroundColor: '#fef3c7',
+                      color: '#92400e',
+                      border: '1px solid #fde68a',
+                      borderRadius: '9999px',
+                      padding: '0.15rem 0.55rem',
+                    }}
+                  >
+                    Editing Review #{editingId}
+                  </span>
+                )}
+              </div>
               <span style={{ fontSize: '0.82rem', color: 'var(--bistro-muted, #6b6357)' }}>
-                Tell us about your culinary journey, ambiance, and hospitality
+                {editingId
+                  ? 'Update your rating or comments below'
+                  : 'Tell us about your culinary journey, ambiance, and hospitality'}
               </span>
             </div>
           </div>
@@ -402,7 +487,14 @@ export default function CustomerFeedbackPage() {
             </div>
 
             {/* Visit Association Option */}
-            <div style={{ paddingTop: '1.2rem', borderTop: '1px solid #eee6d8' }}>
+            {editingId ? (
+              <div style={{ paddingTop: '1rem', borderTop: '1px solid #eee6d8' }}>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--bistro-muted)', fontStyle: 'italic' }}>
+                  ℹ️ Linked dining booking or order references cannot be altered on submitted reviews.
+                </p>
+              </div>
+            ) : (
+              <div style={{ paddingTop: '1.2rem', borderTop: '1px solid #eee6d8' }}>
               <label
                 style={{
                   display: 'block',
@@ -538,6 +630,7 @@ export default function CustomerFeedbackPage() {
                 </div>
               )}
             </div>
+            )}
 
             {/* Comment Section */}
             <div style={{ paddingTop: '1.2rem', borderTop: '1px solid #eee6d8' }}>
@@ -606,21 +699,32 @@ export default function CustomerFeedbackPage() {
 
             {/* Actions */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.85rem', paddingTop: '0.75rem' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setComment('');
-                  setReservationId('');
-                  setOrderId('');
-                  setLinkType('none');
-                  setRating(5);
-                  setFieldErrors({});
-                }}
-                className="bistro-button-outline"
-                style={{ padding: '0.65rem 1.25rem' }}
-              >
-                Reset
-              </button>
+              {editingId ? (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="bistro-button-outline"
+                  style={{ padding: '0.65rem 1.25rem' }}
+                >
+                  Cancel Editing
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setComment('');
+                    setReservationId('');
+                    setOrderId('');
+                    setLinkType('none');
+                    setRating(5);
+                    setFieldErrors({});
+                  }}
+                  className="bistro-button-outline"
+                  style={{ padding: '0.65rem 1.25rem' }}
+                >
+                  Reset
+                </button>
+              )}
 
               <button
                 type="submit"
@@ -633,7 +737,9 @@ export default function CustomerFeedbackPage() {
                   cursor: loading ? 'not-allowed' : 'pointer',
                 }}
               >
-                {loading ? 'Submitting...' : 'Submit Feedback'}
+                {loading
+                  ? (editingId ? 'Updating...' : 'Submitting...')
+                  : (editingId ? 'Update Feedback' : 'Submit Feedback')}
               </button>
             </div>
           </form>
@@ -792,20 +898,71 @@ export default function CustomerFeedbackPage() {
                       transition: 'border-color 0.15s ease',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', flexWrap: 'wrap', gap: '0.35rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                         {renderStarVisual(fb.rating, 16)}
                         <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#8c6736' }}>
                           {fb.rating}.0
                         </span>
                       </div>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--bistro-muted)' }}>
-                        {new Date(fb.createdAt).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--bistro-muted)' }}>
+                          {new Date(fb.createdAt).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })}
+                        </span>
+
+                        {/* Customer Actions: Edit & Delete */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleEditClick(fb)}
+                            style={{
+                              backgroundColor: editingId === fb.feedbackId ? '#8c6736' : '#ffffff',
+                              color: editingId === fb.feedbackId ? '#ffffff' : '#8c6736',
+                              border: '1px solid #c5b699',
+                              borderRadius: '5px',
+                              padding: '0.15rem 0.5rem',
+                              cursor: 'pointer',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              transition: 'all 0.15s ease',
+                            }}
+                            title="Edit this review"
+                          >
+                            <IconEdit size={12} color={editingId === fb.feedbackId ? '#ffffff' : '#8c6736'} />
+                            <span>Edit</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClick(fb.feedbackId)}
+                            style={{
+                              backgroundColor: '#ffffff',
+                              color: '#be123c',
+                              border: '1px solid #fecdd3',
+                              borderRadius: '5px',
+                              padding: '0.15rem 0.5rem',
+                              cursor: 'pointer',
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              transition: 'all 0.15s ease',
+                            }}
+                            title="Delete this review"
+                          >
+                            <IconTrash size={12} color="#be123c" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
                     {(fb.bookingReference || fb.orderReference) && (
@@ -848,6 +1005,39 @@ export default function CustomerFeedbackPage() {
                       <span style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--bistro-muted)' }}>
                         No written comments provided.
                       </span>
+                    )}
+
+                    {/* Management Reply Display */}
+                    {fb.adminReply && (
+                      <div
+                        style={{
+                          marginTop: '0.65rem',
+                          backgroundColor: '#faf5ec',
+                          border: '1px solid #eedfc9',
+                          borderLeft: '4px solid #c5a059',
+                          borderRadius: '8px',
+                          padding: '0.65rem 0.85rem',
+                          boxShadow: '0 1px 3px rgba(140, 103, 54, 0.04)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#8c6736' }}>
+                            ⭐ Response from Cinnamon Bistro Management
+                          </span>
+                          {fb.adminRepliedAt && (
+                            <span style={{ fontSize: '0.7rem', color: 'var(--bistro-muted)' }}>
+                              {new Date(fb.adminRepliedAt).toLocaleDateString(undefined, {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#493628', lineHeight: 1.5 }}>
+                          {fb.adminReply}
+                        </p>
+                      </div>
                     )}
                   </div>
                 ))}
