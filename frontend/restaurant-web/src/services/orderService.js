@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { handleAuthResponseError } from './api';
 
 const ORDER_API_BASE =
   import.meta.env.VITE_ORDER_API_URL ||
@@ -23,6 +24,12 @@ orderApi.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Unified 401 response interceptor
+orderApi.interceptors.response.use(
+  (response) => response,
+  handleAuthResponseError
 );
 
 export const submitDineInOrder = async (request) => {

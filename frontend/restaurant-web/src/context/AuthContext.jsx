@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize auth state from localStorage on mount
+  // Initialize auth state from localStorage on mount and listen for global 401 unauthorized events
   useEffect(() => {
     try {
       const storedToken = localStorage.getItem('token');
@@ -24,6 +24,18 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('user');
     } finally {
       setIsLoading(false);
+    }
+
+    const handleUnauthorized = () => {
+      setToken(null);
+      setUser(null);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('auth:unauthorized', handleUnauthorized);
+      return () => {
+        window.removeEventListener('auth:unauthorized', handleUnauthorized);
+      };
     }
   }, []);
 

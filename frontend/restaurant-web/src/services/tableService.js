@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { handleAuthResponseError } from './api';
 
 const RESERVATION_API_BASE =
   import.meta.env.VITE_RESERVATION_API_URL || 'http://localhost:5000/api';
@@ -20,6 +21,12 @@ reservationApi.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Unified 401 response interceptor
+reservationApi.interceptors.response.use(
+  (response) => response,
+  handleAuthResponseError
 );
 
 /**
