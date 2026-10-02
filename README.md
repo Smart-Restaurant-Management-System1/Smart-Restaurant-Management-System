@@ -10,8 +10,266 @@ Cinnamon Bistro is an enterprise-grade smart restaurant management platform engi
 
 - **Sprint 1 (Completed):** Established Identity & Access Management (JWT authentication, BCrypt hashing, role-based authorization for Customer, Admin, and KitchenStaff), customer profile management, core restaurant dining table configuration, multi-container Docker deployment, and CI/CD pipelines.
 - **Sprint 2 (Completed):** Delivered complete end-to-end table reservation management, real-time availability search with local restaurant operating rules (`Asia/Colombo`), pessimistic row-level concurrency control (`SELECT ... FOR UPDATE`) preventing double-booking, customer reservation maintenance (rescheduling with self-exclusion and soft cancellation), administrative reservation management with controlled status transitions, analytics and reporting (with CSV/XLSX exports and spreadsheet formula injection defense), public landing experience, and asynchronous event publishing via the Transactional Outbox pattern and Apache Kafka (KRaft mode).
-- **Sprint 3 (Upcoming Milestone):** Menu catalog management, customer table ordering, order status tracking, and kitchen display / queue management.
+- **Sprint 3 (Completed):** Delivered administrative menu catalog management, hybrid image asset storage (Azure Blob + local fallback), customer menu browsing with dietary preferences, persistent order cart operations, atomic table-side dine-in ordering, reservation-linked pre-ordering, real-time customer order tracking, kitchen queue display system (KDS), serialized kitchen status transitions under pessimistic locks, order lifecycle event streaming to Apache Kafka (`order-lifecycle-events`) via the Transactional Outbox pattern, and luxury boutique UI harmonization.
 - **Sprint 4 (Planned Milestone):** Billing, payment processing, final end-to-end integration, performance hardening, and production cloud cutover.
+
+---
+
+## Sprint 3 — Menu, Ordering & Kitchen Workflow
+
+### Sprint 3 Overview
+
+Sprint 3 delivers the complete digital dining and culinary fulfillment engine for Cinnamon Bistro. It bridges customer-facing menu discovery, persistent cart management, table-side and reservation-linked ordering, and real-time order tracking with back-of-house kitchen display and queue management. All mutations are safeguarded by strict row-level concurrency control, server-authoritative price validation, and transactional outbox event publishing to Apache Kafka (`order-lifecycle-events`).
+
+**End-to-End Business Workflow:**
+$$\text{Menu Catalog} \longrightarrow \text{Order Cart} \longrightarrow \text{Dine-in / Pre-Order Placement} \longrightarrow \text{Customer Tracking} \longrightarrow \text{Kitchen Queue (KDS)} \longrightarrow \text{Kafka Lifecycle Events}$$
+
+1. **Menu Discovery:** Guests browse active culinary offerings, filtering dynamically by course categories and dietary preferences (vegetarian, vegan, gluten-free).
+2. **Cart Staging:** Items are staged into a persistent, authenticated cart with server-validated unit prices and quantity management.
+3. **Order Placement:** Customers place atomic dine-in orders (assigned to active physical tables) or pre-orders linked to upcoming confirmed reservations, protected by idempotency replay safeguards.
+4. **Order Tracking:** Customers monitor live order progression through an interactive status stepper (`Pending` → `Preparing` → `Ready` → `Served`).
+5. **Kitchen Display System (KDS):** Kitchen staff monitor prioritized order queues, transitioning tickets through the preparation lifecycle under pessimistic database row locks.
+6. **Event-Driven Streaming:** Order lifecycle transitions emit schema-validated domain events to Kafka via the Transactional Outbox pattern for downstream analytics and notification processing.
+
+### Sprint 3 Team Members
+
+| Team member | Student ID | Sprint 3 role |
+| --- | --- | --- |
+| D.M.N. Pesanjith | IT24101505 | Developer |
+| H. L. P. S. Perera | IT24101848 | DevOps |
+| H.R.M.A.A. Bandara | IT24100315 | QA Engineer |
+| Wijesinghe K. | IT24102587 | Business Analytics |
+
+### Sprint 3 Developer Scope
+
+| Jira ID | Feature | Result |
+| --- | --- | --- |
+| **SR-130** | Manage Menu Items, Prices and Availability | Admin CRUD endpoints for catalog items, multipart image uploads, category classification, dietary tags, and instant availability toggles. |
+| **SR-131** | Browse Menu & Filter by Category / Dietary Preferences | Public customer catalog querying returning only active dishes (`IsAvailable = 1`), with real-time category, dietary, and keyword search filters. |
+| **SR-132** | Persistent Order Cart Management | Authenticated customer cart operations (add, quantity increment/decrement, remove, clear) with server-authoritative price re-synchronization. |
+| **SR-133** | Dine-In Table Ordering & Idempotency | Transactional table-side order creation (`POST /api/orders/dine-in`) with table validation, cryptographic reference generation (`ORD-XXXX-XXXX`), and replay defense. |
+| **SR-134** | Reservation-Linked Pre-Ordering | Pre-order creation (`POST /api/orders/reservation-pre-order`) bound to upcoming reservations with ownership checks, duplicate prevention, and PR #61 idempotency fix. |
+| **SR-135** | Real-Time Order Tracking & History | Unified customer query (`GET /api/orders/my-orders`) across dine-in and pre-orders with real-time status progression stepper and past order archives. |
+| **SR-136** | Kitchen Queue Display System (KDS) | Staff/Admin kitchen dashboard (`GET /api/kitchen/queue`) aggregating pending and preparing orders sorted by FIFO priority and elapsed preparation wait timers. |
+| **SR-137** | Kitchen Order Lifecycle Transitions & Locking | Controlled state progression (`Pending` → `Preparing` → `Ready` → `Served`) under InnoDB `SELECT ... FOR UPDATE` row locks with milestone timestamp auditing. |
+| **SR-138** | Kafka Order Lifecycle Event Streaming | Transactional Outbox publishing of `OrderLifecycleEvent` envelopes (`OrderCreated`, `OrderPreparing`, `OrderReady`, `OrderServed`, `OrderCancelled`) to Kafka topic `order-lifecycle-events`. |
+| **SR-211** | Luxury Boutique UI/UX Harmonization | Cohesive visual styling with Playfair Display typography, warm gold accents, charcoal dark theme, glassmorphism cards, and role-aware navigation guards. |
+| **SR-278** | OrderCreated Kafka Event Routing Bug Fix | Resolved outbox publisher routing defect ensuring order lifecycle events are reliably published to `order-lifecycle-events` rather than falling back to reservation topics. |
+
+### Menu Management (SR-130)
+
+The menu management subsystem enables administrators to govern the restaurant's culinary offerings:
+- **Administrative Operations:** `MenuItemsController.cs` exposes `POST /api/menu-items`, `PUT /api/menu-items/{id}`, and `PATCH /api/menu-items/{id}/availability`, secured by `[Authorize(Roles = AppRoles.Admin)]`.
+- **Item Schema & Attributes:** Governs item name, description, course category (`Starter`, `Main`, `Dessert`, `Beverage`), price, dietary preferences (`Vegetarian`, `Vegan`, `Gluten-Free`), and availability status (`IsAvailable`).
+- **Validation Pipeline:** Enforced via FluentValidation (`MenuItemCreateRequestValidator` and `MenuItemUpdateRequestValidator`):
+  - Name required, length between 2 and 150 characters.
+  - Description optional, maximum 1000 characters.
+  - Price strictly greater than 0 (`Price > 0`), formatted to two decimal places.
+  - Valid category enumeration membership.
+  - Image file size bounded to a maximum of 5MB, restricted to safe image MIME types (`image/jpeg`, `image/png`, `image/webp`).
+- **Hybrid Asset Storage:** Abstracted via `IImageStorageService` supporting Azure Blob Storage (`AzureBlobImageStorageService`) in cloud environments and fallback local physical storage (`LocalImageStorageService`) during local development and offline testing.
+- **Frontend Management UI:** `MenuManagementPage.jsx` provides an administrative dashboard featuring live search, category grouping, modal create/edit forms with real-time image previews, and instant toggle switches for item availability.
+
+### Customer Menu & Filtering (SR-131)
+
+- **Public Catalog Retrieval (`GET /api/menu-items`):** Customers and unauthenticated visitors browse active dishes. The query enforces database-level filtering `WHERE IsAvailable = 1`, ensuring disabled items are never displayed or orderable.
+- **Dynamic Category & Dietary Filtering:** `CustomerMenuPage.jsx` renders course category tabs (`All`, `Starters`, `Mains`, `Desserts`, `Beverages`) combined with multi-select dietary pills (`Vegetarian`, `Vegan`, `Gluten-Free`) and client-side instant keyword search.
+- **UX States:** Complete visual feedback states including shimmering loading skeletons, empty state prompts when filters yield no matches, and non-blocking toast notifications on network errors.
+
+### Cart Management (SR-132)
+
+- **Authentication & Isolation:** `OrderCartController.cs` and `OrderCartService.cs` enforce `[Authorize(Roles = AppRoles.Customer)]`. Carts are strictly bound 1:1 to the authenticated `CustomerId` extracted from JWT claims (`ClaimTypes.NameIdentifier`). No user can inspect or mutate another customer's cart.
+- **Cart Operations:**
+  - `GET /api/cart`: Returns the customer's active cart, line items, item pricing, and calculated subtotals.
+  - `POST /api/cart/items`: Adds an item to the cart. Revalidates item existence and `IsAvailable = 1`.
+  - `PUT /api/cart/items/{itemId}`: Updates item quantity (`Quantity > 0`). Quantities reduced to zero trigger item removal.
+  - `DELETE /api/cart/items/{itemId}`: Removes a single line item.
+  - `DELETE /api/cart`: Empties the entire cart.
+- **Server-Authoritative Price Synchronization:** Client-submitted prices are ignored. All unit prices and subtotal calculations are derived dynamically from database records in `MenuItems`, preventing client-side tampering before order checkout.
+- **Database Schema:** Backed by `OrderCarts` and `OrderCartItems` tables with foreign keys and unique constraint `uq_order_carts_customer (CustomerId)`.
+
+### Dine-in Ordering (SR-133)
+
+- **Atomic Order Creation (`POST /api/orders/dine-in`):** Customers submit table-side orders for immediate dining:
+  - Validates `TableId` exists and represents an active dining table (`RestaurantTables.IsActive = 1`).
+  - Verifies cart contains valid items and calculates the authoritative total amount.
+  - Generates a cryptographically secure, human-readable reference `ORD-XXXX-XXXX` using an unambiguous alphanumeric character set.
+  - Under a database transaction (`IsolationLevel.ReadCommitted`), writes to `DineInOrders` (status `Pending`), inserts line items into `DineInOrderItems`, empties the customer's cart, and stages an `OrderCreated` event envelope into `ReservationOutbox`.
+- **Idempotency Protection:** Clients transmit an `Idempotency-Key` header (UUID or client-generated token). The endpoint validates key uniqueness against unique index `uq_dine_in_orders_customer_idempotency`. Repeated requests return HTTP 200 OK with the existing order, preventing duplicate kitchen tickets or multiple charges.
+- **Frontend Order Review:** `OrderReviewPage.jsx` displays an itemized checkout summary, table selection dropdown, special dining instructions input, and an animated placement confirmation redirecting to real-time tracking.
+
+### Reservation-Linked Pre-Ordering (SR-134)
+
+- **Pre-Order Placement (`POST /api/orders/reservation-pre-order`):** Enables customers to pre-select dishes for an upcoming dining reservation:
+  - Validates that the target reservation exists, belongs to the authenticated customer, and is in an eligible state (`Pending` or `Confirmed`). Cancelled or completed reservations are rejected with HTTP 400 Bad Request.
+  - Enforces single pre-order constraints per reservation via unique index `uq_reservation_pre_orders_reservation`.
+  - Generates a reference formatted as `PRE-XXXX-XXXX`.
+  - Transactionally creates `ReservationPreOrders` and `ReservationPreOrderItems`, stages an `OrderCreated` outbox event, and clears the active cart.
+- **Idempotency State Fix (PR #61):** Resolved pre-order retry handling so idempotent duplicate requests correctly retain and return the existing pre-order details without throwing collision errors.
+- **Frontend Pre-Order Flow:** `ReservationPreOrderPage.jsx` guides customers through selecting an eligible upcoming reservation, reviewing selected dishes, adding preparation notes, and submitting the pre-order.
+
+### Order Tracking & History (SR-135)
+
+- **Unified Querying (`GET /api/orders/my-orders`):** Executes a unified `UNION ALL` query merging `DineInOrders` and `ReservationPreOrders` for the authenticated customer ID, sorted newest first (`CreatedAt DESC`).
+- **Normalized Lifecycle Progression:** Normalizes states across both ordering channels into a standardized progression:
+  $$\text{Pending (Order Placed)} \longrightarrow \text{Preparing (In Kitchen)} \longrightarrow \text{Ready (Ready for Service)} \longrightarrow \text{Served (Delivered)}$$
+- **Frontend Tracking Experience:** `OrderTrackingPage.jsx` and `orderTrackingHelpers.js` provide:
+  - An interactive visual progress stepper highlighting current preparation stages and elapsed times.
+  - Automatic 15-second background polling ensuring live updates without manual page refreshes.
+  - Order history tab displaying past completed and served orders with collapsible line-item receipts.
+
+### Kitchen Queue Display System (SR-136)
+
+- **Kitchen Queue API (`GET /api/kitchen/queue`):** Accessible strictly to `[Authorize(Roles = AppRoles.KitchenStaff + "," + AppRoles.Admin)]`. Returns all active orders with status `Pending` or `Preparing`.
+- **Priority & Urgency Sorting:** Orders are sorted chronologically (FIFO) by arrival timestamp. Each order envelope calculates an elapsed waiting duration in minutes.
+- **Frontend KDS Dashboard (`KitchenQueuePage.jsx`):**
+  - Two-column kanban board separating "New Orders (Pending)" and "In Preparation (Preparing)".
+  - High-contrast visual cards showing order reference, table number or reservation tag, order type (Dine-in vs. Pre-order), item quantities, and special cooking instructions.
+  - Dynamic urgency timer pills changing color as wait times escalate (Normal, Warning, Urgent).
+  - Configurable auto-refresh toggle with 30-second polling.
+
+### Kitchen Status Updates & Concurrency Control (SR-137)
+
+- **Status Transition Endpoint (`PATCH /api/kitchen/orders/{orderReference}/status`):** Authorized kitchen staff update ticket status as culinary preparation progresses:
+  - Allowed sequential transitions: `Pending` → `Preparing`, `Preparing` → `Ready`, `Ready` → `Served`.
+  - Illegal status jumps (e.g., `Pending` → `Ready`, or reverting `Served` to `Preparing`) are rejected with HTTP 400 Bad Request.
+- **Pessimistic Row-Level Locking:** To prevent concurrent kitchen staff members from simultaneously updating the same order ticket or overwriting state:
+  ```sql
+  SELECT Id, Status FROM DineInOrders WHERE OrderReference = @OrderReference FOR UPDATE;
+  ```
+  Transitions execute under an exclusive InnoDB row lock in a `ReadCommitted` transaction.
+- **Audit Timestamps & Outbox Events:** The transaction updates milestone timestamps (`PreparingStartedAt`, `ReadyAt`, `ServedAt`) and stages corresponding `OrderPreparing`, `OrderReady`, or `OrderServed` events into `ReservationOutbox`.
+
+### Kafka Lifecycle Integration (SR-138)
+
+- **Order Event Envelope:** Standardized JSON structure defined in `OrderLifecycleEvent.cs` and `OrderLifecycleEventTypes.cs`:
+  ```json
+  {
+    "eventId": "a7b3c2d1-e4f5-4a6b-8c9d-0e1f2a3b4c5d",
+    "eventType": "OrderCreated",
+    "schemaVersion": 1,
+    "aggregateType": "Order",
+    "aggregateId": "ORD-8F3K-9P2W",
+    "messageKey": "ORD-8F3K-9P2W",
+    "payload": { ... },
+    "occurredAtUtc": "2026-09-25T10:15:30.123Z"
+  }
+  ```
+- **Lifecycle Event Types:** `OrderCreated`, `OrderPreparing`, `OrderReady`, `OrderServed`, `OrderCancelled`.
+- **Dedicated Topic:** Emitted to Apache Kafka topic `order-lifecycle-events` (configured with 4 partitions in KRaft mode).
+- **Partition Ordering:** Partition key is set to `MessageKey = orderReference`, guaranteeing that all sequential lifecycle events for a given order ticket land on the exact same Kafka partition and are consumed in strict chronological order.
+- **Outbox Publisher Worker (`OutboxPublisherService`):** Background hosted service polls `ReservationOutbox` using non-blocking row claims (`SELECT ... FOR UPDATE SKIP LOCKED`), lease-based lock coordination, at-least-once delivery, exponential backoff retries, and dead-letter isolation.
+
+### SR-278 Bug Fix: Kafka Order Event Routing Defect
+
+- **Problem & Observed Behavior:** Order lifecycle events (`OrderCreated`, `OrderPreparing`, etc.) were failing to publish to the dedicated `order-lifecycle-events` topic or were falling back to the reservation topic `restaurant.reservations.v1`, mixing order payloads into reservation event streams.
+- **Root Cause Analysis:** In `OutboxPublisherService.cs`, topic selection was governed solely by:
+  ```csharp
+  string.Equals(outboxEvent.AggregateType, "Order", StringComparison.OrdinalIgnoreCase)
+  ```
+  When outbox events were inserted without an explicit `AggregateType` or when casing differed, the publisher fell back to the default reservation topic `_options.ReservationTopic` (`restaurant.reservations.v1`).
+- **Implemented Fix (PR #63, commit `3972ef9`):**
+  Added a robust helper `IsOrderLifecycleEvent(OutboxEvent outboxEvent)`:
+  ```csharp
+  private static bool IsOrderLifecycleEvent(OutboxEvent outboxEvent)
+  {
+      if (string.Equals(outboxEvent.AggregateType, "Order", StringComparison.OrdinalIgnoreCase))
+          return true;
+
+      if (!string.IsNullOrWhiteSpace(outboxEvent.EventType) &&
+          outboxEvent.EventType.StartsWith("Order", StringComparison.OrdinalIgnoreCase))
+          return true;
+
+      return OrderLifecycleEventTypes.All.Contains(outboxEvent.EventType, StringComparer.OrdinalIgnoreCase);
+  }
+  ```
+  The publisher inspects `AggregateType`, prefix matching, and known event type constants in `OrderLifecycleEventTypes`, ensuring all order-related events are strictly routed to `_options.OrderLifecycleTopic`.
+- **Verification:** Verified via dedicated unit tests in `reservation-service-tests` validating topic resolution across all order event types, and confirmed in PR #63 review and build pipelines.
+
+### UI/UX Harmonization (SR-211)
+
+- **Luxury Boutique Design System:** Harmonized all customer, admin, and kitchen interfaces using Cinnamon Bistro’s signature design language:
+  - Serif typography hierarchy powered by Google Font **Playfair Display** paired with modern sans-serif body text.
+  - Refined warm gold accent palette (`#C5A880`, `#D4AF37`) layered against dark obsidian and charcoal surfaces (`#121212`, `#1E1E1E`).
+  - Frosted glassmorphism panels, subtle metallic borders, and smooth hover micro-interactions.
+- **Role-Aware Navigation & Post-Login Redirection:**
+  - `postLoginRedirect.js` dynamically directs users to appropriate starting pages upon authentication based on role and intended destination (e.g., checkout redirecting to login and resuming at order review).
+  - `roles.js` and `CUSTOMER_ORDERING_ROLES` provide unified client-side route guards.
+- **Form Ergonomics & Feedback:** Accessible form inputs, high-contrast states, real-time input validation messaging, and non-blocking toast notifications.
+
+### Security & Validation
+
+- **Stateless JWT Authentication:** All non-public endpoints require valid Bearer tokens validated against cryptographic HMAC-SHA256 signature, issuer, audience, and expiration.
+- **Role-Based Authorization (RBAC):** Strict attribute enforcement:
+  - `AppRoles.Admin`: Menu item creation, editing, availability toggles, and administrative oversight.
+  - `AppRoles.Customer`: Cart operations, dine-in ordering, pre-ordering, and personal tracking.
+  - `AppRoles.KitchenStaff` & `AppRoles.Admin`: Kitchen queue inspection and status updates.
+- **Customer Identity & Ownership Isolation:** All customer mutations derive `CustomerId` directly from JWT claims (`ClaimTypes.NameIdentifier`). Carts and order histories cannot be queried or mutated across customer boundaries.
+- **Authoritative Pricing & Availability Enforcement:** Cart totals and order line-item amounts are recalculated strictly from server database records at transaction time, completely neutralizing client-side price tampering.
+- **Replay & Idempotency Safeguards:** Unique indices `uq_dine_in_orders_customer_idempotency` and `uq_reservation_pre_orders_reservation` protect against duplicate submissions.
+- **SQL Injection Defense:** All queries across menu, cart, dine-in, pre-order, and kitchen tables use parameterized ADO.NET SQL commands via `MySqlConnector`. String interpolation in SQL commands is strictly disallowed.
+- **Asset Upload Sanitization:** Image uploads are restricted to 5MB and validated against strict MIME types and file extensions, with sanitized filenames preventing path traversal.
+
+### Testing
+
+The Sprint 3 implementation is verified by automated test suites across backend and frontend repositories:
+- **Reservation Service Unit Tests (`reservation-service-tests`):** **231 tests passing** (`dotnet test`). Covers:
+  - Menu item request validators (`MenuItemCreateRequestValidator`, `MenuItemUpdateRequestValidator`).
+  - Cart addition, quantity updates, price calculations, and customer isolation.
+  - Dine-in order creation, table availability checks, and idempotency key handling.
+  - Reservation pre-order validation, eligibility constraints, and duplicate rejection.
+  - Kitchen queue sorting, wait duration calculations, and state machine transition validation.
+  - Outbox publisher routing logic and SR-278 order lifecycle topic resolution.
+- **Identity Service Unit Tests (`identity-service-tests`):** **31 tests passing** (`dotnet test`). Covers authentication, registration, token generation, and role authorization policies.
+- **Frontend Unit & Component Tests (`restaurant-web`):** **147 tests passing** (`npm test`). Covers:
+  - Menu category filtering, dietary preference selection, and search debouncing.
+  - Cart line-item increment, decrement, removal, and subtotal calculation.
+  - Order review validation and dine-in submission workflows.
+  - Kitchen queue card rendering, urgency timer calculation, and status progression buttons.
+  - Role-based route protection and post-login redirection logic.
+
+### Sprint 3 Outcome
+
+Sprint 3 successfully transitions Cinnamon Bistro from a table reservation system into a fully operational end-to-end dining management platform. Customers enjoy a luxurious, responsive experience for browsing menus, staging carts, placing dine-in orders or reservation-linked pre-orders, and tracking preparation in real time. Kitchen staff benefit from a prioritized, concurrency-safe digital display queue. The platform guarantees transactional data integrity, server-authoritative pricing, and seamless event-driven integration through Apache Kafka, providing a hardened foundation for Sprint 4 billing and payment integration.
+
+---
+
+### API Endpoints Added in Sprint 3
+
+| Method | Endpoint | Authorization | Description |
+| --- | --- | --- | --- |
+| `GET` | `/api/menu-items` | Public / Customer | Retrieves all active menu items (`IsAvailable = 1`) with optional category and dietary filters (SR-131). |
+| `GET` | `/api/menu-items/admin` | Admin | Retrieves all menu items including inactive dishes for administrative management (SR-130). |
+| `GET` | `/api/menu-items/{id}` | Public / Authenticated | Retrieves detailed information for a single menu item (SR-130). |
+| `POST` | `/api/menu-items` | Admin | Creates a new menu item with multipart/form-data image upload and validation (SR-130). |
+| `PUT` | `/api/menu-items/{id}` | Admin | Updates menu item details, pricing, categories, dietary flags, and optional image (SR-130). |
+| `PATCH` | `/api/menu-items/{id}/availability` | Admin | Toggles menu item availability (`IsAvailable`) instantaneously (SR-130). |
+| `GET` | `/api/cart` | Customer | Retrieves the authenticated customer's active cart with server-calculated totals (SR-132). |
+| `POST` | `/api/cart/items` | Customer | Adds an item to the customer's cart with server-authoritative unit price (SR-132). |
+| `PUT` | `/api/cart/items/{itemId}` | Customer | Updates line-item quantity in the active cart (SR-132). |
+| `DELETE` | `/api/cart/items/{itemId}` | Customer | Removes a specific line item from the cart (SR-132). |
+| `DELETE` | `/api/cart` | Customer | Clears all items from the customer's active cart (SR-132). |
+| `POST` | `/api/orders/dine-in` | Customer | Places an atomic dine-in order for a physical table under idempotency protection (SR-133). |
+| `POST` | `/api/orders/reservation-pre-order` | Customer | Places a pre-order linked to an eligible upcoming reservation (SR-134). |
+| `GET` | `/api/orders/reservation-pre-order/{reservationId}` | Customer | Retrieves pre-order details associated with a specific reservation (SR-134). |
+| `GET` | `/api/orders/my-orders` | Customer | Returns unified order history across dine-in and pre-orders for the authenticated user (SR-135). |
+| `GET` | `/api/orders/{orderReference}/status` | Customer | Checks real-time preparation status and milestone timestamps for a specific order (SR-135). |
+| `GET` | `/api/kitchen/queue` | KitchenStaff, Admin | Retrieves active kitchen queue orders (`Pending`, `Preparing`) sorted by FIFO and urgency (SR-136). |
+| `PATCH` | `/api/kitchen/orders/{orderReference}/status` | KitchenStaff, Admin | Updates kitchen order status (`Preparing`, `Ready`, `Served`) under pessimistic row lock (SR-137). |
+
+---
+
+### Database Schema & Migrations (Sprint 3)
+
+Sprint 3 database tables and constraints are managed via idempotent SQL migration scripts in `database/reservation-db/`:
+
+| Migration Script | Scope & Changes Implemented |
+| --- | --- |
+| `03_menu_items.sql` | Creates `MenuItems` table (`Id`, `Name`, `Description`, `Category`, `Price`, `IsAvailable`, `DietaryPreferences`, `ImageReference`, `CreatedAt`, `UpdatedAt`), check constraint `chk_menu_items_price (Price > 0)`, and composite index `idx_menu_items_category (Category, IsAvailable)`. |
+| `07_order_cart.sql` | Creates `OrderCarts` table (`Id`, `CustomerId`, `CreatedAt`, `UpdatedAt`) with unique constraint `uq_order_carts_customer (CustomerId)`, and `OrderCartItems` table (`Id`, `CartId`, `MenuItemId`, `Quantity`, `UnitPrice`, `SpecialInstructions`, `CreatedAt`, `UpdatedAt`) with foreign keys and check constraint `chk_order_cart_items_qty (Quantity > 0)`. |
+| `08_dine_in_orders.sql` | Creates `DineInOrders` table (`Id`, `OrderReference`, `CustomerId`, `TableId`, `Status`, `TotalAmount`, `SpecialInstructions`, `IdempotencyKey`, `CreatedAt`, `UpdatedAt`, `PreparingStartedAt`, `ReadyAt`, `ServedAt`), unique index `uq_dine_in_orders_ref`, unique index `uq_dine_in_orders_customer_idempotency`, and line-item table `DineInOrderItems`. |
+| `09_reservation_pre_orders.sql` | Creates `ReservationPreOrders` table (`Id`, `OrderReference`, `CustomerId`, `ReservationId`, `Status`, `TotalAmount`, `SpecialInstructions`, `CreatedAt`, `UpdatedAt`, `PreparingStartedAt`, `ReadyAt`, `ServedAt`), unique index `uq_reservation_pre_orders_ref`, unique index `uq_reservation_pre_orders_reservation`, and line-item table `ReservationPreOrderItems`. |
+| `10_order_lifecycle_events.sql` | Configures outbox routing and index support for `OrderLifecycleEvent` types (`OrderCreated`, `OrderPreparing`, `OrderReady`, `OrderServed`, `OrderCancelled`) targeting Kafka topic `order-lifecycle-events`. |
 
 ---
 
@@ -505,27 +763,43 @@ npm test
 | SR-114 | Publish Reservation Lifecycle Events to Apache Kafka | Done |
 | SR-112 | Cinnamon Bistro Public Landing Page & Atmosphere Showcase | Done |
 
+### Sprint 3 Summary (Completed Work Items)
+
+| Jira Key | Work Item Summary | Status |
+| --- | --- | --- |
+| SR-130 | Manage Menu Items, Prices and Availability | Done |
+| SR-131 | Browse the Menu and Filter by Category or Dietary Preference | Done |
+| SR-132 | Add, Update and Remove Items in the Order Cart | Done |
+| SR-133 | Place a Dine-in Order for a Restaurant Table | Done |
+| SR-134 | Place a Pre-Order Linked to a Reservation | Done |
+| SR-135 | Track Order Status and View Customer Order History | Done |
+| SR-136 | Display Incoming Orders in the Kitchen Queue | Done |
+| SR-137 | Update Kitchen Order Status from Pending to Preparing and Ready | Done |
+| SR-138 | Publish Order Lifecycle Events through Kafka | Done |
+| SR-211 | UI/UX Harmonization & Luxury Boutique Styling | Done |
+| SR-278 | Fix OrderCreated Kafka Lifecycle Event Topic Routing | Done |
+
 ---
 
-## Sprint 3 — Next Scope
+## Sprint 4 — Next Scope
 
-Sprint 3 shifts focus to restaurant dining operations, menu catalog management, and kitchen fulfillment:
+Sprint 4 shifts focus to billing, payment processing, final end-to-end integration, performance hardening, and production cloud cutover:
 
-1. **Digital Menu Management:** Hierarchical category browsing, dietary tags (vegetarian, vegan, gluten-free), dynamic pricing, allergen warnings, and item availability toggles.
-2. **Customer Table Ordering:** Table-side ordering interface allowing seated guests to place and modify orders linked to their active table or reservation.
-3. **Kitchen Display System (KDS) & Order Queue:** Real-time kitchen dashboard displaying incoming orders, preparation status transitions (`Received` → `Preparing` → `Ready` → `Served`), and order item timers.
-4. **Inter-Service Event Consumption:** Consuming reservation and table status events from Apache Kafka within the ordering and kitchen workflows.
+1. **Billing & Invoice Generation:** Itemized invoice generation for completed dine-in orders and reservations, applying tax, service charge, and discounts.
+2. **Payment Processing Integration:** Secure payment gateway integration supporting digital card processing, transaction receipts, and payment status synchronization.
+3. **End-to-End Workflow Verification:** Cross-service transaction audits, full customer dining cycle testing (Reservation → Menu → Order → Kitchen → Bill → Payment), and regression validation.
+4. **Performance Hardening & Cloud Cutover:** High-load concurrency stress testing, caching strategies, and production environment cutover on Microsoft Azure.
 
 ---
 
 ## Team
 
-| Team member | Student ID | Sprint 1 role | Sprint 2 role |
-| --- | --- | --- | --- |
-| D.M.N. Pesanjith | IT24101505 | Business Analytics / Project Management | DevOps |
-| H. L. P. S. Perera | IT24101848 | QA Engineer | Developer |
-| H.R.M.A.A. Bandara | IT24100315 | Developer | Business Analytics |
-| Wijesinghe K. | IT24102587 | DevOps | QA Engineer |
+| Team member | Student ID | Sprint 1 role | Sprint 2 role | Sprint 3 role |
+| --- | --- | --- | --- | --- |
+| D.M.N. Pesanjith | IT24101505 | Business Analytics / Project Management | DevOps | Developer |
+| H. L. P. S. Perera | IT24101848 | QA Engineer | Developer | DevOps |
+| H.R.M.A.A. Bandara | IT24100315 | Developer | Business Analytics | QA Engineer |
+| Wijesinghe K. | IT24102587 | DevOps | QA Engineer | Business Analytics |
 
 ---
 

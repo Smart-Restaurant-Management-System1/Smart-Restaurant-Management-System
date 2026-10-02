@@ -1,4 +1,4 @@
-﻿
+
 /* =========================================================
    CINNAMON BISTRO
    GLOBAL + KITCHEN QUEUE STYLES
@@ -629,9 +629,9 @@ a:focus-visible {
 
 .kitchen-queue-error,
 .kitchen-error-card {
-  border-color: #dfbdb1 !important;
-  background: #fff6f1 !important;
-  color: #98553e !important;
+  border-color: #fecaca !important;
+  background: #fef2f2 !important;
+  color: #991b1b !important;
 }
 
 /* =========================================================
@@ -675,7 +675,7 @@ a:focus-visible {
   }
 
   .kitchen-summary-number {
-    font-size: 2.4rem !important;
+    font-size: clamp(1.6rem, 5vw, 2.1rem) !important;
   }
 
   .kitchen-header-actions,

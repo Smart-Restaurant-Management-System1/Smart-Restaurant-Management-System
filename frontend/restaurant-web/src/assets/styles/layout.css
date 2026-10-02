@@ -16,6 +16,12 @@
   --bistro-card-bg: #ffffff;
   --bistro-dark-espresso: #211c17;
 
+  /* Surface Colors & Wells (Boutique Consistency) */
+  --bistro-card-bg: #ffffff;
+  --bistro-card-border: #eedfc9;
+  --bistro-well-bg: #faf5ec;
+  --bistro-well-border: #eedfc9;
+
   /* App Shell Geometry & Layout */
   --topbar-height: 72px;
   --sidebar-width: 260px;
@@ -488,7 +494,7 @@
 .page-header-title {
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
   font-weight: 600 !important;
-  font-size: clamp(2rem, 3.2vw, 2.5rem) !important;
+  font-size: clamp(1.6rem, 3.2vw, 2.5rem) !important;
   letter-spacing: -0.015em !important;
   color: var(--bistro-ink) !important;
   margin: 0 0 0.45rem 0 !important;
@@ -504,7 +510,7 @@
 
 .page-header-subtitle {
   color: var(--bistro-muted) !important;
-  font-size: 0.94rem !important;
+  font-size: clamp(0.85rem, 1.2vw, 0.94rem) !important;
   margin: 0 !important;
   line-height: 1.65 !important;
   font-family: 'Poppins', sans-serif !important;
@@ -518,14 +524,30 @@
   flex-wrap: wrap;
 }
 
+/* Standardized Responsive Dual-Pane Layout */
+.bistro-dual-pane-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.85fr);
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+}
+
+@media (max-width: 960px) {
+  .bistro-dual-pane-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.25rem !important;
+  }
+}
+
 /* ========================================================
    Bistro Surface Cards & Metrics (Warm Artisanal Theme)
    ======================================================== */
 
 .bistro-card {
-  background: #ffffff;
+  background: var(--bistro-card-bg);
   border: 1px solid var(--bistro-border);
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 0 4px 16px rgba(40, 37, 31, 0.04);
   padding: 1.65rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
@@ -536,10 +558,17 @@
   border-color: #c5b699;
 }
 
-.bistro-card h2,
+.bistro-card h2 {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  font-size: clamp(1.15rem, 2vw, 1.5rem);
+  color: var(--bistro-ink);
+}
+
 .bistro-card h3 {
   font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 400;
+  font-weight: 600;
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
   color: var(--bistro-ink);
 }
 
@@ -567,7 +596,7 @@
 
 .bistro-metric-value {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 2.15rem;
+  font-size: clamp(1.55rem, 2.6vw, 2.15rem);
   font-weight: 400;
   color: var(--bistro-ink);
   margin-top: 0.35rem;
@@ -879,7 +908,52 @@ tbody tr:hover {
   }
 
   .page-header-title {
-    font-size: 1.75rem !important;
+    font-size: clamp(1.5rem, 2.8vw, 1.85rem) !important;
+  }
+
+  .bistro-card {
+    padding: 1.35rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-main-content {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .bistro-card {
+    padding: 1.15rem;
+    border-radius: 10px;
+  }
+
+  .bistro-metric-card {
+    padding: 1rem 1.25rem;
+  }
+
+  thead th {
+    padding: 0.75rem 0.85rem !important;
+    font-size: 0.7rem !important;
+  }
+
+  tbody td {
+    padding: 0.75rem 0.85rem !important;
+    font-size: 0.84rem !important;
+  }
+
+  .page-header {
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .page-header-actions .bistro-button-gold,
+  .page-header-actions .bistro-button-outline {
+    flex: 1;
+    min-width: 140px;
   }
 }
 
@@ -897,7 +971,28 @@ tbody tr:hover {
   }
 
   .page-header-title {
-    font-size: 1.55rem !important;
+    font-size: clamp(1.35rem, 5vw, 1.65rem) !important;
+  }
+
+  .page-header-subtitle {
+    font-size: 0.84rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-main-content {
+    padding: 1rem 0.75rem 1.75rem;
+  }
+
+  .bistro-card {
+    padding: 1rem;
+  }
+
+  .bistro-button-gold,
+  .bistro-button-dark,
+  .bistro-button-outline {
+    padding: 0.55rem 1rem !important;
+    font-size: 0.82rem !important;
   }
 }
 
