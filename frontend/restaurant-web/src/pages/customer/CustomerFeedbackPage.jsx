@@ -3,6 +3,65 @@ import PageHeader from '../../components/common/PageHeader';
 import { submitFeedback, getMyFeedback } from '../../services/feedbackService';
 import { validateFeedback } from '../../utils/feedbackValidation';
 
+// SVG Icons matching Cinnamon Bistro luxury tokens
+const IconStar = ({ filled = false, size = 22, color = '#d4af37' }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill={filled ? color : 'none'}
+    stroke={filled ? color : '#cbbea7'}
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{ transition: 'all 0.15s ease' }}
+  >
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+  </svg>
+);
+
+const IconCheckCircle = ({ size = 20, color = '#166534' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
+  </svg>
+);
+
+const IconAlertCircle = ({ size = 20, color = '#9f1239' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="8" x2="12" y2="12" />
+    <line x1="12" y1="16" x2="12.01" y2="16" />
+  </svg>
+);
+
+const IconUtensils = ({ size = 20, color = '#a87942' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2" />
+    <path d="M15 2v20" />
+    <path d="M7 2v20" />
+    <path d="M4 2v5a3 3 0 0 0 6 0V2" />
+  </svg>
+);
+
+const IconCalendar = ({ size = 15, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
+const IconReceipt = ({ size = 15, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" />
+    <line x1="8" y1="7" x2="16" y2="7" />
+    <line x1="8" y1="11" x2="16" y2="11" />
+    <line x1="8" y1="15" x2="12" y2="15" />
+  </svg>
+);
+
 export default function CustomerFeedbackPage() {
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
@@ -66,7 +125,7 @@ export default function CustomerFeedbackPage() {
     setLoading(true);
     try {
       await submitFeedback(payload);
-      setSuccessMessage('Thank you for sharing your experience! Your dining feedback has been recorded.');
+      setSuccessMessage('Thank you for your valuable feedback! Your review helps Cinnamon Bistro continuously refine its culinary craftsmanship.');
       setComment('');
       setReservationId('');
       setOrderId('');
@@ -81,168 +140,324 @@ export default function CustomerFeedbackPage() {
     }
   };
 
-  const renderStars = (starCount) => (
-    <div className="flex items-center gap-1 text-amber-400" aria-label={`${starCount} out of 5 stars`}>
+  const renderStarVisual = (count, size = 16) => (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
       {[1, 2, 3, 4, 5].map((s) => (
-        <svg
-          key={s}
-          className={`w-5 h-5 ${s <= starCount ? 'fill-current text-amber-400' : 'text-slate-600'}`}
-          viewBox="0 0 24 24"
-        >
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
+        <IconStar key={s} filled={s <= count} size={size} color="#d4af37" />
       ))}
     </div>
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="portal-page-content" style={{ maxWidth: '1280px', margin: '0 auto', paddingBottom: '3.5rem' }}>
+      {/* Unified Page Header */}
       <PageHeader
-        title="Guest Feedback & Ratings"
-        subtitle="Help Cinnamon Bistro preserve its pinnacle of culinary craftsmanship by sharing your dining impressions."
+        eyebrow="GUEST IMPRESSIONS & RATINGS"
+        title={<>Share Your Dining <em>Impressions.</em></>}
+        subtitle="Your honest reviews inspire our culinary team and service staff to maintain the highest gastronomic standards and warm hospitality."
       />
 
+      {/* Success Notification Banner */}
       {successMessage && (
         <div
           role="status"
           aria-live="polite"
-          className="mb-8 rounded-lg bg-emerald-950/40 border border-emerald-500/40 p-4 text-emerald-200 flex items-center justify-between shadow-lg"
+          style={{
+            backgroundColor: '#f0fdf4',
+            border: '1px solid #bbf7d0',
+            borderRadius: '12px',
+            padding: '1rem 1.4rem',
+            marginBottom: '1.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 14px rgba(34, 197, 94, 0.08)',
+          }}
         >
-          <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            <span className="font-medium text-sm">{successMessage}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <IconCheckCircle size={22} color="#166534" />
+            <span style={{ fontSize: '0.92rem', fontWeight: 600, color: '#166534' }}>
+              {successMessage}
+            </span>
           </div>
           <button
             type="button"
             onClick={() => setSuccessMessage('')}
-            className="text-emerald-400 hover:text-emerald-200"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#166534',
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              padding: '0.2rem 0.5rem',
+            }}
+            title="Dismiss"
           >
             ✕
           </button>
         </div>
       )}
 
+      {/* Error Notification Banner */}
       {errorMessage && (
         <div
           role="alert"
           aria-live="assertive"
-          className="mb-8 rounded-lg bg-rose-950/40 border border-rose-500/40 p-4 text-rose-200 flex items-center justify-between shadow-lg"
+          style={{
+            backgroundColor: '#fff1f2',
+            border: '1px solid #fecdd3',
+            borderRadius: '12px',
+            padding: '1rem 1.4rem',
+            marginBottom: '1.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 4px 14px rgba(239, 68, 68, 0.08)',
+          }}
         >
-          <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <circle cx="12" cy="12" r="10" strokeWidth={2} />
-              <line x1="12" y1="8" x2="12" y2="12" strokeWidth={2} />
-              <line x1="12" y1="16" x2="12.01" y2="16" strokeWidth={2} />
-            </svg>
-            <span className="font-medium text-sm">{errorMessage}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <IconAlertCircle size={22} color="#9f1239" />
+            <span style={{ fontSize: '0.92rem', fontWeight: 600, color: '#9f1239' }}>
+              {errorMessage}
+            </span>
           </div>
           <button
             type="button"
             onClick={() => setErrorMessage('')}
-            className="text-rose-400 hover:text-rose-200"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#9f1239',
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              padding: '0.2rem 0.5rem',
+            }}
+            title="Dismiss"
           >
             ✕
           </button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Feedback Submission Form */}
-        <section className="lg:col-span-7 bg-slate-900/90 border border-amber-900/30 rounded-xl p-6 md:p-8 shadow-xl backdrop-blur-sm">
-          <h2 className="text-xl font-serif font-bold text-amber-100 mb-2 flex items-center gap-2">
-            <span>Rate Your Experience</span>
-          </h2>
-          <p className="text-sm text-slate-400 mb-6">
-            Select your rating and tell us about your food, ambience, and hospitality.
-          </p>
+      {/* Main Dual-Pane Content Layout */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+          gap: '2rem',
+          alignItems: 'start',
+        }}
+      >
+        {/* Left Pane: Review Submission Form */}
+        <section
+          className="bistro-card"
+          style={{
+            position: 'relative',
+            overflow: 'hidden',
+            border: '1px solid #e8e0d0',
+            borderRadius: '14px',
+            boxShadow: '0 6px 22px rgba(40, 30, 15, 0.05)',
+            padding: '2rem',
+            backgroundColor: '#ffffff',
+          }}
+        >
+          {/* Top Gold Gradient Strip */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+            }}
+          />
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '0.65rem' }}>
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: '#faf5ec',
+                border: '1px solid #eedfc9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <IconUtensils size={22} color="#a87942" />
+            </div>
+            <div>
+              <h2
+                style={{
+                  fontFamily: 'Georgia, serif',
+                  fontSize: '1.38rem',
+                  fontWeight: 700,
+                  color: 'var(--bistro-ink, #28251f)',
+                  margin: 0,
+                  lineHeight: 1.2,
+                }}
+              >
+                Rate Your Experience
+              </h2>
+              <span style={{ fontSize: '0.82rem', color: 'var(--bistro-muted, #6b6357)' }}>
+                Tell us about your culinary journey, ambiance, and hospitality
+              </span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ marginTop: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.45rem' }}>
             {/* Star Rating Control */}
             <div>
-              <label className="block text-sm font-semibold text-amber-200/90 mb-2">
-                Overall Experience Rating <span className="text-rose-400">*</span>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: 'var(--bistro-ink)',
+                  marginBottom: '0.6rem',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                Overall Rating <span style={{ color: '#be123c' }}>*</span>
               </label>
+
               <div
-                className="flex items-center gap-2 mb-2"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '0.6rem',
+                }}
                 onMouseLeave={() => setHoverRating(0)}
               >
                 {[1, 2, 3, 4, 5].map((starValue) => {
-                  const active = (hoverRating || rating) >= starValue;
+                  const isActive = (hoverRating || rating) >= starValue;
                   return (
                     <button
                       key={starValue}
                       type="button"
                       onClick={() => setRating(starValue)}
                       onMouseEnter={() => setHoverRating(starValue)}
-                      className="p-1 focus:outline-none focus:ring-2 focus:ring-amber-400 rounded transition-transform hover:scale-110"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transform: isActive ? 'scale(1.12)' : 'scale(1)',
+                        transition: 'transform 0.15s ease',
+                      }}
                       aria-label={`${starValue} star`}
                     >
-                      <svg
-                        className={`w-9 h-9 transition-colors ${
-                          active ? 'fill-current text-amber-400' : 'text-slate-700 hover:text-amber-300'
-                        }`}
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
+                      <IconStar
+                        filled={isActive}
+                        size={34}
+                        color={isActive ? '#d4af37' : '#d9d0bf'}
+                      />
                     </button>
                   );
                 })}
+
+                <span
+                  style={{
+                    marginLeft: '0.65rem',
+                    fontFamily: 'Georgia, serif',
+                    fontSize: '1.45rem',
+                    fontWeight: 700,
+                    color: '#8c6736',
+                  }}
+                >
+                  {hoverRating || rating}.0
+                </span>
               </div>
-              <p className="text-xs text-amber-300/80 font-medium">
+
+              {/* Dynamic Description Pill */}
+              <div
+                style={{
+                  display: 'inline-block',
+                  padding: '0.35rem 0.85rem',
+                  backgroundColor: '#faf5ec',
+                  border: '1px solid #eedfc9',
+                  borderRadius: '9999px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: '#8c6736',
+                }}
+              >
                 {ratingDescriptions[hoverRating || rating]}
-              </p>
+              </div>
+
               {fieldErrors.rating && (
-                <p className="text-xs text-rose-400 mt-1">{fieldErrors.rating}</p>
+                <p style={{ fontSize: '0.8rem', color: '#be123c', marginTop: '0.4rem', fontWeight: 500 }}>
+                  {fieldErrors.rating}
+                </p>
               )}
             </div>
 
             {/* Visit Association Option */}
-            <div className="pt-2 border-t border-slate-800">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Associate with a Visit or Order (Optional)
+            <div style={{ paddingTop: '1.2rem', borderTop: '1px solid #eee6d8' }}>
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: 'var(--bistro-ink)',
+                  marginBottom: '0.65rem',
+                }}
+              >
+                Link to Dining Booking or Order (Optional)
               </label>
-              <div className="flex flex-wrap gap-4 mb-4">
-                <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="linkType"
-                    value="none"
-                    checked={linkType === 'none'}
-                    onChange={() => setLinkType('none')}
-                    className="text-amber-500 focus:ring-amber-500"
-                  />
-                  <span>General Visit</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="linkType"
-                    value="reservation"
-                    checked={linkType === 'reservation'}
-                    onChange={() => setLinkType('reservation')}
-                    className="text-amber-500 focus:ring-amber-500"
-                  />
-                  <span>Table Reservation</span>
-                </label>
-                <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="linkType"
-                    value="order"
-                    checked={linkType === 'order'}
-                    onChange={() => setLinkType('order')}
-                    className="text-amber-500 focus:ring-amber-500"
-                  />
-                  <span>Food Order</span>
-                </label>
+
+              {/* Segmented Radio Options */}
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '0.65rem',
+                  flexWrap: 'wrap',
+                  marginBottom: '1rem',
+                }}
+              >
+                {[
+                  { id: 'none', label: 'General Experience', icon: <IconUtensils size={15} color={linkType === 'none' ? '#ffffff' : '#8c6736'} /> },
+                  { id: 'reservation', label: 'Table Reservation', icon: <IconCalendar size={15} color={linkType === 'reservation' ? '#ffffff' : '#8c6736'} /> },
+                  { id: 'order', label: 'Food Order', icon: <IconReceipt size={15} color={linkType === 'order' ? '#ffffff' : '#8c6736'} /> },
+                ].map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setLinkType(option.id)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      padding: '0.5rem 0.95rem',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      border: linkType === option.id ? '1px solid #8c6736' : '1px solid #dfd8cb',
+                      backgroundColor: linkType === option.id ? '#8c6736' : '#faf8f4',
+                      color: linkType === option.id ? '#ffffff' : 'var(--bistro-ink)',
+                      transition: 'all 0.15s ease',
+                      boxShadow: linkType === option.id ? '0 2px 6px rgba(140, 103, 54, 0.2)' : 'none',
+                    }}
+                  >
+                    {option.icon}
+                    <span>{option.label}</span>
+                  </button>
+                ))}
               </div>
 
               {linkType === 'reservation' && (
-                <div className="mb-2">
-                  <label htmlFor="resIdInput" className="block text-xs font-semibold text-slate-400 mb-1">
+                <div style={{ backgroundColor: '#faf6ef', border: '1px solid #eedfc9', borderRadius: '10px', padding: '1rem', marginTop: '0.5rem' }}>
+                  <label htmlFor="resIdInput" style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#8c6736', marginBottom: '0.35rem' }}>
                     Reservation ID
                   </label>
                   <input
@@ -252,16 +467,28 @@ export default function CustomerFeedbackPage() {
                     placeholder="e.g. 102"
                     value={reservationId}
                     onChange={(e) => setReservationId(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem 0.85rem',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #d9d0bf',
+                      borderRadius: '7px',
+                      fontSize: '0.88rem',
+                      color: 'var(--bistro-ink)',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
                   />
-                  <p className="text-xs text-slate-500 mt-1">Found in your Reservation History (e.g. Booking #102).</p>
+                  <p style={{ margin: '0.35rem 0 0', fontSize: '0.74rem', color: 'var(--bistro-muted)' }}>
+                    Found in your Reservation History (e.g., Booking #102).
+                  </p>
                 </div>
               )}
 
               {linkType === 'order' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+                <div style={{ backgroundColor: '#faf6ef', border: '1px solid #eedfc9', borderRadius: '10px', padding: '1rem', marginTop: '0.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem' }}>
                   <div>
-                    <label htmlFor="orderIdInput" className="block text-xs font-semibold text-slate-400 mb-1">
+                    <label htmlFor="orderIdInput" style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#8c6736', marginBottom: '0.35rem' }}>
                       Order ID
                     </label>
                     <input
@@ -271,21 +498,41 @@ export default function CustomerFeedbackPage() {
                       placeholder="e.g. 54"
                       value={orderId}
                       onChange={(e) => setOrderId(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                      style={{
+                        width: '100%',
+                        padding: '0.55rem 0.85rem',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #d9d0bf',
+                        borderRadius: '7px',
+                        fontSize: '0.88rem',
+                        color: 'var(--bistro-ink)',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
                     />
                   </div>
                   <div>
-                    <label htmlFor="orderTypeSelect" className="block text-xs font-semibold text-slate-400 mb-1">
-                      Order Type
+                    <label htmlFor="orderTypeSelect" style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#8c6736', marginBottom: '0.35rem' }}>
+                      Order Classification
                     </label>
                     <select
                       id="orderTypeSelect"
                       value={orderType}
                       onChange={(e) => setOrderType(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:border-amber-500 focus:outline-none"
+                      style={{
+                        width: '100%',
+                        padding: '0.55rem 0.85rem',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #d9d0bf',
+                        borderRadius: '7px',
+                        fontSize: '0.88rem',
+                        color: 'var(--bistro-ink)',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
                     >
                       <option value="DineIn">Dine-In Order</option>
-                      <option value="ReservationPreOrder">Pre-Order</option>
+                      <option value="ReservationPreOrder">Reservation Pre-Order</option>
                     </select>
                   </div>
                 </div>
@@ -293,130 +540,321 @@ export default function CustomerFeedbackPage() {
             </div>
 
             {/* Comment Section */}
-            <div className="pt-2 border-t border-slate-800">
-              <div className="flex justify-between items-center mb-1">
-                <label htmlFor="commentInput" className="block text-sm font-semibold text-amber-200/90">
-                  Your Comments {rating <= 3 && <span className="text-rose-400">*</span>}
+            <div style={{ paddingTop: '1.2rem', borderTop: '1px solid #eee6d8' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+                <label
+                  htmlFor="commentInput"
+                  style={{
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    color: 'var(--bistro-ink)',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  Your Comments & Review {rating <= 3 && <span style={{ color: '#be123c' }}>*</span>}
                 </label>
-                <span className={`text-xs ${comment.length > 950 ? 'text-amber-400' : 'text-slate-500'}`}>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: comment.length > 950 ? '#be123c' : 'var(--bistro-muted)',
+                  }}
+                >
                   {comment.length} / 1000
                 </span>
               </div>
+
               <textarea
                 id="commentInput"
                 rows={4}
                 maxLength={1000}
                 placeholder={
                   rating <= 3
-                    ? 'Please describe what could have been better about your visit (minimum 5 characters)...'
-                    : 'Share details of your favorite dishes, our team hospitality, or dining atmosphere (optional)...'
+                    ? 'Please share details on how we can improve your dining experience (minimum 5 characters)...'
+                    : 'Share details of your favorite dishes, our hospitality, or the dining ambiance (optional)...'
                 }
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className={`w-full bg-slate-800 border ${
-                  fieldErrors.comment ? 'border-rose-500' : 'border-slate-700'
-                } rounded-lg p-3 text-sm text-slate-100 placeholder-slate-500 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 transition-colors`}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 0.95rem',
+                  backgroundColor: '#faf8f4',
+                  border: fieldErrors.comment ? '1px solid #be123c' : '1px solid #d9d0bf',
+                  borderRadius: '8px',
+                  fontSize: '0.88rem',
+                  color: 'var(--bistro-ink)',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                  lineHeight: 1.5,
+                  resize: 'vertical',
+                }}
               />
+
               {fieldErrors.comment ? (
-                <p className="text-xs text-rose-400 mt-1">{fieldErrors.comment}</p>
+                <p style={{ fontSize: '0.8rem', color: '#be123c', marginTop: '0.35rem', fontWeight: 600 }}>
+                  {fieldErrors.comment}
+                </p>
               ) : (
-                <p className="text-xs text-slate-400 mt-1">
+                <p style={{ fontSize: '0.75rem', color: 'var(--bistro-muted)', marginTop: '0.35rem' }}>
                   {rating <= 3
-                    ? 'A comment is required for ratings of 3 stars or lower to help us improve.'
+                    ? 'A comment is required for ratings of 3 stars or lower to help us promptly address your concerns.'
                     : 'Comments are optional for 4 and 5-star ratings.'}
                 </p>
               )}
             </div>
 
-            {/* Submit Action */}
-            <div className="pt-4 flex justify-end">
+            {/* Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.85rem', paddingTop: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setComment('');
+                  setReservationId('');
+                  setOrderId('');
+                  setLinkType('none');
+                  setRating(5);
+                  setFieldErrors({});
+                }}
+                className="bistro-button-outline"
+                style={{ padding: '0.65rem 1.25rem' }}
+              >
+                Reset
+              </button>
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full sm:w-auto px-8 py-3 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 disabled:bg-slate-700 text-slate-950 font-bold rounded-lg transition-colors shadow-lg hover:shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                className="bistro-button-gold"
+                style={{
+                  padding: '0.65rem 1.65rem',
+                  minWidth: '180px',
+                  opacity: loading ? 0.7 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
               >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4 text-slate-950" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                    <span>Submitting Feedback...</span>
-                  </>
-                ) : (
-                  <span>Submit Dining Feedback</span>
-                )}
+                {loading ? 'Submitting...' : 'Submit Feedback'}
               </button>
             </div>
           </form>
         </section>
 
-        {/* Previous Feedback History */}
-        <section className="lg:col-span-5 bg-slate-900/60 border border-slate-800 rounded-xl p-6 md:p-8 flex flex-col">
-          <h2 className="text-xl font-serif font-bold text-slate-100 mb-2">Your Previous Reviews</h2>
-          <p className="text-sm text-slate-400 mb-6">
-            Review your historical feedback submissions recorded for Cinnamon Bistro.
-          </p>
+        {/* Right Pane: Commitment & Previous Feedback History */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+          {/* Commitment Card */}
+          <div
+            className="bistro-card"
+            style={{
+              position: 'relative',
+              overflow: 'hidden',
+              border: '1px solid #e8e0d0',
+              borderRadius: '14px',
+              backgroundColor: '#faf6ee',
+              padding: '1.5rem',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 100%)',
+              }}
+            />
+            <h3
+              style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                color: '#6e5129',
+                margin: '0 0 0.5rem 0',
+              }}
+            >
+              Our Commitment to Excellence
+            </h3>
+            <p
+              style={{
+                margin: 0,
+                fontSize: '0.82rem',
+                lineHeight: 1.6,
+                color: 'var(--bistro-muted, #6b6357)',
+              }}
+            >
+              Every dining impression is personally reviewed by executive management and chef directors. Your feedback directly shapes our seasonal menu creations and ensures exceptional culinary experiences.
+            </p>
+          </div>
 
-          {feedbackListLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-12 text-slate-500">
-              <div className="w-8 h-8 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mb-3" />
-              <p className="text-xs">Loading your reviews...</p>
-            </div>
-          ) : previousFeedbacks.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-12 text-center p-6 border border-dashed border-slate-800 rounded-lg">
-              <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-amber-400 mb-3">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </div>
-              <h3 className="text-sm font-semibold text-slate-300 mb-1">No feedback submitted yet</h3>
-              <p className="text-xs text-slate-500 max-w-xs">
-                Your past reviews and dining ratings will appear here after submission.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-              {previousFeedbacks.map((fb) => (
-                <div
-                  key={fb.feedbackId}
-                  className="bg-slate-800/80 border border-slate-700/60 rounded-lg p-4 shadow-sm"
+          {/* Previous Feedbacks Card */}
+          <section
+            className="bistro-card"
+            style={{
+              position: 'relative',
+              overflow: 'hidden',
+              border: '1px solid #e8e0d0',
+              borderRadius: '14px',
+              boxShadow: '0 4px 16px rgba(40, 30, 15, 0.04)',
+              padding: '1.65rem',
+              backgroundColor: '#ffffff',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'linear-gradient(90deg, #8c6736 0%, #ddbb78 100%)',
+              }}
+            />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+              <div>
+                <h3
+                  style={{
+                    fontFamily: 'Georgia, serif',
+                    fontSize: '1.22rem',
+                    fontWeight: 700,
+                    color: 'var(--bistro-ink)',
+                    margin: 0,
+                  }}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    {renderStars(fb.rating)}
-                    <span className="text-xs text-slate-400">
-                      {new Date(fb.createdAt).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </span>
-                  </div>
+                  Your Previous Reviews
+                </h3>
+                <span style={{ fontSize: '0.78rem', color: 'var(--bistro-muted)' }}>
+                  Historical ratings submitted from this account
+                </span>
+              </div>
+              <span
+                style={{
+                  display: 'inline-block',
+                  padding: '0.2rem 0.65rem',
+                  backgroundColor: '#eee3cf',
+                  border: '1px solid #c5b699',
+                  borderRadius: '9999px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  color: '#6b532f',
+                }}
+              >
+                {previousFeedbacks.length} {previousFeedbacks.length === 1 ? 'review' : 'reviews'}
+              </span>
+            </div>
 
-                  {(fb.bookingReference || fb.orderReference) && (
-                    <div className="mb-2">
-                      <span className="inline-block bg-slate-700/80 text-amber-300 text-xs px-2 py-0.5 rounded font-mono">
-                        {fb.bookingReference ? `Booking ${fb.bookingReference}` : fb.orderReference}
+            {feedbackListLoading ? (
+              <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--bistro-muted)' }}>
+                <p style={{ fontSize: '0.85rem' }}>Loading your previous reviews...</p>
+              </div>
+            ) : previousFeedbacks.length === 0 ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '2.5rem 1.5rem',
+                  backgroundColor: '#faf8f4',
+                  border: '1px dashed #d9d0bf',
+                  borderRadius: '10px',
+                }}
+              >
+                <div
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
+                    backgroundColor: '#eee3cf',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 0.75rem',
+                  }}
+                >
+                  <IconStar filled size={22} color="#a87942" />
+                </div>
+                <h4 style={{ fontFamily: 'Georgia, serif', margin: '0 0 0.35rem', fontSize: '0.96rem', color: 'var(--bistro-ink)' }}>
+                  No feedback recorded yet
+                </h4>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: 'var(--bistro-muted)', lineHeight: 1.5 }}>
+                  Your submitted ratings and experience critiques will be archived here for easy reference.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem', maxHeight: '520px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                {previousFeedbacks.map((fb) => (
+                  <div
+                    key={fb.feedbackId}
+                    style={{
+                      backgroundColor: '#faf8f4',
+                      border: '1px solid #ebdcc5',
+                      borderRadius: '10px',
+                      padding: '1.05rem',
+                      boxShadow: '0 2px 8px rgba(40, 30, 15, 0.03)',
+                      transition: 'border-color 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                        {renderStarVisual(fb.rating, 16)}
+                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#8c6736' }}>
+                          {fb.rating}.0
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--bistro-muted)' }}>
+                        {new Date(fb.createdAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
                       </span>
                     </div>
-                  )}
 
-                  {fb.comment ? (
-                    <p className="text-sm text-slate-200 italic bg-slate-900/50 p-2.5 rounded border-l-2 border-amber-500/60">
-                      "{fb.comment}"
-                    </p>
-                  ) : (
-                    <p className="text-xs text-slate-500 italic">No comment provided.</p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+                    {(fb.bookingReference || fb.orderReference) && (
+                      <div style={{ marginBottom: '0.55rem' }}>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            backgroundColor: '#eee3cf',
+                            color: '#6b532f',
+                            border: '1px solid #c5b699',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '4px',
+                            fontFamily: 'monospace',
+                          }}
+                        >
+                          {fb.bookingReference ? `Booking #${fb.bookingReference}` : fb.orderReference}
+                        </span>
+                      </div>
+                    )}
+
+                    {fb.comment ? (
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: '0.82rem',
+                          fontStyle: 'italic',
+                          color: 'var(--bistro-ink)',
+                          lineHeight: 1.55,
+                          backgroundColor: '#ffffff',
+                          padding: '0.65rem 0.85rem',
+                          borderRadius: '6px',
+                          borderLeft: '3px solid #c5a059',
+                        }}
+                      >
+                        “{fb.comment}”
+                      </p>
+                    ) : (
+                      <span style={{ fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--bistro-muted)' }}>
+                        No written comments provided.
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );
