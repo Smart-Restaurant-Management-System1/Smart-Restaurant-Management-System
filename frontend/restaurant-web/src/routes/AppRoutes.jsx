@@ -15,6 +15,8 @@ import AdminReservationsPage from '../pages/admin/AdminReservationsPage';
 import ReservationReportsPage from '../pages/admin/ReservationReportsPage';
 import MenuManagementPage from '../pages/admin/MenuManagementPage';
 import AdminUserManagementPage from '../pages/admin/AdminUserManagementPage';
+import AdminFeedbackPage from '../pages/admin/AdminFeedbackPage';
+import CustomerFeedbackPage from '../pages/customer/CustomerFeedbackPage';
 
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
 import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
@@ -175,6 +177,12 @@ export default function AppRoutes() {
           path="/cart"
           element={<CustomerCartPage />}
         />
+
+        {/* Customer Feedback - SR-219 / SR-233 */}
+        <Route
+          path="/feedback"
+          element={<CustomerFeedbackPage />}
+        />
       </Route>
 
       {/* Tables Route */}
@@ -281,6 +289,12 @@ export default function AppRoutes() {
         <Route
           path="/admin/reports/reservations"
           element={<ReservationReportsPage />}
+        />
+
+        {/* Customer Feedback Review - SR-219 / SR-235 */}
+        <Route
+          path="/admin/feedback"
+          element={<AdminFeedbackPage />}
         />
       </Route>
 
