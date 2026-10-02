@@ -126,4 +126,21 @@ public class AuthController : ControllerBase
     {
         return Ok(new { message = "Staff authorized access granted to operational summary." });
     }
+
+    /// <summary>
+    /// End active user session and notify server for session auditing.
+    /// </summary>
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult Logout()
+    {
+        var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? User.FindFirst("sub")?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            _logger.LogInformation("User {UserId} logged out successfully.", userId);
+        }
+
+        return Ok(new { message = "Logged out successfully." });
+    }
 }
