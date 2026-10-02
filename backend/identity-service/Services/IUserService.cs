@@ -1,4 +1,4 @@
-﻿using IdentityService.DTOs;
+using IdentityService.DTOs;
 
 namespace IdentityService.Services;
 

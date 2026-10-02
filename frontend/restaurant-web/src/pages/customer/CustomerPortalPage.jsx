@@ -46,6 +46,22 @@ export default function CustomerPortalPage() {
     },
     {
       number: '03',
+      title: 'User Management',
+      description: 'Oversee registered customer accounts and staff personnel, manage role privileges, toggle status, and inspect profiles.',
+      link: '/admin/users',
+      buttonLabel: 'Manage Users',
+      buttonClass: 'bistro-button-gold',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+    {
+      number: '04',
       title: 'Manage Bookings',
       description: 'Review guest dining reservations, verify check-ins, manage seating schedules, and track booking statuses.',
       link: '/admin/reservations',
@@ -61,7 +77,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '04',
+      number: '05',
       title: 'Reports & Analytics',
       description: 'Analyze reservation trends, peak dining hours, cancellation distributions, and export official CSV/Excel reports.',
       link: '/admin/reports/reservations',
@@ -76,7 +92,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '05',
+      number: '06',
       title: 'Kitchen Queue',
       description: 'Monitor live kitchen orders, track dish preparation stages, and review ticket fulfillment queues in real-time.',
       link: '/kitchen',
@@ -90,7 +106,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '06',
+      number: '07',
       title: 'System Profile',
       description: 'Manage administrative account credentials, verified contact details, and system security preferences.',
       link: '/profile',
