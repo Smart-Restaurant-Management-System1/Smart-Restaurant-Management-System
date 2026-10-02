@@ -1218,10 +1218,10 @@ body {
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
-  color: #111827;
-  background: #ffffff;
-  min-height: 100vh;
+  padding: 0;
+  color: var(--bistro-ink, #28251f);
+  background: transparent;
+  min-height: auto;
 }
 
 .page-header {
@@ -1574,7 +1574,7 @@ body {
 
 @media (max-width: 650px) {
   .page-container {
-    padding: 1rem;
+    padding: 0;
   }
 
   .menu-metrics-grid {

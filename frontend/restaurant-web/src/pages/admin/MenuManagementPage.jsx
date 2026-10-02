@@ -620,7 +620,7 @@ export default function MenuManagementPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: '#faf6ee',
+            background: 'var(--bistro-well-bg, #faf5ec)',
             flexWrap: 'wrap',
             gap: '1rem',
           }}
@@ -656,14 +656,14 @@ export default function MenuManagementPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '0.55rem',
-              flex: '1 1 380px',
-              maxWidth: '560px',
+              flex: '1 1 480px',
+              maxWidth: '680px',
               justifyContent: 'center',
               flexWrap: 'wrap',
             }}
           >
             {/* Search Input */}
-            <div style={{ position: 'relative', flex: '1 1 170px', minWidth: '150px' }}>
+            <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px' }}>
               <input
                 id="search"
                 type="text"
@@ -698,7 +698,7 @@ export default function MenuManagementPage() {
             </div>
 
             {/* Category Dropdown */}
-            <div style={{ flex: '1 1 125px', minWidth: '115px' }}>
+            <div style={{ flex: '0 0 auto', minWidth: '140px' }}>
               <select
                 id="filterCategory"
                 value={category}
@@ -724,7 +724,7 @@ export default function MenuManagementPage() {
             </div>
 
             {/* Availability Dropdown */}
-            <div style={{ flex: '1 1 120px', minWidth: '110px' }}>
+            <div style={{ flex: '0 0 auto', minWidth: '125px' }}>
               <select
                 id="availability"
                 value={availability}
@@ -1087,7 +1087,7 @@ export default function MenuManagementPage() {
                         {/* Delete Button */}
                         <button
                           type="button"
-                          className="bistro-button-danger"
+                          className="bistro-button-outline"
                           onClick={() => handlePromptDelete(item)}
                           disabled={deletingItemId === item.menuItemId}
                           style={{
@@ -1097,6 +1097,18 @@ export default function MenuManagementPage() {
                             justifyContent: 'center',
                             boxSizing: 'border-box',
                             borderRadius: '6px',
+                            color: '#b91c1c',
+                            borderColor: '#fca5a5',
+                            backgroundColor: '#fef2f2',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fee2e2';
+                            e.currentTarget.style.borderColor = '#f87171';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#fef2f2';
+                            e.currentTarget.style.borderColor = '#fca5a5';
                           }}
                           title="Delete Dish"
                         >
