@@ -454,8 +454,8 @@ function OrderReviewPage() {
               display: 'inline-flex',
               flexDirection: 'column',
               alignItems: 'center',
-              background: '#faf6ee',
-              border: '1px solid #ebdcc5',
+              background: '#faf5ec',
+              border: '1px solid #eedfc9',
               borderRadius: '12px',
               padding: '0.85rem 2rem',
               marginBottom: '2rem',
@@ -499,8 +499,8 @@ function OrderReviewPage() {
           >
             <div
               style={{
-                background: '#fdfbf7',
-                border: '1px solid #f0e7db',
+                background: '#faf5ec',
+                border: '1px solid #eedfc9',
                 borderRadius: '10px',
                 padding: '0.85rem 1rem',
               }}
@@ -531,8 +531,8 @@ function OrderReviewPage() {
 
             <div
               style={{
-                background: '#fdfbf7',
-                border: '1px solid #f0e7db',
+                background: '#faf5ec',
+                border: '1px solid #eedfc9',
                 borderRadius: '10px',
                 padding: '0.85rem 1rem',
               }}
@@ -563,8 +563,8 @@ function OrderReviewPage() {
 
             <div
               style={{
-                background: '#fdfbf7',
-                border: '1px solid #f0e7db',
+                background: '#faf5ec',
+                border: '1px solid #eedfc9',
                 borderRadius: '10px',
                 padding: '0.85rem 1rem',
               }}
@@ -630,7 +630,7 @@ function OrderReviewPage() {
 
               <div
                 style={{
-                  border: '1px solid #f0e7db',
+                  border: '1px solid #eedfc9',
                   borderRadius: '10px',
                   overflow: 'hidden',
                 }}
@@ -665,7 +665,7 @@ function OrderReviewPage() {
                         padding: '0.75rem 1rem',
                         borderBottom:
                           index < orderItems.length - 1
-                            ? '1px solid #f0e7db'
+                            ? '1px solid #eedfc9'
                             : 'none',
                       }}
                     >
@@ -765,14 +765,7 @@ function OrderReviewPage() {
         </div>
       )}
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.4fr) minmax(300px, 0.8fr)',
-          gap: '1.5rem',
-          alignItems: 'start',
-        }}
-      >
+      <div className="bistro-dual-pane-grid">
         <section
           className="bistro-card"
           style={{
@@ -896,9 +889,9 @@ function OrderReviewPage() {
                       textAlign: 'left',
                       border: selected
                         ? '2px solid #c5a059'
-                        : '1px solid #eadfce',
+                        : '1px solid #eedfc9',
                       background: selected
-                        ? '#faf6ee'
+                        ? '#faf5ec'
                         : '#ffffff',
                       borderRadius: '10px',
                       padding: '0.9rem',

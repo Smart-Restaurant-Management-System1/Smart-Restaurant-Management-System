@@ -24,22 +24,22 @@ const STATUS_CONFIG = {
   Pending: {
     label: 'Pending',
     color: COLORS.pending,
-    background: '#fbf0dc',
-    border: '#ead1a5',
+    background: '#fef3c7',
+    border: '#fde68a',
     description: 'Waiting to be prepared',
   },
   Preparing: {
     label: 'Preparing',
     color: COLORS.preparing,
-    background: '#f3e7dd',
-    border: '#dfc7b4',
+    background: '#faf5ec',
+    border: '#eedfc9',
     description: 'Currently being prepared',
   },
   Ready: {
     label: 'Ready',
     color: COLORS.ready,
-    background: '#e8f1e4',
-    border: '#c6ddbd',
+    background: '#ecfdf5',
+    border: '#a7f3d0',
     description: 'Ready to serve',
   },
 };
@@ -215,7 +215,7 @@ function SummaryCard({
             style={{
               color: COLORS.dark,
               fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize: '35px',
+              fontSize: 'clamp(1.75rem, 2.5vw, 2.2rem)',
               fontWeight: 700,
               lineHeight: 1,
             }}
@@ -956,10 +956,10 @@ export default function KitchenQueuePage() {
     width: '100%',
     minHeight: '46px',
     padding: '0 13px',
-    border: `1px solid ${COLORS.border}`,
+    border: '1px solid #d9d0bf',
     borderRadius: '9px',
     outline: 'none',
-    background: '#fffdf9',
+    background: '#ffffff',
     color: COLORS.dark,
     fontFamily: 'inherit',
     fontSize: '13px',
@@ -1130,9 +1130,9 @@ export default function KitchenQueuePage() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   padding: '7px 12px',
-                  border: `1px solid #e5d1b2`,
+                  border: '1px solid #eedfc9',
                   borderRadius: '999px',
-                  background: '#f7ecdc',
+                  background: '#faf5ec',
                   color: COLORS.gold,
                   fontSize: '11px',
                   fontWeight: 800,
@@ -1182,10 +1182,10 @@ export default function KitchenQueuePage() {
           style={{
             display: 'grid',
             gridTemplateColumns:
-              'minmax(220px, 1.6fr) minmax(150px, 1fr) minmax(150px, 1fr)',
+              'repeat(auto-fit, minmax(200px, 1fr))',
             gap: '12px',
             padding: '20px 28px',
-            background: '#fcf9f4',
+            background: '#faf5ec',
             borderBottom: `1px solid ${COLORS.border}`,
           }}
         >
@@ -1289,16 +1289,16 @@ export default function KitchenQueuePage() {
             <div
               style={{
                 padding: '45px 20px',
-                border: '1px solid #e4c5b9',
+                border: '1px solid #fecaca',
                 borderRadius: '12px',
-                background: '#fff6f1',
+                background: '#fef2f2',
                 textAlign: 'center',
               }}
             >
               <h3
                 style={{
                   margin: '0 0 10px',
-                  color: '#98553e',
+                  color: '#991b1b',
                   fontSize: '17px',
                 }}
               >
@@ -1308,7 +1308,7 @@ export default function KitchenQueuePage() {
               <p
                 style={{
                   margin: '0 0 20px',
-                  color: '#a47767',
+                  color: '#b91c1c',
                   fontSize: '13px',
                 }}
               >
@@ -1329,7 +1329,7 @@ export default function KitchenQueuePage() {
                 padding: '60px 20px',
                 border: `1px dashed ${COLORS.border}`,
                 borderRadius: '12px',
-                background: '#fcf8f2',
+                background: '#faf5ec',
                 textAlign: 'center',
               }}
             >

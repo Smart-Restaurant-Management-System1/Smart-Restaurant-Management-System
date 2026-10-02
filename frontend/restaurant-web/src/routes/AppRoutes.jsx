@@ -1,4 +1,4 @@
-﻿import ReservationPreOrderPage from "../pages/customer/ReservationPreOrderPage";
+import ReservationPreOrderPage from "../pages/customer/ReservationPreOrderPage";
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
@@ -40,10 +40,6 @@ export default function AppRoutes() {
 
   const getDefaultRedirect = () => {
     if (!isAuthenticated) return '/login';
-
-    if (user?.roles?.includes(ROLES.ADMIN)) {
-      return '/admin';
-    }
 
     if (user?.roles?.includes(ROLES.KITCHEN_STAFF)) {
       return '/kitchen';

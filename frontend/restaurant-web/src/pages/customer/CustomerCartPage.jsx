@@ -490,14 +490,7 @@ function CustomerCartPage() {
               </Link>
             </div>
           ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1.45fr) minmax(340px, 380px)',
-                gap: '1.75rem',
-                alignItems: 'start',
-              }}
-            >
+            <div className="bistro-dual-pane-grid">
               {/* Cart Items List */}
               <section
                 className="bistro-card"
@@ -863,7 +856,7 @@ function CustomerCartPage() {
                     style={{
                       border: '1px solid #fca5a5',
                       borderRadius: '8px',
-                      background: '#fff5f5',
+                      background: '#ffffff',
                       color: '#b91c1c',
                       padding: '0.48rem 0.9rem',
                       fontSize: '0.8rem',
@@ -872,6 +865,7 @@ function CustomerCartPage() {
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: '0.35rem',
+                      transition: 'all 0.2s ease',
                     }}
                   >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

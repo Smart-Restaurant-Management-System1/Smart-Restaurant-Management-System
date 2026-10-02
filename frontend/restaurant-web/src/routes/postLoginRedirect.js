@@ -23,7 +23,6 @@ const isSafeRelativePath = (path) =>
   ![...path].some((ch) => ch.charCodeAt(0) < 32);
 
 export const getDefaultPathForRoles = (roles = []) => {
-  if (roles.includes(ROLES.ADMIN)) return '/admin';
   if (roles.includes(ROLES.KITCHEN_STAFF)) return '/kitchen';
   return '/portal';
 };

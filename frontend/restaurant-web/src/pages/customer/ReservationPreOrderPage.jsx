@@ -409,8 +409,8 @@ function ReservationPreOrderPage() {
               display: 'inline-flex',
               flexDirection: 'column',
               alignItems: 'center',
-              background: '#faf6ee',
-              border: '1px solid #ebdcc5',
+              background: '#faf5ec',
+              border: '1px solid #eedfc9',
               borderRadius: '12px',
               padding: '0.85rem 2rem',
               marginBottom: '2rem',
@@ -435,7 +435,7 @@ function ReservationPreOrderPage() {
               textAlign: 'left',
             }}
           >
-            <div style={{ background: '#fdfbf7', border: '1px solid #f0e7db', borderRadius: '10px', padding: '0.85rem 1rem' }}>
+            <div style={{ background: '#faf5ec', border: '1px solid #eedfc9', borderRadius: '10px', padding: '0.85rem 1rem' }}>
               <span style={{ display: 'block', fontSize: '0.74rem', color: '#78716c', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
                 Linked Reservation
               </span>
@@ -444,7 +444,7 @@ function ReservationPreOrderPage() {
               </strong>
             </div>
 
-            <div style={{ background: '#fdfbf7', border: '1px solid #f0e7db', borderRadius: '10px', padding: '0.85rem 1rem' }}>
+            <div style={{ background: '#faf5ec', border: '1px solid #eedfc9', borderRadius: '10px', padding: '0.85rem 1rem' }}>
               <span style={{ display: 'block', fontSize: '0.74rem', color: '#78716c', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
                 Total Amount
               </span>
@@ -453,7 +453,7 @@ function ReservationPreOrderPage() {
               </strong>
             </div>
 
-            <div style={{ background: '#fdfbf7', border: '1px solid #f0e7db', borderRadius: '10px', padding: '0.85rem 1rem' }}>
+            <div style={{ background: '#faf5ec', border: '1px solid #eedfc9', borderRadius: '10px', padding: '0.85rem 1rem' }}>
               <span style={{ display: 'block', fontSize: '0.74rem', color: '#78716c', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
                 Service Status
               </span>
@@ -561,7 +561,7 @@ function ReservationPreOrderPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '2rem',
           alignItems: 'start',
         }}
@@ -648,8 +648,8 @@ function ReservationPreOrderPage() {
                         justifyContent: 'space-between',
                         gap: '1rem',
                         padding: '0.85rem 1rem',
-                        background: '#fdfbf7',
-                        border: '1px solid #f0e7db',
+                        background: '#faf5ec',
+                        border: '1px solid #eedfc9',
                         borderRadius: '10px',
                       }}
                     >
@@ -660,7 +660,7 @@ function ReservationPreOrderPage() {
                             width: '40px',
                             height: '40px',
                             borderRadius: '8px',
-                            background: '#faf4e8',
+                            background: '#ffffff',
                             border: '1px solid #eedfc9',
                             display: 'flex',
                             alignItems: 'center',
@@ -787,7 +787,7 @@ function ReservationPreOrderPage() {
             {reservations.length === 0 ? (
               <div
                 style={{
-                  background: '#faf6ee',
+                  background: '#faf5ec',
                   border: '1px dashed #eedfc9',
                   borderRadius: '10px',
                   padding: '1.5rem',
@@ -831,8 +831,8 @@ function ReservationPreOrderPage() {
                       width: '100%',
                       padding: '0.75rem 1rem',
                       borderRadius: '8px',
-                      border: '1px solid #eedfc9',
-                      background: '#faf6ee',
+                      border: '1px solid #d9d0bf',
+                      background: '#ffffff',
                       fontSize: '0.92rem',
                       color: '#282115',
                       outline: 'none',
@@ -861,7 +861,7 @@ function ReservationPreOrderPage() {
                 {selectedReservation && (
                   <div
                     style={{
-                      background: '#fdfbf7',
+                      background: '#faf5ec',
                       border: '1px solid #eedfc9',
                       borderRadius: '10px',
                       padding: '1.15rem',
@@ -874,7 +874,7 @@ function ReservationPreOrderPage() {
                           fontSize: '0.78rem',
                           fontWeight: 700,
                           color: '#8c6736',
-                          background: '#faf5ec',
+                          background: '#ffffff',
                           border: '1px solid #eedfc9',
                           borderRadius: '6px',
                           padding: '0.15rem 0.5rem',
