@@ -39,6 +39,44 @@ builder.Services.AddAuthentication(options =>
         RoleClaimType = System.Security.Claims.ClaimTypes.Role,
         NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = async context =>
+        {
+            var userRepo = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+            var userIdClaim = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.Principal?.FindFirst("sub")?.Value;
+
+            if (!int.TryParse(userIdClaim, out var userId) || !await userRepo.IsUserActiveAsync(userId))
+            {
+                context.Fail("User account is inactive or blocked.");
+            }
+        },
+        OnChallenge = async context =>
+        {
+            context.HandleResponse();
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+
+            var payload = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                message = "Authentication required or token is invalid or expired."
+            });
+            await context.Response.WriteAsync(payload);
+        },
+        OnForbidden = async context =>
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+
+            var payload = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                message = "You do not have permission to access this resource."
+            });
+            await context.Response.WriteAsync(payload);
+        }
+    };
 });
 
 builder.Services.AddAuthorization(options =>
@@ -127,6 +165,29 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
+
+// Global exception handling: ensure internal paths, stack traces, and database details are never leaked to clients
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+
+        var exceptionFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+        if (exceptionFeature?.Error != null)
+        {
+            var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError(exceptionFeature.Error, "Unhandled exception processing {Method} {Path}", context.Request.Method, context.Request.Path);
+        }
+
+        var payload = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            message = "An unexpected error occurred. Please try again later."
+        });
+        await context.Response.WriteAsync(payload);
+    });
+});
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

@@ -283,5 +283,64 @@ public class AuthServiceTests
         Assert.Equal("Invalid email or password.", exception.Message);
     }
 
+    [Fact]
+    public async Task LoginAsync_BlockedUser_ThrowsUnauthorizedAccessException_WithGenericSafeMessage()
+    {
+        // Arrange - SR-257: Blocked users must be rejected with safe, non-revealing error message
+        var request = new LoginRequestDto
+        {
+            Email = "blocked@bistro.com",
+            Password = "Password123"
+        };
+
+        var user = new User
+        {
+            UserId = 6,
+            FullName = "Blocked Customer",
+            Email = "blocked@bistro.com",
+            PasswordHash = "$2a$11$hashedpassword",
+            IsActive = false,
+            Status = "Blocked",
+            Roles = new List<string> { "Customer" }
+        };
+
+        _userRepoMock.Setup(r => r.GetByEmailAsync(request.Email))
+            .ReturnsAsync(user);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Invalid email or password.", exception.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_SoftDeletedUser_ThrowsUnauthorizedAccessException_WithGenericSafeMessage()
+    {
+        // Arrange - SR-257: Soft-deleted/deactivated accounts must be rejected with safe error message
+        var request = new LoginRequestDto
+        {
+            Email = "deleted@bistro.com",
+            Password = "Password123"
+        };
+
+        var user = new User
+        {
+            UserId = 7,
+            FullName = "Deleted User",
+            Email = "deleted@bistro.com",
+            PasswordHash = "$2a$11$hashedpassword",
+            IsActive = false,
+            Status = "Inactive",
+            DeletedAt = DateTime.UtcNow.AddDays(-1),
+            Roles = new List<string> { "Customer" }
+        };
+
+        _userRepoMock.Setup(r => r.GetByEmailAsync(request.Email))
+            .ReturnsAsync(user);
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Invalid email or password.", exception.Message);
+    }
+
     #endregion
 }

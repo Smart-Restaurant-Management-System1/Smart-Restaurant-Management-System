@@ -1,5 +1,6 @@
 
 import axios from 'axios';
+import { handleAuthResponseError } from './api';
 
 const reservationApi = axios.create({
   baseURL:
@@ -22,6 +23,12 @@ reservationApi.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Unified 401 response interceptor
+reservationApi.interceptors.response.use(
+  (response) => response,
+  handleAuthResponseError
 );
 
 // Get all menu items for admin with optional filters
