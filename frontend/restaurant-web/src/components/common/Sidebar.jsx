@@ -120,6 +120,20 @@ export default function Sidebar({
     }
 
     if (
+      path === '/feedback' &&
+      location.pathname.startsWith('/feedback')
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/admin/feedback' &&
+      location.pathname.startsWith('/admin/feedback')
+    ) {
+      return true;
+    }
+
+    if (
       path === '/profile' &&
       location.pathname === '/profile'
     ) {
@@ -338,6 +352,21 @@ export default function Sidebar({
     </svg>
   );
 
+  const starIcon = (
+    <svg
+      width="19"
+      height="19"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+
   const customerNavItems = [
     {
       to: '/portal',
@@ -368,6 +397,11 @@ export default function Sidebar({
       to: '/reservations/history',
       label: 'My Reservations',
       icon: calendarIcon,
+    },
+    {
+      to: '/feedback',
+      label: 'Feedback & Ratings',
+      icon: starIcon,
     },
     {
       to: '/tables',
@@ -411,6 +445,11 @@ export default function Sidebar({
       to: '/admin/reservations',
       label: 'Manage Bookings',
       icon: documentIcon,
+    },
+    {
+      to: '/admin/feedback',
+      label: 'Customer Reviews',
+      icon: starIcon,
     },
     {
       to: '/admin/reports/reservations',

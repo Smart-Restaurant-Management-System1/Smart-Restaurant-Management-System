@@ -15,6 +15,7 @@ test('AppRoutes strictly enforces Admin-only access on administrative routes', (
   assert.ok(adminGroup.includes('path="/admin/menu"'));
   assert.ok(adminGroup.includes('path="/admin/reservations"'));
   assert.ok(adminGroup.includes('path="/admin/reports/reservations"'));
+  assert.ok(adminGroup.includes('path="/admin/feedback"'));
 });
 
 test('AppRoutes strictly enforces Kitchen-Staff access on kitchen queue routes', () => {
@@ -84,8 +85,19 @@ test('All service modules attach unified 401 error handler', () => {
   const tableServiceSrc = readFileSync(new URL('../services/tableService.js', import.meta.url), 'utf8');
   const menuServiceSrc = readFileSync(new URL('../services/menuService.js', import.meta.url), 'utf8');
   const orderServiceSrc = readFileSync(new URL('../services/orderService.js', import.meta.url), 'utf8');
+  const feedbackServiceSrc = readFileSync(new URL('../services/feedbackService.js', import.meta.url), 'utf8');
 
   assert.match(tableServiceSrc, /reservationApi\.interceptors\.response\.use\(\s*\(response\)\s*=>\s*response,\s*handleAuthResponseError\s*\)/);
   assert.match(menuServiceSrc, /reservationApi\.interceptors\.response\.use\(\s*\(response\)\s*=>\s*response,\s*handleAuthResponseError\s*\)/);
   assert.match(orderServiceSrc, /orderApi\.interceptors\.response\.use\(\s*\(response\)\s*=>\s*response,\s*handleAuthResponseError\s*\)/);
+  assert.match(feedbackServiceSrc, /feedbackApi\.interceptors\.response\.use\(\s*\(response\)\s*=>\s*response,\s*handleAuthResponseError\s*\)/);
 });
+
+test('AppRoutes strictly enforces Customer-only access on customer feedback route', () => {
+  const src = readFileSync(new URL('./AppRoutes.jsx', import.meta.url), 'utf8');
+  const feedbackSection = src.slice(src.indexOf('{/* Customer Order Cart - SR-132 */}'), src.indexOf('{/* Tables Route */}'));
+
+  assert.match(feedbackSection, /allowedRoles=\{\[ROLES\.CUSTOMER\]\}/);
+  assert.ok(feedbackSection.includes('path="/feedback"'));
+});
+
