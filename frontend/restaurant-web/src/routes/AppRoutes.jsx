@@ -14,6 +14,7 @@ import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminReservationsPage from '../pages/admin/AdminReservationsPage';
 import ReservationReportsPage from '../pages/admin/ReservationReportsPage';
 import MenuManagementPage from '../pages/admin/MenuManagementPage';
+import AdminUserManagementPage from '../pages/admin/AdminUserManagementPage';
 
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
 import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
@@ -258,6 +259,12 @@ export default function AppRoutes() {
         <Route
           path="/admin/menu"
           element={<MenuManagementPage />}
+        />
+
+        {/* User Management - SR-218 */}
+        <Route
+          path="/admin/users"
+          element={<AdminUserManagementPage />}
         />
 
         {/* Existing Admin Routes */}

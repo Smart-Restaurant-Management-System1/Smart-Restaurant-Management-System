@@ -64,6 +64,7 @@ public class AuthService : IAuthService
             PhoneNumber = request.PhoneNumber?.Trim(),
             PasswordHash = passwordHash,
             IsActive = true,
+            Status = "Active",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -82,8 +83,11 @@ public class AuthService : IAuthService
             Email = createdUser.Email,
             PhoneNumber = createdUser.PhoneNumber,
             IsActive = createdUser.IsActive,
+            Status = createdUser.Status,
             Roles = createdUser.Roles,
-            CreatedAt = createdUser.CreatedAt
+            CreatedAt = createdUser.CreatedAt,
+            UpdatedAt = createdUser.UpdatedAt,
+            DeletedAt = createdUser.DeletedAt
         };
     }
 
@@ -91,7 +95,19 @@ public class AuthService : IAuthService
     {
         // 1. Fetch user by email
         var user = await _userRepository.GetByEmailAsync(request.Email.Trim());
-        if (user == null || !user.IsActive)
+        if (user == null)
+        {
+            _logger.LogWarning("Login failed: User {Email} not found.", request.Email);
+            throw new UnauthorizedAccessException("Invalid email or password.");
+        }
+
+        if (user.Status.Equals("Blocked", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Login blocked: User {Email} is blocked by administration.", request.Email);
+            throw new UnauthorizedAccessException("Your account has been blocked by restaurant administration. Please contact support.");
+        }
+
+        if (!user.IsActive)
         {
             _logger.LogWarning("Login failed: User {Email} not found or inactive.", request.Email);
             throw new UnauthorizedAccessException("Invalid email or password.");
