@@ -11,7 +11,7 @@ namespace ReservationService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = AppRoles.Admin)]
 public class MenuItemsController : ControllerBase
 {
     private readonly IMenuItemRepository _menuItemRepository;
