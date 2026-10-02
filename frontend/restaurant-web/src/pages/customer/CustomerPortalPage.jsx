@@ -107,6 +107,19 @@ export default function CustomerPortalPage() {
     },
     {
       number: '07',
+      title: 'Customer Reviews',
+      description: 'Review guest dining satisfaction, inspect ratings distribution, and track customer service quality metrics.',
+      link: '/admin/feedback',
+      buttonLabel: 'View Feedback',
+      buttonClass: 'bistro-button-gold',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      ),
+    },
+    {
+      number: '08',
       title: 'System Profile',
       description: 'Manage administrative account credentials, verified contact details, and system security preferences.',
       link: '/profile',
@@ -189,6 +202,19 @@ export default function CustomerPortalPage() {
     },
     {
       number: '05',
+      title: 'Feedback & Ratings',
+      description: 'Share your dining impressions, rate your culinary experience, and help Cinnamon Bistro elevate its service.',
+      link: '/feedback',
+      buttonLabel: 'Leave Feedback',
+      buttonClass: 'bistro-button-gold',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+        </svg>
+      ),
+    },
+    {
+      number: '06',
       title: 'Personal Profile',
       description: 'Manage your verified account credentials, contact information, dining preferences, and security settings.',
       link: '/profile',
