@@ -9,6 +9,32 @@ public interface IFeedbackService
         SubmitFeedbackRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<(FeedbackResponse? Response, string? ErrorMessage, int StatusCode)> UpdateFeedbackAsync(
+        int customerId,
+        int feedbackId,
+        UpdateFeedbackRequest request,
+        CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string? ErrorMessage, int StatusCode)> DeleteMyFeedbackAsync(
+        int customerId,
+        int feedbackId,
+        CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string? ErrorMessage, int StatusCode)> AdminDeleteFeedbackAsync(
+        int feedbackId,
+        CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string? ErrorMessage, int StatusCode)> AdminMarkAsReadAsync(
+        int feedbackId,
+        bool isRead,
+        CancellationToken cancellationToken = default);
+
+    Task<(FeedbackResponse? Response, string? ErrorMessage, int StatusCode)> AdminReplyAsync(
+        int adminUserId,
+        int feedbackId,
+        AdminReplyRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<FeedbackResponse>> GetMyFeedbackAsync(
         int customerId,
         CancellationToken cancellationToken = default);
@@ -20,3 +46,4 @@ public interface IFeedbackService
     Task<FeedbackSummaryResponse> GetAdminSummaryAsync(
         CancellationToken cancellationToken = default);
 }
+

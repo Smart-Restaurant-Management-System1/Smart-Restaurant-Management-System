@@ -9,6 +9,22 @@ public sealed record SubmitFeedbackRequest
     public string? Comment { get; init; }
 }
 
+public sealed record UpdateFeedbackRequest
+{
+    public int Rating { get; init; }
+    public string? Comment { get; init; }
+}
+
+public sealed record AdminReplyRequest
+{
+    public string Reply { get; init; } = string.Empty;
+}
+
+public sealed record AdminUpdateReadStatusRequest
+{
+    public bool IsRead { get; init; }
+}
+
 public sealed record FeedbackResponse
 {
     public int FeedbackId { get; init; }
@@ -21,6 +37,9 @@ public sealed record FeedbackResponse
     public string? OrderType { get; init; }
     public int Rating { get; init; }
     public string? Comment { get; init; }
+    public bool IsRead { get; init; }
+    public string? AdminReply { get; init; }
+    public DateTime? AdminRepliedAt { get; init; }
     public DateTime CreatedAt { get; init; }
 }
 
@@ -29,6 +48,7 @@ public sealed record AdminFeedbackQuery
     public int Page { get; init; } = 1;
     public int PageSize { get; init; } = 10;
     public int? Rating { get; init; }
+    public bool? IsRead { get; init; }
     public DateTime? FromDate { get; init; }
     public DateTime? ToDate { get; init; }
     public string? Search { get; init; }
@@ -47,5 +67,7 @@ public sealed record FeedbackSummaryResponse
 {
     public double AverageRating { get; init; }
     public int TotalFeedbacks { get; init; }
+    public int UnreadCount { get; init; }
     public Dictionary<int, int> RatingDistribution { get; init; } = new();
 }
+
