@@ -120,6 +120,20 @@ export default function CustomerPortalPage() {
     },
     {
       number: '08',
+      title: 'Payment Verifications',
+      description: 'Review guest bank transfer slips, audit cash settlements, and verify live PayHere transactions.',
+      link: '/admin/payments',
+      buttonLabel: 'Verify Payments',
+      buttonClass: 'bistro-button-gold',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="5" width="20" height="14" rx="2" />
+          <line x1="2" y1="10" x2="22" y2="10" />
+        </svg>
+      ),
+    },
+    {
+      number: '09',
       title: 'System Profile',
       description: 'Manage administrative account credentials, verified contact details, and system security preferences.',
       link: '/profile',
@@ -186,6 +200,20 @@ export default function CustomerPortalPage() {
     },
     {
       number: '04',
+      title: 'Orders & Live Tracking',
+      description: 'Monitor real-time kitchen preparation, view dining recap receipts, and settle pending order payments.',
+      link: '/orders',
+      buttonLabel: 'Track Orders',
+      buttonClass: 'bistro-button-gold',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+      ),
+    },
+    {
+      number: '05',
       title: 'Restaurant Tables',
       description: 'Explore our dining room layout, active seating configurations, ambient terrace tables, and party capacities.',
       link: '/tables',
@@ -201,7 +229,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '05',
+      number: '06',
       title: 'Feedback & Ratings',
       description: 'Share your dining impressions, rate your culinary experience, and help Cinnamon Bistro elevate its service.',
       link: '/feedback',
@@ -214,7 +242,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '06',
+      number: '07',
       title: 'Personal Profile',
       description: 'Manage your verified account credentials, contact information, dining preferences, and security settings.',
       link: '/profile',
