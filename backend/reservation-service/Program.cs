@@ -267,6 +267,23 @@ builder.Services.AddScoped<
     ReservationService.Services.FeedbackService
 >();
 
+// Payment configuration and services (SR-280 / SR-283 / SR-284)
+builder.Services.Configure<
+    ReservationService.Models.PayHereOptions
+>(
+    builder.Configuration.GetSection(
+        ReservationService.Models.PayHereOptions.SectionName
+    )
+);
+builder.Services.AddScoped<
+    ReservationService.Repositories.IPaymentRepository,
+    ReservationService.Repositories.PaymentRepository
+>();
+builder.Services.AddScoped<
+    ReservationService.Services.IPaymentService,
+    ReservationService.Services.PaymentService
+>();
+
 // Availability configuration
 builder.Services.Configure<AvailabilityRulesOptions>(
     builder.Configuration.GetSection(

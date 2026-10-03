@@ -146,7 +146,9 @@ public sealed class OutboxPublisherService(
 
     private static bool IsOrderLifecycleEvent(OutboxEvent outboxEvent) =>
         string.Equals(outboxEvent.AggregateType, "Order", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(outboxEvent.AggregateType, "Payment", StringComparison.OrdinalIgnoreCase) ||
         outboxEvent.EventType.StartsWith("Order", StringComparison.OrdinalIgnoreCase) ||
+        outboxEvent.EventType.StartsWith("Payment", StringComparison.OrdinalIgnoreCase) ||
         outboxEvent.EventType is OrderLifecycleEventTypes.OrderCreated
             or OrderLifecycleEventTypes.OrderPreparing
             or OrderLifecycleEventTypes.OrderReady
