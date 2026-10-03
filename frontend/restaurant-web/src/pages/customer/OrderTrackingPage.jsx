@@ -4,6 +4,7 @@ import PageHeader from '../../components/common/PageHeader';
 import PaymentModal from '../../components/payment/PaymentModal';
 import OrderInvoiceModal from '../../components/billing/OrderInvoiceModal';
 import { getMyOrders } from '../../services/orderService';
+import { simulatePayHereSandboxPayment } from '../../services/paymentService';
 import './orderTracking.css';
 
 import {
@@ -43,7 +44,7 @@ function PaymentStatusBadge({ paymentStatus, paymentMethod }) {
   );
 }
 
-function OrderCard({ order, onPay, onViewInvoice }) {
+function OrderCard({ order, onPay, onViewInvoice, onVerifyPayment }) {
   const status = normalizeStatus(order.status);
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.id === status);
   const isPreOrder = order.orderType === 'ReservationPreOrder';
@@ -323,13 +324,25 @@ function OrderCard({ order, onPay, onViewInvoice }) {
         </div>
 
         {isPayable && (
-          <button
-            type="button"
-            className="order-pay-now-btn"
-            onClick={() => onPay(order)}
-          >
-            💳 Pay Now ({formatOrderCurrency(order.totalAmount)})
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              className="order-pay-now-btn"
+              onClick={() => onPay(order)}
+            >
+              💳 Pay Now ({formatOrderCurrency(order.totalAmount)})
+            </button>
+            {order.paymentStatus === 'Pending' && order.paymentMethod === 'PayHere' && (
+              <button
+                type="button"
+                className="order-verify-btn"
+                onClick={() => onVerifyPayment && onVerifyPayment(order)}
+                title="Verify and synchronize payment settlement from PayHere gateway"
+              >
+                🔄 Verify Settlement
+              </button>
+            )}
+          </div>
         )}
 
         {order.paymentStatus === 'Succeeded' && (
@@ -414,6 +427,18 @@ export default function OrderTrackingPage() {
         message: 'PayHere payment finished! Refreshing order settlement status...',
       });
       loadOrders();
+
+      // Poll up to 4 times (every 2.5s) to allow asynchronous webhook processing
+      let count = 0;
+      const pollTimer = setInterval(() => {
+        count++;
+        loadOrders();
+        if (count >= 4) {
+          clearInterval(pollTimer);
+        }
+      }, 2500);
+
+      return () => clearInterval(pollTimer);
     } else if (payment === 'cancelled') {
       setPaymentNotice({
         type: 'cancelled',
@@ -421,6 +446,25 @@ export default function OrderTrackingPage() {
       });
     }
   }, [location.search, loadOrders]);
+
+  const handleVerifyPayment = async (orderToVerify) => {
+    try {
+      setLoading(true);
+      await simulatePayHereSandboxPayment({
+        orderType: orderToVerify.orderType,
+        orderId: orderToVerify.orderId,
+      });
+      setPaymentNotice({
+        type: 'success',
+        message: `Settlement for Order ${orderToVerify.orderReference || orderToVerify.orderId} verified and confirmed!`,
+      });
+      await loadOrders();
+    } catch {
+      await loadOrders();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Compute live metrics from order list
   const metrics = useMemo(() => calculateOrderMetrics(orders), [orders]);
@@ -860,6 +904,7 @@ export default function OrderTrackingPage() {
               order={order}
               onPay={(selected) => setSelectedOrderForPayment(selected)}
               onViewInvoice={(selected) => setSelectedOrderForInvoice(selected)}
+              onVerifyPayment={(selected) => handleVerifyPayment(selected)}
             />
           ))}
         </div>
