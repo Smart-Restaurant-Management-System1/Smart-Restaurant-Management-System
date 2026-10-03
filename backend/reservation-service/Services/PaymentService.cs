@@ -77,7 +77,7 @@ public sealed class PaymentService : IPaymentService
         }
 
         var prefix = request.OrderType == PaymentConstants.OrderTypes.DineIn ? "DIN" : "PRE";
-        var merchantRef = $"PAY-{prefix}-{request.OrderId:D6}-{Guid.NewGuid():N[..6].ToUpperInvariant()}";
+        var merchantRef = $"PAY-{prefix}-{request.OrderId:D6}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
 
         var payment = new Payment
         {
@@ -179,7 +179,7 @@ public sealed class PaymentService : IPaymentService
         }
 
         var prefix = request.OrderType == PaymentConstants.OrderTypes.DineIn ? "DIN" : "PRE";
-        var merchantRef = $"CASH-{prefix}-{request.OrderId:D6}-{Guid.NewGuid():N[..6].ToUpperInvariant()}";
+        var merchantRef = $"CASH-{prefix}-{request.OrderId:D6}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
 
         var payment = new Payment
         {
@@ -279,7 +279,7 @@ public sealed class PaymentService : IPaymentService
         var slipUrl = await _imageStorageService.SaveImageAsync(request.SlipFile, cancellationToken);
 
         var prefix = request.OrderType == PaymentConstants.OrderTypes.DineIn ? "DIN" : "PRE";
-        var merchantRef = $"BANK-{prefix}-{request.OrderId:D6}-{Guid.NewGuid():N[..6].ToUpperInvariant()}";
+        var merchantRef = $"BANK-{prefix}-{request.OrderId:D6}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
 
         var payment = new Payment
         {

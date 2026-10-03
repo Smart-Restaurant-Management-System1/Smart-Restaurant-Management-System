@@ -16,3 +16,4 @@ TestResults/
 coverage/
 .DS_Store
 Thumbs.db
+**/wwwroot/uploads/
