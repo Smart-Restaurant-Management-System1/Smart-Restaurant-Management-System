@@ -1,4 +1,4 @@
-﻿
+
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -61,7 +61,9 @@ public sealed class OrderTrackingController : ControllerBase
                     d.Status,
                     d.TotalAmount,
                     d.CreatedAt,
-                    d.UpdatedAt
+                    d.UpdatedAt,
+                    COALESCE((SELECT pay.Status FROM Payments pay WHERE pay.OrderType = 'DineIn' AND pay.OrderId = d.OrderId ORDER BY pay.PaymentId DESC LIMIT 1), 'Unpaid') AS PaymentStatus,
+                    (SELECT pay.PaymentMethod FROM Payments pay WHERE pay.OrderType = 'DineIn' AND pay.OrderId = d.OrderId ORDER BY pay.PaymentId DESC LIMIT 1) AS PaymentMethod
                 FROM DineInOrders d
                 WHERE d.CustomerId = @CustomerId
 
@@ -76,7 +78,9 @@ public sealed class OrderTrackingController : ControllerBase
                     p.Status,
                     p.TotalAmount,
                     p.CreatedAt,
-                    p.UpdatedAt
+                    p.UpdatedAt,
+                    COALESCE((SELECT pay.Status FROM Payments pay WHERE pay.OrderType = 'ReservationPreOrder' AND pay.OrderId = p.OrderId ORDER BY pay.PaymentId DESC LIMIT 1), 'Unpaid') AS PaymentStatus,
+                    (SELECT pay.PaymentMethod FROM Payments pay WHERE pay.OrderType = 'ReservationPreOrder' AND pay.OrderId = p.OrderId ORDER BY pay.PaymentId DESC LIMIT 1) AS PaymentMethod
                 FROM ReservationPreOrders p
                 INNER JOIN Reservations r
                     ON r.Id = p.ReservationId
@@ -174,7 +178,16 @@ public sealed class OrderTrackingController : ControllerBase
 
                     UpdatedAt =
                         reader.GetDateTime(
-                            reader.GetOrdinal("UpdatedAt"))
+                            reader.GetOrdinal("UpdatedAt")),
+
+                    PaymentStatus =
+                        reader.GetString(
+                            reader.GetOrdinal("PaymentStatus")),
+
+                    PaymentMethod =
+                        reader.IsDBNull(reader.GetOrdinal("PaymentMethod"))
+                            ? null
+                            : reader.GetString(reader.GetOrdinal("PaymentMethod"))
                 });
             }
         }
@@ -319,6 +332,10 @@ public sealed class OrderTrackingController : ControllerBase
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }
+
+        public string PaymentStatus { get; set; } = "Unpaid";
+
+        public string? PaymentMethod { get; set; }
 
         public List<OrderItem> Items { get; set; } = new();
     }
