@@ -19,8 +19,8 @@ public sealed class FeedbackRepository : IFeedbackRepository
     {
         await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
         const string sql = """
-            INSERT INTO CustomerFeedbacks (CustomerId, ReservationId, OrderId, OrderType, Rating, Comment, CreatedAt, UpdatedAt)
-            VALUES (@CustomerId, @ReservationId, @OrderId, @OrderType, @Rating, @Comment, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+            INSERT INTO CustomerFeedbacks (CustomerId, ReservationId, OrderId, OrderType, Rating, Comment, IsRead, CreatedAt, UpdatedAt)
+            VALUES (@CustomerId, @ReservationId, @OrderId, @OrderType, @Rating, @Comment, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
             SELECT LAST_INSERT_ID();
             """;
 
@@ -40,7 +40,7 @@ public sealed class FeedbackRepository : IFeedbackRepository
     {
         await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
         const string sql = """
-            SELECT FeedbackId, CustomerId, ReservationId, OrderId, OrderType, Rating, Comment, CreatedAt, UpdatedAt
+            SELECT FeedbackId, CustomerId, ReservationId, OrderId, OrderType, Rating, Comment, IsRead, AdminReply, AdminRepliedAt, AdminRepliedBy, CreatedAt, UpdatedAt
             FROM CustomerFeedbacks
             WHERE FeedbackId = @FeedbackId;
             """;
@@ -63,8 +63,69 @@ public sealed class FeedbackRepository : IFeedbackRepository
             OrderType = reader.IsDBNull(reader.GetOrdinal("OrderType")) ? null : reader.GetString("OrderType"),
             Rating = reader.GetInt32("Rating"),
             Comment = reader.IsDBNull(reader.GetOrdinal("Comment")) ? null : reader.GetString("Comment"),
+            IsRead = !reader.IsDBNull(reader.GetOrdinal("IsRead")) && reader.GetBoolean("IsRead"),
+            AdminReply = reader.IsDBNull(reader.GetOrdinal("AdminReply")) ? null : reader.GetString("AdminReply"),
+            AdminRepliedAt = reader.IsDBNull(reader.GetOrdinal("AdminRepliedAt")) ? null : reader.GetDateTime("AdminRepliedAt"),
+            AdminRepliedBy = reader.IsDBNull(reader.GetOrdinal("AdminRepliedBy")) ? null : reader.GetInt32("AdminRepliedBy"),
             CreatedAt = reader.GetDateTime("CreatedAt"),
             UpdatedAt = reader.GetDateTime("UpdatedAt")
+        };
+    }
+
+    public async Task<FeedbackResponse?> GetResponseByIdAsync(int feedbackId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = """
+            SELECT
+                f.FeedbackId,
+                f.CustomerId,
+                CONCAT('Customer #', f.CustomerId) AS CustomerDisplayName,
+                f.ReservationId,
+                r.BookingReference,
+                f.OrderId,
+                CASE
+                    WHEN f.OrderType = 'DineIn' THEN CONCAT('DIN-', LPAD(f.OrderId, 6, '0'))
+                    WHEN f.OrderType = 'ReservationPreOrder' THEN CONCAT('PRE-', LPAD(f.OrderId, 6, '0'))
+                    WHEN f.OrderId IS NOT NULL THEN CONCAT('ORD-', LPAD(f.OrderId, 6, '0'))
+                    ELSE NULL
+                END AS OrderReference,
+                f.OrderType,
+                f.Rating,
+                f.Comment,
+                f.IsRead,
+                f.AdminReply,
+                f.AdminRepliedAt,
+                f.CreatedAt
+            FROM CustomerFeedbacks f
+            LEFT JOIN Reservations r ON f.ReservationId = r.Id
+            WHERE f.FeedbackId = @FeedbackId;
+            """;
+
+        await using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@FeedbackId", feedbackId);
+
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new FeedbackResponse
+        {
+            FeedbackId = reader.GetInt32("FeedbackId"),
+            CustomerId = reader.GetInt32("CustomerId"),
+            CustomerDisplayName = reader.GetString("CustomerDisplayName"),
+            ReservationId = reader.IsDBNull(reader.GetOrdinal("ReservationId")) ? null : reader.GetInt32("ReservationId"),
+            BookingReference = reader.IsDBNull(reader.GetOrdinal("BookingReference")) ? null : reader.GetString("BookingReference"),
+            OrderId = reader.IsDBNull(reader.GetOrdinal("OrderId")) ? null : reader.GetInt32("OrderId"),
+            OrderReference = reader.IsDBNull(reader.GetOrdinal("OrderReference")) ? null : reader.GetString("OrderReference"),
+            OrderType = reader.IsDBNull(reader.GetOrdinal("OrderType")) ? null : reader.GetString("OrderType"),
+            Rating = reader.GetInt32("Rating"),
+            Comment = reader.IsDBNull(reader.GetOrdinal("Comment")) ? null : reader.GetString("Comment"),
+            IsRead = !reader.IsDBNull(reader.GetOrdinal("IsRead")) && reader.GetBoolean("IsRead"),
+            AdminReply = reader.IsDBNull(reader.GetOrdinal("AdminReply")) ? null : reader.GetString("AdminReply"),
+            AdminRepliedAt = reader.IsDBNull(reader.GetOrdinal("AdminRepliedAt")) ? null : reader.GetDateTime("AdminRepliedAt"),
+            CreatedAt = reader.GetDateTime("CreatedAt")
         };
     }
 
@@ -88,6 +149,9 @@ public sealed class FeedbackRepository : IFeedbackRepository
                 f.OrderType,
                 f.Rating,
                 f.Comment,
+                f.IsRead,
+                f.AdminReply,
+                f.AdminRepliedAt,
                 f.CreatedAt
             FROM CustomerFeedbacks f
             LEFT JOIN Reservations r ON f.ReservationId = r.Id
@@ -114,6 +178,9 @@ public sealed class FeedbackRepository : IFeedbackRepository
                 OrderType = reader.IsDBNull(reader.GetOrdinal("OrderType")) ? null : reader.GetString("OrderType"),
                 Rating = reader.GetInt32("Rating"),
                 Comment = reader.IsDBNull(reader.GetOrdinal("Comment")) ? null : reader.GetString("Comment"),
+                IsRead = !reader.IsDBNull(reader.GetOrdinal("IsRead")) && reader.GetBoolean("IsRead"),
+                AdminReply = reader.IsDBNull(reader.GetOrdinal("AdminReply")) ? null : reader.GetString("AdminReply"),
+                AdminRepliedAt = reader.IsDBNull(reader.GetOrdinal("AdminRepliedAt")) ? null : reader.GetDateTime("AdminRepliedAt"),
                 CreatedAt = reader.GetDateTime("CreatedAt")
             });
         }
@@ -130,6 +197,10 @@ public sealed class FeedbackRepository : IFeedbackRepository
         {
             whereClauses.Add("f.Rating = @Rating");
         }
+        if (query.IsRead.HasValue)
+        {
+            whereClauses.Add("f.IsRead = @IsRead");
+        }
         if (query.FromDate.HasValue)
         {
             whereClauses.Add("f.CreatedAt >= @FromDate");
@@ -140,7 +211,7 @@ public sealed class FeedbackRepository : IFeedbackRepository
         }
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
-            whereClauses.Add("(f.Comment LIKE CONCAT('%', @Search, '%') OR r.BookingReference LIKE CONCAT('%', @Search, '%'))");
+            whereClauses.Add("(f.Comment LIKE CONCAT('%', @Search, '%') OR r.BookingReference LIKE CONCAT('%', @Search, '%') OR f.AdminReply LIKE CONCAT('%', @Search, '%'))");
         }
 
         var whereSql = whereClauses.Count > 0 ? "WHERE " + string.Join(" AND ", whereClauses) : string.Empty;
@@ -179,6 +250,9 @@ public sealed class FeedbackRepository : IFeedbackRepository
                 f.OrderType,
                 f.Rating,
                 f.Comment,
+                f.IsRead,
+                f.AdminReply,
+                f.AdminRepliedAt,
                 f.CreatedAt
             FROM CustomerFeedbacks f
             LEFT JOIN Reservations r ON f.ReservationId = r.Id
@@ -208,6 +282,9 @@ public sealed class FeedbackRepository : IFeedbackRepository
                 OrderType = reader.IsDBNull(reader.GetOrdinal("OrderType")) ? null : reader.GetString("OrderType"),
                 Rating = reader.GetInt32("Rating"),
                 Comment = reader.IsDBNull(reader.GetOrdinal("Comment")) ? null : reader.GetString("Comment"),
+                IsRead = !reader.IsDBNull(reader.GetOrdinal("IsRead")) && reader.GetBoolean("IsRead"),
+                AdminReply = reader.IsDBNull(reader.GetOrdinal("AdminReply")) ? null : reader.GetString("AdminReply"),
+                AdminRepliedAt = reader.IsDBNull(reader.GetOrdinal("AdminRepliedAt")) ? null : reader.GetDateTime("AdminRepliedAt"),
                 CreatedAt = reader.GetDateTime("CreatedAt")
             });
         }
@@ -226,7 +303,10 @@ public sealed class FeedbackRepository : IFeedbackRepository
         await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
 
         const string statsSql = """
-            SELECT COUNT(*) AS TotalCount, COALESCE(AVG(Rating), 0.0) AS AvgRating
+            SELECT 
+                COUNT(*) AS TotalCount, 
+                COALESCE(AVG(Rating), 0.0) AS AvgRating,
+                COUNT(CASE WHEN IsRead = 0 THEN 1 END) AS UnreadCount
             FROM CustomerFeedbacks;
             """;
         await using var statsCmd = new MySqlCommand(statsSql, connection);
@@ -234,10 +314,12 @@ public sealed class FeedbackRepository : IFeedbackRepository
 
         var totalCount = 0;
         var avgRating = 0.0;
+        var unreadCount = 0;
         if (await statsReader.ReadAsync(cancellationToken))
         {
             totalCount = statsReader.GetInt32("TotalCount");
             avgRating = Math.Round(statsReader.GetDouble("AvgRating"), 1);
+            unreadCount = statsReader.GetInt32("UnreadCount");
         }
         await statsReader.CloseAsync();
 
@@ -269,8 +351,94 @@ public sealed class FeedbackRepository : IFeedbackRepository
         {
             TotalFeedbacks = totalCount,
             AverageRating = avgRating,
+            UnreadCount = unreadCount,
             RatingDistribution = distribution
         };
+    }
+
+    public async Task<bool> UpdateAsync(int feedbackId, int customerId, int rating, string? comment, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = """
+            UPDATE CustomerFeedbacks
+            SET Rating = @Rating, Comment = @Comment, UpdatedAt = CURRENT_TIMESTAMP
+            WHERE FeedbackId = @FeedbackId AND CustomerId = @CustomerId;
+            """;
+
+        await using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@FeedbackId", feedbackId);
+        cmd.Parameters.AddWithValue("@CustomerId", customerId);
+        cmd.Parameters.AddWithValue("@Rating", rating);
+        cmd.Parameters.AddWithValue("@Comment", (object?)comment ?? DBNull.Value);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> DeleteForCustomerAsync(int feedbackId, int customerId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = """
+            DELETE FROM CustomerFeedbacks
+            WHERE FeedbackId = @FeedbackId AND CustomerId = @CustomerId;
+            """;
+
+        await using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@FeedbackId", feedbackId);
+        cmd.Parameters.AddWithValue("@CustomerId", customerId);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> DeleteForAdminAsync(int feedbackId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = """
+            DELETE FROM CustomerFeedbacks
+            WHERE FeedbackId = @FeedbackId;
+            """;
+
+        await using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@FeedbackId", feedbackId);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> MarkAsReadAsync(int feedbackId, bool isRead, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = """
+            UPDATE CustomerFeedbacks
+            SET IsRead = @IsRead, UpdatedAt = CURRENT_TIMESTAMP
+            WHERE FeedbackId = @FeedbackId;
+            """;
+
+        await using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@FeedbackId", feedbackId);
+        cmd.Parameters.AddWithValue("@IsRead", isRead);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> SetAdminReplyAsync(int feedbackId, string reply, int adminUserId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
+        const string sql = """
+            UPDATE CustomerFeedbacks
+            SET AdminReply = @AdminReply, AdminRepliedAt = CURRENT_TIMESTAMP, AdminRepliedBy = @AdminUserId, IsRead = 1, UpdatedAt = CURRENT_TIMESTAMP
+            WHERE FeedbackId = @FeedbackId;
+            """;
+
+        await using var cmd = new MySqlCommand(sql, connection);
+        cmd.Parameters.AddWithValue("@FeedbackId", feedbackId);
+        cmd.Parameters.AddWithValue("@AdminReply", reply);
+        cmd.Parameters.AddWithValue("@AdminUserId", adminUserId);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync(cancellationToken);
+        return rowsAffected > 0;
     }
 
     public async Task<bool> HasFeedbackForReservationAsync(int customerId, int reservationId, CancellationToken cancellationToken = default)
@@ -365,6 +533,10 @@ public sealed class FeedbackRepository : IFeedbackRepository
         {
             cmd.Parameters.AddWithValue("@Rating", query.Rating.Value);
         }
+        if (query.IsRead.HasValue)
+        {
+            cmd.Parameters.AddWithValue("@IsRead", query.IsRead.Value);
+        }
         if (query.FromDate.HasValue)
         {
             cmd.Parameters.AddWithValue("@FromDate", query.FromDate.Value);
@@ -379,3 +551,4 @@ public sealed class FeedbackRepository : IFeedbackRepository
         }
     }
 }
+

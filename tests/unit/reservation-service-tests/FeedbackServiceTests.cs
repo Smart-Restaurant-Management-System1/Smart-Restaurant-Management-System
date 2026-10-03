@@ -292,4 +292,164 @@ public sealed class FeedbackServiceTests
         Assert.Equal(4.8, result.AverageRating);
         Assert.Equal(15, result.TotalFeedbacks);
     }
+
+    [Fact]
+    public async Task UpdateFeedback_ValidOwner_Returns200OK()
+    {
+        var existing = new CustomerFeedback
+        {
+            FeedbackId = 5,
+            CustomerId = 42,
+            Rating = 4,
+            Comment = "Initial comment"
+        };
+        _repoMock.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repoMock.Setup(r => r.UpdateAsync(5, 42, 5, "Updated comment", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var request = new UpdateFeedbackRequest
+        {
+            Rating = 5,
+            Comment = "Updated comment"
+        };
+
+        var (response, errorMessage, statusCode) = await _service.UpdateFeedbackAsync(42, 5, request);
+
+        Assert.Equal(StatusCodes.Status200OK, statusCode);
+        Assert.Null(errorMessage);
+        Assert.NotNull(response);
+        Assert.Equal(5, response.Rating);
+        Assert.Equal("Updated comment", response.Comment);
+    }
+
+    [Fact]
+    public async Task UpdateFeedback_WrongCustomer_Returns403Forbidden()
+    {
+        var existing = new CustomerFeedback
+        {
+            FeedbackId = 5,
+            CustomerId = 99, // different customer
+            Rating = 4,
+            Comment = "Initial comment"
+        };
+        _repoMock.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var request = new UpdateFeedbackRequest
+        {
+            Rating = 5,
+            Comment = "Updated comment"
+        };
+
+        var (response, errorMessage, statusCode) = await _service.UpdateFeedbackAsync(42, 5, request);
+
+        Assert.Equal(StatusCodes.Status403Forbidden, statusCode);
+        Assert.Null(response);
+        Assert.Contains("not authorized", errorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task DeleteMyFeedback_ValidOwner_Returns204NoContent()
+    {
+        var existing = new CustomerFeedback
+        {
+            FeedbackId = 5,
+            CustomerId = 42,
+            Rating = 4
+        };
+        _repoMock.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repoMock.Setup(r => r.DeleteForCustomerAsync(5, 42, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var (success, errorMessage, statusCode) = await _service.DeleteMyFeedbackAsync(42, 5);
+
+        Assert.True(success);
+        Assert.Equal(StatusCodes.Status204NoContent, statusCode);
+        Assert.Null(errorMessage);
+    }
+
+    [Fact]
+    public async Task DeleteMyFeedback_WrongCustomer_Returns403Forbidden()
+    {
+        var existing = new CustomerFeedback
+        {
+            FeedbackId = 5,
+            CustomerId = 999, // different customer
+            Rating = 4
+        };
+        _repoMock.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+
+        var (success, errorMessage, statusCode) = await _service.DeleteMyFeedbackAsync(42, 5);
+
+        Assert.False(success);
+        Assert.Equal(StatusCodes.Status403Forbidden, statusCode);
+        Assert.Contains("not authorized", errorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AdminDeleteFeedback_ExistingFeedback_Returns204NoContent()
+    {
+        var existing = new CustomerFeedback
+        {
+            FeedbackId = 5,
+            CustomerId = 42,
+            Rating = 1,
+            Comment = "Inappropriate comment"
+        };
+        _repoMock.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repoMock.Setup(r => r.DeleteForAdminAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var (success, errorMessage, statusCode) = await _service.AdminDeleteFeedbackAsync(5);
+
+        Assert.True(success);
+        Assert.Equal(StatusCodes.Status204NoContent, statusCode);
+        Assert.Null(errorMessage);
+    }
+
+    [Fact]
+    public async Task AdminMarkAsRead_ExistingFeedback_Returns200OK()
+    {
+        var existing = new CustomerFeedback { FeedbackId = 5, CustomerId = 42 };
+        _repoMock.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repoMock.Setup(r => r.MarkAsReadAsync(5, true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var (success, errorMessage, statusCode) = await _service.AdminMarkAsReadAsync(5, true);
+
+        Assert.True(success);
+        Assert.Equal(StatusCodes.Status200OK, statusCode);
+    }
+
+    [Fact]
+    public async Task AdminReply_ValidReply_Returns200OK()
+    {
+        var existing = new CustomerFeedback
+        {
+            FeedbackId = 5,
+            CustomerId = 42,
+            Rating = 5,
+            Comment = "Loved the food!"
+        };
+        _repoMock.Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existing);
+        _repoMock.Setup(r => r.SetAdminReplyAsync(5, "Thank you for dining with us!", 1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var request = new AdminReplyRequest { Reply = "Thank you for dining with us!" };
+
+        var (response, errorMessage, statusCode) = await _service.AdminReplyAsync(1, 5, request);
+
+        Assert.Equal(StatusCodes.Status200OK, statusCode);
+        Assert.Null(errorMessage);
+        Assert.NotNull(response);
+        Assert.Equal("Thank you for dining with us!", response.AdminReply);
+        Assert.True(response.IsRead);
+    }
 }
+
