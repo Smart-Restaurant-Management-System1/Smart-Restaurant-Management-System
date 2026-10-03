@@ -16,6 +16,7 @@ import ReservationReportsPage from '../pages/admin/ReservationReportsPage';
 import MenuManagementPage from '../pages/admin/MenuManagementPage';
 import AdminUserManagementPage from '../pages/admin/AdminUserManagementPage';
 import AdminFeedbackPage from '../pages/admin/AdminFeedbackPage';
+import AdminPaymentsPage from '../pages/admin/AdminPaymentsPage';
 import CustomerFeedbackPage from '../pages/customer/CustomerFeedbackPage';
 
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
@@ -295,6 +296,12 @@ export default function AppRoutes() {
         <Route
           path="/admin/feedback"
           element={<AdminFeedbackPage />}
+        />
+
+        {/* Payment Verifications - SR-280 / SR-286 */}
+        <Route
+          path="/admin/payments"
+          element={<AdminPaymentsPage />}
         />
       </Route>
 
