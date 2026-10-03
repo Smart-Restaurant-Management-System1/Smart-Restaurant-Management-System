@@ -15,8 +15,12 @@ public sealed class KitchenQueueOrderDto
     public int? ReservationId { get; init; }
 
     public decimal TotalAmount { get; init; }
+ 
+     public string PaymentStatus { get; init; } = "Unpaid";
 
-    public List<KitchenQueueItemDto> Items { get; init; } = new();
+     public bool IsPaid { get; init; }
+
+     public List<KitchenQueueItemDto> Items { get; init; } = new();
 }
 
 public sealed class KitchenQueueItemDto

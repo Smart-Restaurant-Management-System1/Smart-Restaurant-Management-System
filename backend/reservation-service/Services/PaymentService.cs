@@ -648,12 +648,10 @@ public sealed class PaymentService : IPaymentService
                 return (true, false, false, "You do not own this dine-in order.", 0, orderRef);
             }
 
-            // SR-280 / SR-286: Dine-in orders are payable only after reaching the Served state.
-            if (!string.Equals(status, "Served", StringComparison.OrdinalIgnoreCase))
+            // Pre-Pay Model: Dine-in orders are payable immediately upon placement (must be settled before Preparing).
+            if (string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase))
             {
-                return (true, true, false,
-                    $"Dine-in order #{orderId} is currently in state '{status}'. Payment can only be made after the order has been Served.",
-                    totalAmount, orderRef);
+                return (true, true, false, $"Cannot process payment for a cancelled dine-in order #{orderId}.", totalAmount, orderRef);
             }
 
             return (true, true, true, string.Empty, totalAmount, orderRef);

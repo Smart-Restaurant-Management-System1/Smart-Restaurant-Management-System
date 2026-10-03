@@ -46,9 +46,8 @@ function OrderCard({ order, onPay }) {
   const status = normalizeStatus(order.status);
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.id === status);
   const isPreOrder = order.orderType === 'ReservationPreOrder';
-  const isDineIn = order.orderType === 'DineIn';
   const isPayable =
-    (isDineIn ? status === 'Served' : status !== 'Cancelled') &&
+    status !== 'Cancelled' &&
     order.paymentStatus !== 'Succeeded';
 
   return (
@@ -286,6 +285,29 @@ function OrderCard({ order, onPay }) {
               );
             })}
           </ul>
+        </div>
+      )}
+
+      {/* Pre-Payment Requirement Notice for Active Unpaid Orders */}
+      {isPayable && (
+        <div className="order-prepay-notice">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0 }}
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <div>
+            <strong>Pre-Payment Required:</strong> Kitchen preparation begins immediately after your payment is settled. Please complete checkout below.
+          </div>
         </div>
       )}
 

@@ -188,10 +188,11 @@ public sealed class PaymentTests
     }
 
     [Theory]
+    [InlineData("DineIn", "Received", true)]
+    [InlineData("DineIn", "Pending", true)]
+    [InlineData("DineIn", "Preparing", true)]
+    [InlineData("DineIn", "Ready", true)]
     [InlineData("DineIn", "Served", true)]
-    [InlineData("DineIn", "Received", false)]
-    [InlineData("DineIn", "Preparing", false)]
-    [InlineData("DineIn", "Ready", false)]
     [InlineData("DineIn", "Cancelled", false)]
     [InlineData("ReservationPreOrder", "Pending", true)]
     [InlineData("ReservationPreOrder", "Confirmed", true)]
@@ -201,15 +202,8 @@ public sealed class PaymentTests
     [InlineData("ReservationPreOrder", "Cancelled", false)]
     public void OrderEligibility_EnforcesPayableLifecycleRules(string orderType, string orderStatus, bool expectedPayable)
     {
-        bool isPayable;
-        if (orderType == PaymentConstants.OrderTypes.DineIn)
-        {
-            isPayable = string.Equals(orderStatus, "Served", StringComparison.OrdinalIgnoreCase);
-        }
-        else
-        {
-            isPayable = !string.Equals(orderStatus, "Cancelled", StringComparison.OrdinalIgnoreCase);
-        }
+        Assert.True(orderType is "DineIn" or "ReservationPreOrder");
+        var isPayable = !string.Equals(orderStatus, "Cancelled", StringComparison.OrdinalIgnoreCase);
 
         Assert.Equal(expectedPayable, isPayable);
     }
