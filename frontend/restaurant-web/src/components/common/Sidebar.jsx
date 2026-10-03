@@ -1,4 +1,6 @@
 
+
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -66,6 +68,13 @@ export default function Sidebar({
     if (
       path === '/admin/users' &&
       location.pathname.startsWith('/admin/users')
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/admin/payments' &&
+      location.pathname.startsWith('/admin/payments')
     ) {
       return true;
     }
@@ -354,6 +363,22 @@ export default function Sidebar({
     </svg>
   );
 
+  const paymentIcon = (
+    <svg
+      width="19"
+      height="19"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <line x1="2" y1="10" x2="22" y2="10" />
+    </svg>
+  );
+
   const homeIcon = (
     <svg
       width="18"
@@ -468,6 +493,11 @@ export default function Sidebar({
       to: '/admin/feedback',
       label: 'Customer Reviews',
       icon: starIcon,
+    },
+    {
+      to: '/admin/payments',
+      label: 'Payment Verifications',
+      icon: paymentIcon,
     },
     {
       to: '/admin/reports/reservations',

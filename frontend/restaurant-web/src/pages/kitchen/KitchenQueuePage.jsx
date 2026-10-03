@@ -372,7 +372,51 @@ function QueueOrderCard({ order, onStatusUpdate, updatingOrder }) {
           </div>
         </div>
 
-        <StatusBadge status={order.status} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {order.isPaid ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '6px 11px',
+                borderRadius: '999px',
+                border: '1px solid #a7f3d0',
+                background: '#ecfdf5',
+                color: '#065f46',
+                fontSize: '11px',
+                fontWeight: 800,
+                letterSpacing: '0.4px',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              ✓ Paid
+            </span>
+          ) : (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '6px 11px',
+                borderRadius: '999px',
+                border: '1px solid #fecdd3',
+                background: '#fff1f2',
+                color: '#9f1239',
+                fontSize: '11px',
+                fontWeight: 800,
+                letterSpacing: '0.4px',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              ⏳ Awaiting Payment
+            </span>
+          )}
+
+          <StatusBadge status={order.status} />
+        </div>
       </div>
 
       {/* Ticket information */}
@@ -598,14 +642,25 @@ function QueueOrderCard({ order, onStatusUpdate, updatingOrder }) {
                 ...actionButtonStyle,
                 minHeight: '38px',
                 padding: '0 12px',
-                background: COLORS.preparing,
-                borderColor: COLORS.preparing,
-                color: '#ffffff',
+                background: order.isPaid ? COLORS.preparing : '#e5e7eb',
+                borderColor: order.isPaid ? COLORS.preparing : '#d1d5db',
+                color: order.isPaid ? '#ffffff' : '#6b7280',
+                cursor: order.isPaid ? 'pointer' : 'not-allowed',
+                boxShadow: order.isPaid ? '0 2px 6px rgba(155, 110, 77, 0.25)' : 'none',
               }}
-              disabled={updatingOrder === order.orderReference}
+              disabled={updatingOrder === order.orderReference || !order.isPaid}
+              title={
+                order.isPaid
+                  ? 'Start preparing this order'
+                  : 'Cannot start preparing: Customer payment must be completed and verified before kitchen preparation begins.'
+              }
               onClick={() => onStatusUpdate(order.orderReference, 'Preparing')}
             >
-              {updatingOrder === order.orderReference ? 'Updating...' : 'Start Preparing'}
+              {updatingOrder === order.orderReference
+                ? 'Updating...'
+                : !order.isPaid
+                ? '⛔ Unpaid (Blocked)'
+                : 'Start Preparing'}
             </button>
           )}
 

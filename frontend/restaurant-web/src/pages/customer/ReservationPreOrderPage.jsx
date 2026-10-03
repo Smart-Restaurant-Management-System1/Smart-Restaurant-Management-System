@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getApiErrorMessage } from '../../services/apiErrorMessage';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import PaymentModal from '../../components/payment/PaymentModal';
 import { getCart, clearCart } from '../../services/cartService';
 import { getMyReservationHistory } from '../../services/tableService';
 import { submitReservationPreOrder } from '../../services/orderService';
@@ -119,6 +120,8 @@ function ReservationPreOrderPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
   const [preOrderIdempotencyKey, setPreOrderIdempotencyKey] = useState(null);
+  const [createdOrderForPayment, setCreatedOrderForPayment] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const items = useMemo(() => getCartItems(cart), [cart]);
 
@@ -232,6 +235,18 @@ function ReservationPreOrderPage() {
       );
 
       setSuccess(response);
+
+      const createdId = response.orderId ?? response.OrderId;
+      const createdRef = response.orderReference ?? response.OrderReference ?? `PRE-${createdId || selectedReservationId}`;
+      const createdTotal = response.totalAmount ?? response.TotalAmount ?? displayedTotal;
+
+      setCreatedOrderForPayment({
+        orderId: createdId,
+        orderReference: createdRef,
+        orderType: 'ReservationPreOrder',
+        totalAmount: createdTotal,
+      });
+      setIsPaymentModalOpen(true);
 
       try {
         await clearCart();
@@ -477,31 +492,94 @@ function ReservationPreOrderPage() {
             </div>
           </div>
 
+          {/* Pre-Payment Gatekeeper Notice */}
+          <div
+            style={{
+              maxWidth: '580px',
+              margin: '0 auto 1.5rem',
+              padding: '12px 16px',
+              borderRadius: '10px',
+              background: '#fffbeb',
+              border: '1px solid #fde68a',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              textAlign: 'left',
+              fontSize: '0.86rem',
+              color: '#92400e',
+            }}
+          >
+            <span style={{ fontSize: '1.3rem' }}>⏱️</span>
+            <div>
+              <strong style={{ color: '#78350f', display: 'block' }}>
+                Pre-Payment Required Before Preparation
+              </strong>
+              <span>
+                Our culinary team begins preparing dishes once payment is settled. Please complete checkout below.
+              </span>
+            </div>
+          </div>
+
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setCreatedOrderForPayment({
+                  orderId: success.orderId ?? success.OrderId,
+                  orderReference: orderReference,
+                  orderType: 'ReservationPreOrder',
+                  totalAmount: success.totalAmount || success.TotalAmount || displayedTotal,
+                });
+                setIsPaymentModalOpen(true);
+              }}
+              className="bistro-button-gold"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.72rem 1.6rem',
+                fontSize: '0.94rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                borderRadius: '8px',
+                boxShadow: '0 4px 14px rgba(197, 160, 89, 0.35)',
+              }}
+            >
+              💳 Pay Now ({formatCurrency(success.totalAmount || success.TotalAmount || displayedTotal)})
+            </button>
+            <Link
+              to="/orders/track"
+              className="bistro-button-outline"
+              style={{ textDecoration: 'none', padding: '0.72rem 1.4rem' }}
+            >
+              Track Order Status
+            </Link>
             <Link
               to="/portal"
-              className="bistro-button-gold"
-              style={{ textDecoration: 'none', padding: '0.65rem 1.4rem' }}
+              className="bistro-button-outline"
+              style={{ textDecoration: 'none', padding: '0.72rem 1.4rem' }}
             >
               Return to Portal
             </Link>
             <Link
               to="/reservations/history"
               className="bistro-button-outline"
-              style={{ textDecoration: 'none', padding: '0.65rem 1.4rem' }}
+              style={{ textDecoration: 'none', padding: '0.72rem 1.4rem' }}
             >
               View My Reservations
             </Link>
-            <Link
-              to="/menu"
-              className="bistro-button-outline"
-              style={{ textDecoration: 'none', padding: '0.65rem 1.4rem' }}
-            >
-              Explore Menu
-            </Link>
           </div>
         </section>
+
+        {/* Global Payment Gateway Modal */}
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          order={createdOrderForPayment}
+          onPaymentInitiated={() => {}}
+        />
       </div>
     );
   }
@@ -1043,13 +1121,21 @@ function ReservationPreOrderPage() {
                     <line x1="8" y1="2" x2="8" y2="6" />
                     <line x1="3" y1="10" x2="21" y2="10" />
                   </svg>
-                  <span>Confirm Reservation Pre-Order</span>
+                  <span>💳 Place Pre-Order & Pay Now ({formatCurrency(displayedTotal)}) →</span>
                 </>
               )}
             </button>
           </section>
         </div>
       </div>
+
+      {/* Global Payment Gateway Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        order={createdOrderForPayment}
+        onPaymentInitiated={() => {}}
+      />
     </div>
   );
 }

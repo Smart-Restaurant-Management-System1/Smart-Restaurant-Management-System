@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import PaymentModal from '../../components/payment/PaymentModal';
 import { getMyOrders } from '../../services/orderService';
 import './orderTracking.css';
 
@@ -11,7 +12,6 @@ import {
   formatOrderDateTime,
   calculateOrderMetrics,
 } from './orderTrackingHelpers';
-import './orderTracking.css';
 
 function StatusBadge({ status }) {
   const normalized = normalizeStatus(status);
@@ -25,10 +25,30 @@ function StatusBadge({ status }) {
   );
 }
 
-function OrderCard({ order }) {
+function PaymentStatusBadge({ paymentStatus, paymentMethod }) {
+  const status = (paymentStatus || 'Unpaid').toLowerCase();
+  let label = paymentStatus || 'Unpaid';
+  if (paymentStatus === 'Pending' && paymentMethod === 'BankTransfer') {
+    label = 'Slip Under Review';
+  } else if (paymentStatus === 'Pending' && paymentMethod === 'Cash') {
+    label = 'Cash Requested';
+  }
+
+  return (
+    <span className={`order-payment-badge order-payment-${status}`}>
+      <span className="order-payment-dot" />
+      {label}
+    </span>
+  );
+}
+
+function OrderCard({ order, onPay }) {
   const status = normalizeStatus(order.status);
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.id === status);
   const isPreOrder = order.orderType === 'ReservationPreOrder';
+  const isPayable =
+    status !== 'Cancelled' &&
+    order.paymentStatus !== 'Succeeded';
 
   return (
     <article className="order-history-card">
@@ -102,7 +122,13 @@ function OrderCard({ order }) {
           </span>
         </div>
 
-        <StatusBadge status={status} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <PaymentStatusBadge
+            paymentStatus={order.paymentStatus}
+            paymentMethod={order.paymentMethod}
+          />
+          <StatusBadge status={status} />
+        </div>
       </header>
 
       {/* 4-Box Key Metadata Grid */}
@@ -261,11 +287,62 @@ function OrderCard({ order }) {
           </ul>
         </div>
       )}
+
+      {/* Pre-Payment Requirement Notice for Active Unpaid Orders */}
+      {isPayable && (
+        <div className="order-prepay-notice">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0 }}
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <div>
+            <strong>Pre-Payment Required:</strong> Kitchen preparation begins immediately after your payment is settled. Please complete checkout below.
+          </div>
+        </div>
+      )}
+
+      {/* Payment Settlement Footer Strip */}
+      <footer className="order-card-payment-footer">
+        <div className="order-payment-status-info">
+          <span>Billing Status:</span>
+          <strong style={{ color: order.paymentStatus === 'Succeeded' ? '#047857' : '#2b261f' }}>
+            {order.paymentStatus || 'Unpaid'}
+          </strong>
+          {order.paymentMethod && <span>via {order.paymentMethod}</span>}
+        </div>
+
+        {isPayable && (
+          <button
+            type="button"
+            className="order-pay-now-btn"
+            onClick={() => onPay(order)}
+          >
+            💳 Pay Now ({formatOrderCurrency(order.totalAmount)})
+          </button>
+        )}
+
+        {order.paymentStatus === 'Succeeded' && (
+          <span style={{ color: '#047857', fontWeight: 600, fontSize: '0.84rem' }}>
+            ✓ Payment Succeeded
+          </span>
+        )}
+      </footer>
     </article>
   );
 }
 
 export default function OrderTrackingPage() {
+  const location = useLocation();
   const [orders, setOrders] = useState([]);
   const [status, setStatus] = useState('');
   const [type, setType] = useState('');
@@ -273,6 +350,8 @@ export default function OrderTrackingPage() {
   const [pageSize] = useState(10);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
+  const [paymentNotice, setPaymentNotice] = useState(null);
 
   const loadOrders = useCallback(async () => {
     try {
@@ -304,6 +383,24 @@ export default function OrderTrackingPage() {
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  // Handle PayHere return_url and cancel_url query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const payment = params.get('payment');
+    if (payment === 'returned') {
+      setPaymentNotice({
+        type: 'success',
+        message: 'PayHere payment finished! Refreshing order settlement status...',
+      });
+      loadOrders();
+    } else if (payment === 'cancelled') {
+      setPaymentNotice({
+        type: 'cancelled',
+        message: 'PayHere payment was cancelled. You can settle your order whenever you are ready.',
+      });
+    }
+  }, [location.search, loadOrders]);
 
   // Compute live metrics from order list
   const metrics = useMemo(() => calculateOrderMetrics(orders), [orders]);
@@ -404,6 +501,21 @@ export default function OrderTrackingPage() {
           </div>
         }
       />
+
+      {/* PayHere Return Alert Banner */}
+      {paymentNotice && (
+        <div className={`order-payment-notification-banner order-payment-banner-${paymentNotice.type}`}>
+          <span>{paymentNotice.message}</span>
+          <button
+            type="button"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, color: 'inherit' }}
+            onClick={() => setPaymentNotice(null)}
+            aria-label="Dismiss payment notice"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* 4 Luxury KPI Metric Summary Cards */}
       <section className="order-tracking-summary" aria-label="Order Metrics">
@@ -726,6 +838,7 @@ export default function OrderTrackingPage() {
             <OrderCard
               key={`${order.orderType}-${order.orderId}`}
               order={order}
+              onPay={(selected) => setSelectedOrderForPayment(selected)}
             />
           ))}
         </div>
@@ -777,6 +890,16 @@ export default function OrderTrackingPage() {
           </svg>
         </button>
       </nav>
+
+      {/* Interactive Settlement Modal */}
+      <PaymentModal
+        isOpen={Boolean(selectedOrderForPayment)}
+        order={selectedOrderForPayment}
+        onClose={() => setSelectedOrderForPayment(null)}
+        onPaymentInitiated={() => {
+          loadOrders();
+        }}
+      />
     </main>
   );
 }

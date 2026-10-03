@@ -1009,6 +1009,11 @@ export default function CustomerFeedbackPage() {
                           padding: '0.65rem 0.85rem',
                           borderRadius: '6px',
                           borderLeft: '3px solid #c5a059',
+                          maxWidth: '100%',
+                          boxSizing: 'border-box',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'anywhere',
+                          whiteSpace: 'pre-wrap',
                         }}
                       >
                         “{fb.comment}”
@@ -1030,9 +1035,13 @@ export default function CustomerFeedbackPage() {
                           borderRadius: '8px',
                           padding: '0.65rem 0.85rem',
                           boxShadow: '0 1px 3px rgba(140, 103, 54, 0.04)',
+                          maxWidth: '100%',
+                          boxSizing: 'border-box',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'anywhere',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem', gap: '0.5rem', flexWrap: 'wrap' }}>
                           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#8c6736' }}>
                             ⭐ Response from Cinnamon Bistro Management
                           </span>
@@ -1046,7 +1055,7 @@ export default function CustomerFeedbackPage() {
                             </span>
                           )}
                         </div>
-                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#493628', lineHeight: 1.5 }}>
+                        <p style={{ margin: 0, fontSize: '0.8rem', color: '#493628', lineHeight: 1.5, wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>
                           {fb.adminReply}
                         </p>
                       </div>

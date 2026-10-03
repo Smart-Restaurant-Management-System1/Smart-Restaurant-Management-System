@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import PaymentModal from '../../components/payment/PaymentModal';
 import { getApiErrorMessage } from '../../services/apiErrorMessage';
 import { getCart, clearCart } from '../../services/cartService';
 import { getActiveTables } from '../../services/tableService';
@@ -80,6 +81,8 @@ function OrderReviewPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(null);
+  const [createdOrderForPayment, setCreatedOrderForPayment] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const items = useMemo(() => getCartItems(cart), [cart]);
 
@@ -213,6 +216,18 @@ function OrderReviewPage() {
       }
 
       setSuccess(response);
+
+      const createdId = response.orderId ?? response.OrderId;
+      const createdRef = response.orderReference ?? response.OrderReference ?? orderReference;
+      const createdTotal = response.totalAmount ?? response.TotalAmount ?? total;
+
+      setCreatedOrderForPayment({
+        orderId: createdId,
+        orderReference: createdRef,
+        orderType: 'DineIn',
+        totalAmount: createdTotal,
+      });
+      setIsPaymentModalOpen(true);
 
       try {
         await clearCart();
@@ -683,6 +698,88 @@ function OrderReviewPage() {
             </div>
           )}
 
+          {/* Pre-Payment Gatekeeper Notice */}
+          <div
+            style={{
+              maxWidth: '560px',
+              margin: '0 auto 1.5rem',
+              padding: '12px 16px',
+              borderRadius: '10px',
+              background: '#fffbeb',
+              border: '1px solid #fde68a',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              textAlign: 'left',
+              fontSize: '0.86rem',
+              color: '#92400e',
+            }}
+          >
+            <span style={{ fontSize: '1.3rem' }}>⏱️</span>
+            <div>
+              <strong style={{ color: '#78350f', display: 'block' }}>
+                Pre-Payment Required Before Preparation
+              </strong>
+              <span>
+                Our culinary team begins preparing dishes once payment is settled. Please complete checkout below.
+              </span>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: '0.75rem',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              marginBottom: '1rem',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setCreatedOrderForPayment({
+                  orderId: success.orderId ?? success.OrderId,
+                  orderReference: orderReference,
+                  orderType: 'DineIn',
+                  totalAmount: orderTotal,
+                });
+                setIsPaymentModalOpen(true);
+              }}
+              className="bistro-button-gold"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.72rem 1.6rem',
+                fontSize: '0.94rem',
+                fontWeight: 700,
+                border: 'none',
+                cursor: 'pointer',
+                borderRadius: '8px',
+                boxShadow: '0 4px 14px rgba(197, 160, 89, 0.35)',
+              }}
+            >
+              💳 Pay Now ({formatCurrency(orderTotal)})
+            </button>
+
+            <Link
+              to="/orders/track"
+              className="bistro-button-outline"
+              style={{
+                textDecoration: 'none',
+                padding: '0.72rem 1.4rem',
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+              }}
+            >
+              Track Order Status →
+            </Link>
+          </div>
+
           <div
             style={{
               display: 'flex',
@@ -693,10 +790,11 @@ function OrderReviewPage() {
           >
             <Link
               to="/portal"
-              className="bistro-button-gold"
               style={{
-                textDecoration: 'none',
-                padding: '0.65rem 1.4rem',
+                color: '#78716c',
+                fontSize: '0.84rem',
+                textDecoration: 'underline',
+                padding: '0.4rem 0.8rem',
               }}
             >
               Return to Portal
@@ -704,10 +802,11 @@ function OrderReviewPage() {
 
             <Link
               to="/menu"
-              className="bistro-button-outline"
               style={{
-                textDecoration: 'none',
-                padding: '0.65rem 1.4rem',
+                color: '#78716c',
+                fontSize: '0.84rem',
+                textDecoration: 'underline',
+                padding: '0.4rem 0.8rem',
               }}
             >
               Explore More Dishes
@@ -945,8 +1044,11 @@ function OrderReviewPage() {
             style={{
               width: '100%',
               marginTop: '1.25rem',
-              padding: '0.8rem 1rem',
+              padding: '0.85rem 1rem',
+              fontSize: '0.94rem',
+              fontWeight: 700,
               border: 'none',
+              borderRadius: '8px',
               cursor:
                 submitting ||
                 items.length === 0 ||
@@ -959,14 +1061,25 @@ function OrderReviewPage() {
                 !selectedTableId
                   ? 0.6
                   : 1,
+              boxShadow: '0 3px 10px rgba(197, 160, 89, 0.3)',
             }}
           >
             {submitting
-              ? 'Submitting Order...'
-              : 'Confirm & Submit Order'}
+              ? 'Placing Order…'
+              : `💳 Place Order & Pay Now (${formatCurrency(total)}) →`}
           </button>
         </section>
       </div>
+
+      {/* Global Payment Gateway Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        order={createdOrderForPayment}
+        onPaymentInitiated={() => {
+          // payment initiated
+        }}
+      />
     </div>
   );
 }

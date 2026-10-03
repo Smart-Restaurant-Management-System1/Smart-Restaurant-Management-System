@@ -18,15 +18,18 @@ public sealed class KitchenQueueController : ControllerBase
     private readonly DatabaseHelper _databaseHelper;
     private readonly ILogger<KitchenQueueController> _logger;
     private readonly IOutboxRepository _outboxRepository;
+    private readonly IPaymentRepository _paymentRepository;
 
     public KitchenQueueController(
         DatabaseHelper databaseHelper,
         ILogger<KitchenQueueController> logger,
-        IOutboxRepository outboxRepository)
+        IOutboxRepository outboxRepository,
+        IPaymentRepository paymentRepository)
     {
         _databaseHelper = databaseHelper;
         _logger = logger;
         _outboxRepository = outboxRepository;
+        _paymentRepository = paymentRepository;
     }
 
     [HttpGet("queue")]
@@ -57,7 +60,14 @@ public sealed class KitchenQueueController : ControllerBase
                     d.CreatedAt AS SubmittedAt,
                     d.TableId,
                     NULL AS ReservationId,
-                    d.TotalAmount
+                    d.TotalAmount,
+                    COALESCE((
+                        SELECT pay.Status
+                        FROM Payments pay
+                        WHERE pay.OrderType = 'DineIn' AND pay.OrderId = d.OrderId
+                        ORDER BY pay.PaymentId DESC
+                        LIMIT 1
+                    ), 'Unpaid') AS PaymentStatus
                 FROM DineInOrders d
                 WHERE d.Status IN ('Received', 'Preparing', 'Ready')
 
@@ -71,7 +81,14 @@ public sealed class KitchenQueueController : ControllerBase
                     p.CreatedAt AS SubmittedAt,
                     r.TableId,
                     p.ReservationId,
-                    p.TotalAmount
+                    p.TotalAmount,
+                    COALESCE((
+                        SELECT pay.Status
+                        FROM Payments pay
+                        WHERE pay.OrderType = 'ReservationPreOrder' AND pay.OrderId = p.OrderId
+                        ORDER BY pay.PaymentId DESC
+                        LIMIT 1
+                    ), 'Unpaid') AS PaymentStatus
                 FROM ReservationPreOrders p
                 INNER JOIN Reservations r
                     ON r.Id = p.ReservationId
@@ -99,6 +116,17 @@ public sealed class KitchenQueueController : ControllerBase
 
                 while (await reader.ReadAsync(cancellationToken))
                 {
+                    var paymentStatus = reader.IsDBNull(
+                        reader.GetOrdinal("PaymentStatus"))
+                        ? "Unpaid"
+                        : reader.GetString(
+                            reader.GetOrdinal("PaymentStatus"));
+
+                    var isPaid = string.Equals(
+                        paymentStatus,
+                        PaymentConstants.PaymentStatuses.Succeeded,
+                        StringComparison.OrdinalIgnoreCase);
+
                     orders.Add(new KitchenQueueOrderDto
                     {
                         OrderReference = reader.GetString(
@@ -126,7 +154,11 @@ public sealed class KitchenQueueController : ControllerBase
                                 reader.GetOrdinal("ReservationId")),
 
                         TotalAmount = reader.GetDecimal(
-                            reader.GetOrdinal("TotalAmount"))
+                            reader.GetOrdinal("TotalAmount")),
+
+                        PaymentStatus = paymentStatus,
+
+                        IsPaid = isPaid
                     });
                 }
             }
@@ -338,6 +370,30 @@ public sealed class KitchenQueueController : ControllerBase
                     message =
                         $"The order cannot move from {normalizedCurrentStatus} to {targetStatus}."
                 });
+            }
+
+            if (targetStatus == "Preparing")
+            {
+                var paymentOrderType = isDineIn
+                    ? PaymentConstants.OrderTypes.DineIn
+                    : PaymentConstants.OrderTypes.ReservationPreOrder;
+
+                var successfulPayment = await _paymentRepository.GetSuccessfulPaymentForOrderAsync(
+                    paymentOrderType,
+                    orderId,
+                    connection,
+                    transaction,
+                    cancellationToken);
+
+                if (successfulPayment == null)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return Conflict(new
+                    {
+                        message =
+                            $"Cannot start preparing: {orderReference} has not been paid yet. Customer payment must be verified before kitchen preparation begins."
+                    });
+                }
             }
 
             var updateSql = $"""
