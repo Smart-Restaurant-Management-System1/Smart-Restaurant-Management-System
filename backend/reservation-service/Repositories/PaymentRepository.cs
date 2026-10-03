@@ -276,6 +276,38 @@ public sealed class PaymentRepository : IPaymentRepository
         return list;
     }
 
+    public async Task<IReadOnlyList<Payment>> GetPaymentHistoryAsync(
+        string? status,
+        int limit,
+        MySqlConnection connection,
+        CancellationToken cancellationToken = default)
+    {
+        const string sql = """
+            SELECT PaymentId, CustomerId, OrderType, OrderId, PaymentMethod,
+                   Amount, Currency, Status, MerchantOrderReference,
+                   ProviderPaymentId, SlipUrl, CustomerNotes,
+                   VerifiedBy, VerifiedAt, CreatedAt, UpdatedAt
+            FROM Payments
+            WHERE (@Status IS NULL OR Status = @Status)
+            ORDER BY UpdatedAt DESC, PaymentId DESC
+            LIMIT @Limit;
+            """;
+
+        using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Status", string.IsNullOrWhiteSpace(status) ? (object)DBNull.Value : status);
+        command.Parameters.AddWithValue("@Limit", limit <= 0 ? 100 : limit);
+
+        using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var list = new List<Payment>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            list.Add(MapPayment(reader));
+        }
+
+        return list;
+    }
+
     private static Payment MapPayment(MySqlDataReader reader)
     {
         return new Payment

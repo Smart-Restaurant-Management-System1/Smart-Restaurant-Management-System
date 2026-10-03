@@ -250,6 +250,21 @@ public sealed class PaymentsController : ControllerBase
     }
 
     /// <summary>
+    /// Retrieve payment history for administration and verification audit (Staff only).
+    /// </summary>
+    [HttpGet("history")]
+    [Authorize(Policy = AppPolicies.RequireStaff)]
+    [ProducesResponseType(typeof(IReadOnlyList<PaymentStatusResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPaymentHistory(
+        [FromQuery] string? status = null,
+        [FromQuery] int limit = 100,
+        CancellationToken cancellationToken = default)
+    {
+        var results = await _paymentService.GetPaymentHistoryAsync(status, limit, cancellationToken);
+        return Ok(results);
+    }
+
+    /// <summary>
     /// Verify or reject a pending cash or bank transfer payment (Staff only).
     /// </summary>
     [HttpPatch("{paymentId:int}/verify")]

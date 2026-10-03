@@ -520,6 +520,17 @@ public sealed class PaymentService : IPaymentService
         return payments.Select(MapToResponse).ToList();
     }
 
+    public async Task<IReadOnlyList<PaymentStatusResponse>> GetPaymentHistoryAsync(
+        string? status,
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
+
+        var payments = await _paymentRepository.GetPaymentHistoryAsync(status, limit, connection, cancellationToken);
+        return payments.Select(MapToResponse).ToList();
+    }
+
     public async Task<PaymentStatusResponse> VerifyPaymentAsync(
         int staffUserId,
         int paymentId,

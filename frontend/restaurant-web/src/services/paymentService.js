@@ -75,6 +75,14 @@ export const getPendingVerifications = async () => {
   return response.data;
 };
 
+export const getPaymentHistory = async ({ status = '', limit = 100 } = {}) => {
+  const params = {};
+  if (status) params.status = status;
+  if (limit) params.limit = limit;
+  const response = await paymentApi.get('/payments/history', { params });
+  return response.data;
+};
+
 export const verifyPayment = async (paymentId, { action, notes }) => {
   const response = await paymentApi.patch(`/payments/${paymentId}/verify`, {
     action,

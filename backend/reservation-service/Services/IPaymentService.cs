@@ -33,6 +33,11 @@ public interface IPaymentService
     Task<IReadOnlyList<PaymentStatusResponse>> GetPendingVerificationsAsync(
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<PaymentStatusResponse>> GetPaymentHistoryAsync(
+        string? status,
+        int limit,
+        CancellationToken cancellationToken = default);
+
     Task<PaymentStatusResponse> VerifyPaymentAsync(
         int staffUserId,
         int paymentId,

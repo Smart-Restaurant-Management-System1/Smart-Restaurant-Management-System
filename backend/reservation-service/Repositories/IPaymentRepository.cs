@@ -63,4 +63,10 @@ public interface IPaymentRepository
     Task<IReadOnlyList<Payment>> GetPendingVerificationsAsync(
         MySqlConnection connection,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<Payment>> GetPaymentHistoryAsync(
+        string? status,
+        int limit,
+        MySqlConnection connection,
+        CancellationToken cancellationToken = default);
 }

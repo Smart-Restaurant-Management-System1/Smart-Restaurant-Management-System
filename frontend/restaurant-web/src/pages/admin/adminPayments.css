@@ -1,10 +1,73 @@
+/* =========================================================
+   CINNAMON BISTRO · ADMIN PAYMENT VERIFICATIONS & HISTORY
+   Boutique Design System: Playfair Display + Poppins + Warm Gold
+   ========================================================= */
+
 .admin-payments-page {
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
   padding: 0 0 48px;
+  box-sizing: border-box;
 }
 
+/* =========================================================
+   TOP MAIN NAVIGATION TABS (Pending vs History)
+   ========================================================= */
+.admin-payments-main-nav {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #eedfc9;
+  padding-bottom: 2px;
+  flex-wrap: wrap;
+}
+
+.admin-payments-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  color: #7c7162;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+
+.admin-payments-nav-tab:hover {
+  color: #a87942;
+}
+
+.admin-payments-nav-tab.active {
+  color: #a87942;
+  border-bottom-color: #a87942;
+}
+
+.admin-nav-badge {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+  line-height: 1;
+}
+
+.admin-nav-count {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+/* =========================================================
+   METRIC SUMMARY CARDS (Responsive Grid)
+   ========================================================= */
 .admin-payments-metrics {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -42,12 +105,15 @@
 
 .admin-payments-metric-val {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 1.8rem;
+  font-size: clamp(1.4rem, 2.2vw, 1.85rem);
   font-weight: 700;
   color: #2b261f;
   margin: 0;
 }
 
+/* =========================================================
+   FILTER TOOLBAR
+   ========================================================= */
 .admin-payments-toolbar {
   display: flex;
   align-items: center;
@@ -60,6 +126,7 @@
 .admin-payments-tabs {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .admin-payments-tab-btn {
@@ -72,6 +139,12 @@
   color: #7c7162;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.admin-payments-tab-btn:hover {
+  border-color: #a87942;
+  color: #a87942;
 }
 
 .admin-payments-tab-btn.active {
@@ -92,36 +165,84 @@
   font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
+.admin-payments-refresh-btn:hover:not(:disabled) {
+  background: #f4ebd9;
+}
+
+.admin-payments-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Alert Notifications */
+.admin-payments-alert {
+  padding: 12px 18px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 0.88rem;
+  animation: apFadeIn 0.25s ease-out;
+}
+
+.admin-payments-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.admin-payments-alert-success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+@keyframes apFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================================
+   TABLE & RESPONSIVE WRAPPER
+   ========================================================= */
 .admin-payments-table-card {
   background: #ffffff;
   border: 1px solid #eedfc9;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(40, 33, 21, 0.05);
+  box-shadow: 0 4px 18px rgba(40, 33, 21, 0.05);
+}
+
+.admin-payments-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-payments-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  min-width: 860px; /* guarantees layout on smaller screens via scroll */
 }
 
 .admin-payments-table th {
   background: #faf5ec;
-  padding: 12px 16px;
-  font-size: 0.76rem;
+  padding: 13px 16px;
+  font-size: 0.74rem;
   font-weight: 700;
   color: #7c7162;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   border-bottom: 1px solid #eedfc9;
+  white-space: nowrap;
 }
 
 .admin-payments-table td {
   padding: 14px 16px;
-  border-bottom: 1px solid #f3ece1;
+  border-bottom: 1px solid #f5ede1;
   font-size: 0.88rem;
   color: #2b261f;
   vertical-align: middle;
@@ -131,14 +252,49 @@
   background: #fdfaf6;
 }
 
+.admin-payments-empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: #7c7162;
+  font-size: 0.95rem;
+}
+
+/* Cell typography & badges */
+.admin-payment-ref-badge {
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 0.84rem;
+  color: #4b5563;
+  background: #f3f4f6;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.admin-order-ref-title {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.admin-customer-subtext {
+  font-size: 0.78rem;
+  color: #8c8275;
+}
+
+.admin-payment-amount {
+  font-size: 0.92rem;
+  color: #111827;
+}
+
 .admin-payments-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 14px;
-  font-size: 0.74rem;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .admin-payments-badge-cash {
@@ -153,20 +309,123 @@
   color: #1d4ed8;
 }
 
+.admin-payments-badge-payhere {
+  background: #faf5ff;
+  border: 1px solid #e9d5ff;
+  color: #7e22ce;
+}
+
+/* History Status Badges */
+.admin-history-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.admin-history-status-badge.status-succeeded {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.admin-history-status-badge.status-failed {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Slip Thumbnail & Bank Details */
+.admin-slip-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-slip-thumb-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
 .admin-slip-thumb {
   width: 44px;
   height: 44px;
   object-fit: cover;
   border-radius: 6px;
   border: 1px solid #eedfc9;
-  cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.18s ease;
 }
 
-.admin-slip-thumb:hover {
+.admin-slip-thumb-btn:hover .admin-slip-thumb {
   transform: scale(1.08);
 }
 
+.admin-slip-zoom-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 0.65rem;
+  text-align: center;
+  padding: 1px 0;
+}
+
+.admin-slip-bank-ref {
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.admin-no-slip {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.admin-counter-note {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.admin-customer-notes-cell {
+  font-size: 0.82rem;
+  color: #4b5563;
+  max-width: 180px;
+  display: inline-block;
+  word-break: break-word;
+}
+
+.admin-date-cell {
+  font-size: 0.82rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.admin-verified-cell {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+/* Action Buttons */
 .admin-payments-actions {
   display: flex;
   gap: 8px;
@@ -176,42 +435,269 @@
   background: #10b981;
   color: #ffffff;
   border: none;
-  padding: 6px 12px;
+  padding: 7px 13px;
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .admin-btn-approve:hover {
-  opacity: 0.9;
+  background: #059669;
+  transform: translateY(-1px);
 }
 
 .admin-btn-reject {
   background: #ef4444;
   color: #ffffff;
   border: none;
-  padding: 6px 12px;
+  padding: 7px 13px;
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .admin-btn-reject:hover {
-  opacity: 0.9;
+  background: #dc2626;
+  transform: translateY(-1px);
 }
 
-.slip-preview-modal-overlay {
+/* =========================================================
+   LUXURY CONFIRMATION MODAL (Replaces window.confirm)
+   ========================================================= */
+.admin-confirm-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background-color: rgba(11, 12, 16, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1100;
+  z-index: 1200;
+  padding: 1.25rem;
+  animation: apFadeIn 0.22s ease-out;
+}
+
+.admin-confirm-modal-card {
+  background: linear-gradient(145deg, #181a22 0%, #111318 100%);
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75), 0 0 40px rgba(197, 160, 89, 0.1);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-confirm-modal-bar {
+  height: 4px;
+  width: 100%;
+}
+
+.admin-confirm-modal-bar.bar-approve {
+  background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%);
+}
+
+.admin-confirm-modal-bar.bar-reject {
+  background: linear-gradient(90deg, #ef4444 0%, #f87171 50%, #ef4444 100%);
+}
+
+.admin-confirm-modal-header {
+  padding: 1.5rem 1.75rem 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-confirm-modal-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.admin-confirm-modal-icon.icon-approve {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+.admin-confirm-modal-icon.icon-reject {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+
+.admin-confirm-modal-title-wrap h3 {
+  margin: 0 0 4px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.25rem;
+  color: #f9fafb;
+}
+
+.admin-confirm-modal-title-wrap p {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+/* Summary Box inside Modal */
+.admin-confirm-summary-box {
+  margin: 1.25rem 1.75rem 0;
+  padding: 1rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(197, 160, 89, 0.2);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-confirm-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+}
+
+.confirm-label {
+  color: #9ca3af;
+  font-size: 0.82rem;
+}
+
+.confirm-value {
+  color: #f3f4f6;
+  font-weight: 600;
+}
+
+.confirm-amount {
+  color: #c5a059;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.customer-note-italic {
+  font-style: italic;
+  font-size: 0.82rem;
+  color: #d1d5db;
+  max-width: 260px;
+  text-align: right;
+}
+
+/* Input notes area */
+.admin-confirm-input-group {
+  margin: 1.25rem 1.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-confirm-input-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #d1d5db;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-confirm-textarea {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f9fafb;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.admin-confirm-textarea:focus {
+  border-color: #c5a059;
+}
+
+/* Confirmation action buttons */
+.admin-confirm-actions {
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.admin-confirm-btn-cancel {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #d1d5db;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-confirm-btn-cancel:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.admin-confirm-btn-action {
+  border: none;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirm-approve {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+.btn-confirm-approve:hover:not(:disabled) {
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-confirm-reject {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
+}
+
+.btn-confirm-reject:hover:not(:disabled) {
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.45);
+  transform: translateY(-1px);
+}
+
+/* Full Preview Modal */
+.slip-preview-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1300;
   padding: 20px;
 }
 
@@ -219,18 +705,120 @@
   max-width: 90vw;
   max-height: 90vh;
   position: relative;
-  background: #ffffff;
+  background: #181a22;
+  border: 1px solid rgba(197, 160, 89, 0.3);
   border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  padding: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
+.slip-preview-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.slip-preview-title {
+  color: #c5a059;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.slip-preview-close-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.slip-preview-close-btn:hover {
+  background: #ef4444;
+}
+
 .slip-preview-img {
   max-width: 100%;
-  max-height: 80vh;
+  max-height: 75vh;
   object-fit: contain;
   border-radius: 8px;
+}
+
+/* =========================================================
+   RESPONSIVE BREAKPOINTS (Mobile & Tablet Optimization)
+   ========================================================= */
+@media (max-width: 960px) {
+  .admin-payments-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-payments-metrics > :last-child {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-payments-page {
+    padding: 0 12px 36px;
+  }
+
+  .admin-payments-main-nav {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .admin-payments-nav-tab {
+    width: 100%;
+    justify-content: space-between;
+    padding: 10px 14px;
+  }
+
+  .admin-payments-metrics {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .admin-payments-metrics > :last-child {
+    grid-column: span 1;
+  }
+
+  .admin-payments-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-payments-tabs {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .admin-payments-tab-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .admin-payments-refresh-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-confirm-modal-card {
+    width: 95%;
+  }
+
+  .admin-confirm-actions {
+    flex-direction: column;
+  }
+
+  .admin-confirm-btn-cancel,
+  .admin-confirm-btn-action {
+    width: 100%;
+  }
 }
