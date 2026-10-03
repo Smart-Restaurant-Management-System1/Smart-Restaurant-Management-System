@@ -1077,7 +1077,7 @@ function OrderReviewPage() {
         onClose={() => setIsPaymentModalOpen(false)}
         order={createdOrderForPayment}
         onPaymentInitiated={() => {
-          // payment initiated
+          navigate('/orders');
         }}
       />
     </div>

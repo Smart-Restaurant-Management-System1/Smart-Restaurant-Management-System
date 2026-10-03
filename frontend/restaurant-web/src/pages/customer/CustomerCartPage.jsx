@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getApiErrorMessage } from '../../services/apiErrorMessage';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import PaymentModal from '../../components/payment/PaymentModal';
 import {
@@ -85,6 +85,7 @@ const formatCurrency = (amount) => {
 };
 
 function CustomerCartPage() {
+  const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -1885,7 +1886,8 @@ function CustomerCartPage() {
         onClose={() => setIsPaymentModalOpen(false)}
         order={createdOrderForPayment}
         onPaymentInitiated={(result) => {
-          // If cash or slip was submitted, banner at top reflects status
+          // If cash or slip was submitted, smoothly navigate to live tracking
+          navigate('/orders');
         }}
       />
 
