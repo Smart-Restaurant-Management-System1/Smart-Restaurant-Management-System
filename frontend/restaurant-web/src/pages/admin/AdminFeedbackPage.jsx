@@ -1172,7 +1172,6 @@ export default function AdminFeedbackPage() {
                             No written review provided.
                           </span>
                         )}
-
                         {/* Management Response Box */}
                         {fb.adminReply && (
                           <div
