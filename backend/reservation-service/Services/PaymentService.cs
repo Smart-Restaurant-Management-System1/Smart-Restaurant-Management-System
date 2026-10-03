@@ -603,6 +603,144 @@ public sealed class PaymentService : IPaymentService
         return MapToResponse(payment);
     }
 
+    public async Task<PaymentStatusResponse> SimulatePayHereSuccessAsync(
+        int customerId,
+        PaymentCheckoutRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_payHereOptions.IsSandbox)
+        {
+            throw new InvalidOperationException("Simulation is only permitted when PayHere is configured in Sandbox mode.");
+        }
+
+        ValidateOrderType(request.OrderType);
+
+        await using var connection = await _databaseHelper.CreateConnectionAsync(cancellationToken);
+
+        var (isFound, isOwned, isEligible, errorMessage, totalAmount, _) =
+            await ValidateOrderAsync(connection, customerId, request.OrderType, request.OrderId, cancellationToken);
+
+        if (!isFound)
+        {
+            throw new KeyNotFoundException(errorMessage);
+        }
+
+        if (!isOwned)
+        {
+            throw new UnauthorizedAccessException(errorMessage);
+        }
+
+        if (!isEligible)
+        {
+            throw new InvalidOperationException(errorMessage);
+        }
+
+        var existingSuccess = await _paymentRepository.GetSuccessfulPaymentForOrderAsync(
+            request.OrderType,
+            request.OrderId,
+            connection,
+            null,
+            cancellationToken);
+
+        if (existingSuccess != null)
+        {
+            throw new InvalidOperationException("This order has already been paid successfully.");
+        }
+
+        var latestPayment = await _paymentRepository.GetLatestPaymentForOrderAsync(
+            request.OrderType,
+            request.OrderId,
+            connection,
+            null,
+            cancellationToken);
+
+        Payment payment;
+        if (latestPayment != null && latestPayment.Status == PaymentConstants.PaymentStatuses.Pending)
+        {
+            payment = latestPayment;
+        }
+        else
+        {
+            var prefix = request.OrderType == PaymentConstants.OrderTypes.DineIn ? "DIN" : "PRE";
+            var merchantRef = $"PAY-{prefix}-{request.OrderId:D6}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";
+
+            payment = new Payment
+            {
+                CustomerId = customerId,
+                OrderType = request.OrderType,
+                OrderId = request.OrderId,
+                PaymentMethod = PaymentConstants.PaymentMethods.PayHere,
+                Amount = totalAmount,
+                Currency = _payHereOptions.Currency,
+                Status = PaymentConstants.PaymentStatuses.Pending,
+                MerchantOrderReference = merchantRef
+            };
+
+            await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
+            {
+                await _paymentRepository.CreatePaymentAsync(payment, connection, transaction, cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+        }
+
+        var simProviderPaymentId = $"SIM-PH-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
+        var verifiedAt = DateTime.UtcNow;
+
+        await using (var transaction = await connection.BeginTransactionAsync(cancellationToken))
+        {
+            await _paymentRepository.UpdatePaymentStatusAsync(
+                payment.PaymentId,
+                PaymentConstants.PaymentStatuses.Succeeded,
+                simProviderPaymentId,
+                null,
+                verifiedAt,
+                connection,
+                transaction,
+                cancellationToken);
+
+            var notificationEvent = new PaymentNotificationEvent
+            {
+                Provider = "PayHere",
+                ProviderPaymentId = simProviderPaymentId,
+                MerchantOrderReference = payment.MerchantOrderReference,
+                StatusCode = "2",
+                PayHereAmount = payment.Amount,
+                PayHereCurrency = payment.Currency,
+                SignatureHash = "SIMULATED_SANDBOX_SIGNATURE",
+                IsSuccess = true
+            };
+
+            await _paymentRepository.RecordNotificationEventAsync(
+                notificationEvent,
+                connection,
+                transaction,
+                cancellationToken);
+
+            payment.Status = PaymentConstants.PaymentStatuses.Succeeded;
+            payment.ProviderPaymentId = simProviderPaymentId;
+            payment.VerifiedAt = verifiedAt;
+
+            await PaymentLifecycleOutboxHelper.InsertAsync(
+                connection,
+                transaction,
+                _outboxRepository,
+                payment,
+                PaymentLifecycleEventTypes.PaymentSucceeded,
+                cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        _logger.LogInformation(
+            "Simulated PayHere Sandbox payment success for PaymentId {PaymentId} ({OrderRef}) of {Amount} {Currency}.",
+            payment.PaymentId,
+            payment.MerchantOrderReference,
+            payment.Amount,
+            payment.Currency);
+
+        return MapToResponse(payment);
+    }
+
     private static void ValidateOrderType(string orderType)
     {
         if (orderType != PaymentConstants.OrderTypes.DineIn &&

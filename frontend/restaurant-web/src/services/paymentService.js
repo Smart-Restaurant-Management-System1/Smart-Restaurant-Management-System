@@ -91,6 +91,14 @@ export const verifyPayment = async (paymentId, { action, notes }) => {
   return response.data;
 };
 
+export const simulatePayHereSandboxPayment = async ({ orderType, orderId }) => {
+  const response = await paymentApi.post('/payments/simulate-sandbox-success', {
+    orderType,
+    orderId,
+  });
+  return response.data;
+};
+
 export const launchPayHereHostedCheckout = (checkoutData) => {
   if (!checkoutData || !checkoutData.checkoutUrl) {
     throw new Error('Invalid checkout data.');
@@ -103,6 +111,7 @@ export const launchPayHereHostedCheckout = (checkoutData) => {
   const form = document.createElement('form');
   form.method = 'POST';
   form.action = checkoutData.checkoutUrl;
+  form.target = '_blank';
   form.style.display = 'none';
 
   const fields = {
@@ -153,4 +162,5 @@ export default {
   getPendingVerifications,
   verifyPayment,
   launchPayHereHostedCheckout,
+  simulatePayHereSandboxPayment,
 };

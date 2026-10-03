@@ -43,4 +43,9 @@ public interface IPaymentService
         int paymentId,
         VerifyPaymentRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<PaymentStatusResponse> SimulatePayHereSuccessAsync(
+        int customerId,
+        PaymentCheckoutRequest request,
+        CancellationToken cancellationToken = default);
 }

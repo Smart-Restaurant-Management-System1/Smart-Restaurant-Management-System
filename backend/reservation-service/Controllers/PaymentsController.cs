@@ -77,6 +77,56 @@ public sealed class PaymentsController : ControllerBase
     }
 
     /// <summary>
+    /// SR-280: Sandbox simulation endpoint for development and testing.
+    /// Simulates a successful PayHere online payment callback without requiring an external internet webhook.
+    /// Only active when PayHere is configured in Sandbox mode.
+    /// </summary>
+    [HttpPost("simulate-sandbox-success")]
+    [Authorize(Policy = AppPolicies.RequireCustomer)]
+    [ProducesResponseType(typeof(PaymentStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SimulateSandboxSuccess(
+        [FromBody] PaymentCheckoutRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetCustomerId(out var customerId))
+        {
+            return Unauthorized(new { message = "Valid customer identity is required." });
+        }
+
+        if (!await _userAccountStatusValidator.IsUserActiveAsync(customerId, cancellationToken))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Your account is deactivated or blocked." });
+        }
+
+        try
+        {
+            var response = await _paymentService.SimulatePayHereSuccessAsync(customerId, request, cancellationToken);
+            return Ok(response);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Request cash settlement at the restaurant counter or table.
     /// </summary>
     [HttpPost("cash")]
