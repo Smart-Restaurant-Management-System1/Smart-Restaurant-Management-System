@@ -1133,7 +1133,7 @@ export default function AdminFeedbackPage() {
                       </td>
 
                       {/* Comments & Reply */}
-                      <td style={{ padding: '1rem 1.25rem', maxWidth: '380px' }}>
+                      <td style={{ padding: '1rem 1.25rem', maxWidth: '380px', minWidth: '220px', wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                         {fb.comment ? (
                           <div>
                             {isCritical && (
@@ -1162,6 +1162,9 @@ export default function AdminFeedbackPage() {
                                 color: 'var(--bistro-ink)',
                                 lineHeight: 1.5,
                                 fontStyle: 'italic',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'anywhere',
+                                whiteSpace: 'pre-wrap',
                               }}
                             >
                               “{fb.comment}”
@@ -1185,9 +1188,13 @@ export default function AdminFeedbackPage() {
                               borderBottom: '1px solid #eee6d8',
                               borderRadius: '6px',
                               fontSize: '0.76rem',
+                              maxWidth: '100%',
+                              boxSizing: 'border-box',
+                              overflowWrap: 'anywhere',
+                              wordBreak: 'break-word',
                             }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem', gap: '0.5rem', flexWrap: 'wrap' }}>
                               <span style={{ fontWeight: 700, color: '#8c6736' }}>
                                 Response from Cinnamon Bistro:
                               </span>
@@ -1201,7 +1208,7 @@ export default function AdminFeedbackPage() {
                                 </span>
                               )}
                             </div>
-                            <p style={{ margin: 0, color: '#493628', lineHeight: 1.45, fontStyle: 'normal' }}>
+                            <p style={{ margin: 0, color: '#493628', lineHeight: 1.45, fontStyle: 'normal', wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>
                               {fb.adminReply}
                             </p>
                           </div>
@@ -1456,7 +1463,7 @@ export default function AdminFeedbackPage() {
                 <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#8c6736', fontWeight: 700, display: 'block', marginBottom: '0.3rem' }}>
                   Guest Dining Impressions
                 </span>
-                <p style={{ margin: 0, fontSize: '0.82rem', fontStyle: 'italic', color: 'var(--bistro-ink)', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: '0.82rem', fontStyle: 'italic', color: 'var(--bistro-ink)', lineHeight: 1.5, wordBreak: 'break-word', overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>
                   “{replyingFeedback.comment || 'No written critique provided.'}”
                 </p>
               </div>
