@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import PaymentModal from '../../components/payment/PaymentModal';
+import OrderInvoiceModal from '../../components/billing/OrderInvoiceModal';
 import { getMyOrders } from '../../services/orderService';
 import './orderTracking.css';
 
@@ -42,7 +43,7 @@ function PaymentStatusBadge({ paymentStatus, paymentMethod }) {
   );
 }
 
-function OrderCard({ order, onPay }) {
+function OrderCard({ order, onPay, onViewInvoice }) {
   const status = normalizeStatus(order.status);
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.id === status);
   const isPreOrder = order.orderType === 'ReservationPreOrder';
@@ -332,10 +333,28 @@ function OrderCard({ order, onPay }) {
         )}
 
         {order.paymentStatus === 'Succeeded' && (
-          <span style={{ color: '#047857', fontWeight: 600, fontSize: '0.84rem' }}>
-            ✓ Payment Succeeded
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ color: '#047857', fontWeight: 600, fontSize: '0.84rem' }}>
+              ✓ Payment Succeeded
+            </span>
+            <button
+              type="button"
+              className="order-invoice-btn"
+              onClick={() => onViewInvoice && onViewInvoice(order)}
+              title="Download or print official Tax Invoice & Dining Receipt"
+            >
+              🧾 Tax Invoice / Receipt
+            </button>
+          </div>
         )}
+
+        <Link
+          to={`/menu${order.tableId ? `?tableId=${order.tableId}` : ''}`}
+          className="order-add-items-link"
+          title="Order more delicacies, beverages or desserts for your table"
+        >
+          ➕ Order More
+        </Link>
       </footer>
     </article>
   );
@@ -351,6 +370,7 @@ export default function OrderTrackingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
+  const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState(null);
   const [paymentNotice, setPaymentNotice] = useState(null);
 
   const loadOrders = useCallback(async () => {
@@ -839,6 +859,7 @@ export default function OrderTrackingPage() {
               key={`${order.orderType}-${order.orderId}`}
               order={order}
               onPay={(selected) => setSelectedOrderForPayment(selected)}
+              onViewInvoice={(selected) => setSelectedOrderForInvoice(selected)}
             />
           ))}
         </div>
@@ -899,6 +920,13 @@ export default function OrderTrackingPage() {
         onPaymentInitiated={() => {
           loadOrders();
         }}
+      />
+
+      {/* Official Tax Invoice & Dining Receipt Modal */}
+      <OrderInvoiceModal
+        isOpen={Boolean(selectedOrderForInvoice)}
+        order={selectedOrderForInvoice}
+        onClose={() => setSelectedOrderForInvoice(null)}
       />
     </main>
   );

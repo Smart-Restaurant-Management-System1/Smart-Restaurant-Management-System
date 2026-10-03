@@ -970,3 +970,50 @@
 .order-prepay-notice strong {
   color: #78350f;
 }
+
+/* Official Tax Invoice Button */
+.order-invoice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #3b2c1f;
+  border: 1px solid #eedfc9;
+  border-radius: 7px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(40, 33, 21, 0.05);
+  transition: all 0.2s ease;
+}
+
+.order-invoice-btn:hover {
+  background: #fdfbf7;
+  border-color: #a87942;
+  color: #845e2a;
+  transform: translateY(-1px);
+}
+
+/* Quick Additional Orders Link (Sprint 4 Point 4) */
+.order-add-items-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #faf6f0;
+  color: #845e2a;
+  border: 1px dashed #d5ba94;
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.order-add-items-link:hover {
+  background: #f3ece0;
+  border-color: #a87942;
+  color: #5c3e17;
+  transform: translateY(-1px);
+}

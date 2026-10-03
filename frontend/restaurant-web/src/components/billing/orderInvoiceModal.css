@@ -1,0 +1,352 @@
+/* ==========================================================================
+   Order Invoice & Dining Receipt Modal Styles (Cinnamon Bistro)
+   ========================================================================== */
+
+.invoice-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 25, 23, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.invoice-modal-dialog {
+  background: #ffffff;
+  border: 1px solid #e7ded4;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 680px;
+  box-shadow: 0 20px 40px rgba(43, 38, 31, 0.22);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Modal Actions Header Bar */
+.invoice-modal-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  background: #fdfbf7;
+  border-bottom: 1px solid #eedfc9;
+}
+
+.invoice-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #3b2c1f;
+  margin: 0;
+}
+
+.invoice-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.invoice-action-btn-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #a87942;
+  color: #ffffff;
+  border: 1px solid #a87942;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.invoice-action-btn-print:hover {
+  background: #8b6234;
+  border-color: #8b6234;
+}
+
+.invoice-action-btn-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #574838;
+  border: 1px solid #eedfc9;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.invoice-action-btn-download:hover {
+  background: #f8f4ee;
+  color: #2b261f;
+}
+
+.invoice-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: #8a7a6b;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.invoice-modal-close-btn:hover {
+  background: #f0e9df;
+  color: #2b261f;
+}
+
+/* Printable Document Body */
+.invoice-document-scroll {
+  padding: 1.75rem 2rem;
+  overflow-y: auto;
+  color: #2b261f;
+  background: #ffffff;
+}
+
+.invoice-document {
+  max-width: 600px;
+  margin: 0 auto;
+  font-family: inherit;
+}
+
+/* Restaurant Header Brand */
+.invoice-brand-block {
+  text-align: center;
+  padding-bottom: 1.25rem;
+  border-bottom: 2px dashed #eedfc9;
+  margin-bottom: 1.25rem;
+}
+
+.invoice-restaurant-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.04em;
+  color: #2b261f;
+  margin: 0 0 4px 0;
+  font-weight: 700;
+}
+
+.invoice-restaurant-tagline {
+  font-size: 0.82rem;
+  color: #8c7355;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin: 0 0 6px 0;
+  font-weight: 600;
+}
+
+.invoice-restaurant-contact {
+  font-size: 0.78rem;
+  color: #6e6459;
+  margin: 0 0 3px 0;
+}
+
+.invoice-restaurant-tax {
+  font-size: 0.78rem;
+  color: #6e6459;
+  font-weight: 600;
+  margin: 4px 0 0 0;
+}
+
+/* Document Title & Paid Seal */
+.invoice-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.invoice-doc-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #2b261f;
+  text-transform: uppercase;
+}
+
+.invoice-paid-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1.5px solid #10b981;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Key Metadata Grid */
+.invoice-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  background: #fdfbf7;
+  border: 1px solid #eedfc9;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 1.5rem;
+  font-size: 0.82rem;
+}
+
+.invoice-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.invoice-meta-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: #8c7355;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.invoice-meta-value {
+  color: #2b261f;
+  font-weight: 600;
+}
+
+/* Line Items Table */
+.invoice-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+  font-size: 0.85rem;
+}
+
+.invoice-items-table th {
+  background: #faf6f0;
+  color: #493628;
+  font-weight: 700;
+  text-align: left;
+  padding: 9px 12px;
+  border-bottom: 2px solid #e3d2be;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.invoice-items-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0e9df;
+  color: #2b261f;
+}
+
+.invoice-items-table tr:last-child td {
+  border-bottom: 2px solid #e3d2be;
+}
+
+/* Financial Totals Breakdown */
+.invoice-summary-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 1.75rem;
+  font-size: 0.86rem;
+}
+
+.invoice-summary-row {
+  display: flex;
+  justify-content: space-between;
+  width: 260px;
+  color: #574838;
+}
+
+.invoice-summary-row.total-row {
+  border-top: 2px solid #2b261f;
+  border-bottom: 2px solid #2b261f;
+  padding: 8px 0;
+  margin-top: 4px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #2b261f;
+}
+
+/* Document Footer */
+.invoice-footer-notes {
+  text-align: center;
+  border-top: 1px solid #eedfc9;
+  padding-top: 1.25rem;
+  font-size: 0.76rem;
+  color: #8a7a6b;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   PRINT MEDIA RULES (For Clean PDF Save & Paper Printing)
+   ========================================================================== */
+@media print {
+  /* Hide the rest of the web app during print */
+  body * {
+    visibility: hidden;
+  }
+
+  .invoice-document, .invoice-document * {
+    visibility: visible;
+  }
+
+  .invoice-modal-backdrop {
+    position: static;
+    background: transparent !important;
+    padding: 0 !important;
+    backdrop-filter: none !important;
+  }
+
+  .invoice-modal-dialog {
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .invoice-modal-header-bar {
+    display: none !important;
+  }
+
+  .invoice-document-scroll {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .invoice-document {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 10mm;
+  }
+
+  .invoice-paid-stamp {
+    border: 1px solid #065f46 !important;
+    color: #065f46 !important;
+    background: transparent !important;
+  }
+}
