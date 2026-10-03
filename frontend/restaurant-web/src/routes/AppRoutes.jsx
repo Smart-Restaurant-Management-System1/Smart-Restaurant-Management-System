@@ -129,9 +129,13 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        {/* Customer Order Tracking - SR-135 */}
+        {/* Customer Order Tracking - SR-135 / SR-280 */}
         <Route
           path="/orders"
+          element={<OrderTrackingPage />}
+        />
+        <Route
+          path="/orders/track"
           element={<OrderTrackingPage />}
         />
 

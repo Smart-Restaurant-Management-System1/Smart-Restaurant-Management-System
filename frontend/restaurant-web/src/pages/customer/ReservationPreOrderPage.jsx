@@ -578,7 +578,9 @@ function ReservationPreOrderPage() {
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
           order={createdOrderForPayment}
-          onPaymentInitiated={() => {}}
+          onPaymentInitiated={() => {
+            navigate('/orders');
+          }}
         />
       </div>
     );
