@@ -2,12 +2,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { getApiErrorMessage } from '../../services/apiErrorMessage';
 import { Link } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
+import PaymentModal from '../../components/payment/PaymentModal';
 import {
   getCart,
   updateCartItem,
   removeCartItem,
   clearCart,
 } from '../../services/cartService';
+import { submitDineInOrder, submitReservationPreOrder } from '../../services/orderService';
+import { getActiveTables, getMyReservationHistory } from '../../services/tableService';
 
 const getCartItems = (cartData) => {
   if (Array.isArray(cartData)) return cartData;
@@ -93,6 +96,20 @@ function CustomerCartPage() {
   const [actionError, setActionError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Direct Checkout & Payment Gateway States
+  const [showDineInModal, setShowDineInModal] = useState(false);
+  const [showPreOrderModal, setShowPreOrderModal] = useState(false);
+  const [tables, setTables] = useState([]);
+  const [reservations, setReservations] = useState([]);
+  const [loadingTables, setLoadingTables] = useState(false);
+  const [loadingReservations, setLoadingReservations] = useState(false);
+  const [selectedTableId, setSelectedTableId] = useState('');
+  const [selectedReservationId, setSelectedReservationId] = useState('');
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [modalError, setModalError] = useState('');
+  const [createdOrderForPayment, setCreatedOrderForPayment] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
   const loadCart = async () => {
     try {
       setLoading(true);
@@ -151,6 +168,162 @@ function CustomerCartPage() {
   };
 
   const total = getServerTotal() ?? calculatedTotal;
+
+  const handleOpenDineInModal = async () => {
+    if (items.length === 0) return;
+    setModalError('');
+    setShowDineInModal(true);
+    if (tables.length === 0) {
+      try {
+        setLoadingTables(true);
+        const data = await getActiveTables();
+        const list = Array.isArray(data) ? data : [];
+        setTables(list);
+        if (list.length > 0 && !selectedTableId) {
+          const firstId = list[0].tableId ?? list[0].TableId;
+          setSelectedTableId(String(firstId));
+        }
+      } catch (err) {
+        console.error('Failed to load active tables:', err);
+        setModalError('Unable to load available tables. Please try again.');
+      } finally {
+        setLoadingTables(false);
+      }
+    }
+  };
+
+  const handleConfirmDineInAndPay = async () => {
+    if (!selectedTableId) {
+      setModalError('Please select a dining table to proceed.');
+      return;
+    }
+    try {
+      setPlacingOrder(true);
+      setModalError('');
+
+      const orderRequest = {
+        tableId: Number(selectedTableId),
+        orderType: 'DineIn',
+        items: items.map((item) => ({
+          menuItemId: Number(getMenuItemId(item)),
+          quantity: getItemQuantity(item),
+        })),
+      };
+
+      const newOrder = await submitDineInOrder(orderRequest);
+      try {
+        await clearCart();
+      } catch (e) {
+        console.warn('Cart clear non-fatal error:', e);
+      }
+      setCart({ items: [] });
+      setShowDineInModal(false);
+
+      const orderId = newOrder.orderId ?? newOrder.OrderId;
+      const orderRef = newOrder.orderReference ?? newOrder.OrderReference;
+      const orderTotal = newOrder.totalAmount ?? newOrder.TotalAmount ?? total;
+
+      setCreatedOrderForPayment({
+        orderId,
+        orderReference: orderRef,
+        orderType: 'DineIn',
+        totalAmount: orderTotal,
+      });
+      setIsPaymentModalOpen(true);
+    } catch (err) {
+      console.error('Failed to place dine-in order:', err);
+      setModalError(
+        err.response?.data?.message || 'Unable to place order. Please try again.'
+      );
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
+  const handleOpenPreOrderModal = async () => {
+    if (items.length === 0) return;
+    setModalError('');
+    setShowPreOrderModal(true);
+    if (reservations.length === 0) {
+      try {
+        setLoadingReservations(true);
+        const data = await getMyReservationHistory(1, 50);
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.reservations)
+            ? data.reservations
+            : [];
+        const activeRes = list.filter((r) => {
+          const st = (r.status ?? r.Status ?? '').toLowerCase();
+          return st === 'confirmed' || st === 'pending';
+        });
+        setReservations(activeRes);
+        if (activeRes.length > 0 && !selectedReservationId) {
+          const firstId = activeRes[0].reservationId ?? activeRes[0].ReservationId ?? activeRes[0].id ?? activeRes[0].Id;
+          setSelectedReservationId(String(firstId));
+        }
+      } catch (err) {
+        console.error('Failed to load reservations:', err);
+        setModalError('Unable to load your reservations. Please try again.');
+      } finally {
+        setLoadingReservations(false);
+      }
+    }
+  };
+
+  const handleConfirmPreOrderAndPay = async () => {
+    if (!selectedReservationId) {
+      setModalError('Please select an active reservation to link your pre-order.');
+      return;
+    }
+    try {
+      setPlacingOrder(true);
+      setModalError('');
+
+      const idempotencyKey =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random()}`;
+
+      const preOrderItems = items.map((item) => ({
+        menuItemId: Number(getMenuItemId(item)),
+        quantity: getItemQuantity(item),
+      }));
+
+      const newOrder = await submitReservationPreOrder(
+        Number(selectedReservationId),
+        preOrderItems,
+        idempotencyKey
+      );
+
+      try {
+        await clearCart();
+      } catch (e) {
+        console.warn('Cart clear non-fatal error:', e);
+      }
+      setCart({ items: [] });
+      setShowPreOrderModal(false);
+
+      const orderId = newOrder.orderId ?? newOrder.OrderId;
+      const orderRef = newOrder.orderReference ?? newOrder.OrderReference;
+      const orderTotal = newOrder.totalAmount ?? newOrder.TotalAmount ?? total;
+
+      setCreatedOrderForPayment({
+        orderId,
+        orderReference: orderRef,
+        orderType: 'ReservationPreOrder',
+        totalAmount: orderTotal,
+      });
+      setIsPaymentModalOpen(true);
+    } catch (err) {
+      console.error('Failed to place pre-order:', err);
+      setModalError(
+        err.response?.data?.message || 'Unable to place pre-order. Please try again.'
+      );
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
 
   const handleIncreaseQuantity = async (item) => {
     const menuItemId = getMenuItemId(item);
@@ -296,6 +469,53 @@ function CustomerCartPage() {
           </div>
         }
       />
+
+      {createdOrderForPayment && (
+        <div
+          style={{
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '1.4rem' }}>🎉</span>
+            <div>
+              <strong style={{ color: '#065f46', fontSize: '0.95rem', display: 'block' }}>
+                Order {createdOrderForPayment.orderReference} Placed Successfully!
+              </strong>
+              <span style={{ color: '#047857', fontSize: '0.84rem' }}>
+                Pre-payment required before kitchen prepares. Please complete payment below.
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              className="bistro-button-gold"
+              onClick={() => setIsPaymentModalOpen(true)}
+              style={{ padding: '8px 16px', fontSize: '0.86rem', fontWeight: 700 }}
+            >
+              💳 Pay Now ({formatCurrency(createdOrderForPayment.totalAmount)})
+            </button>
+            <Link
+              to="/orders/track"
+              className="bistro-button-outline"
+              style={{ padding: '8px 16px', fontSize: '0.86rem', textDecoration: 'none' }}
+            >
+              Track Order →
+            </Link>
+          </div>
+        </div>
+      )}
 
       {loading && (
         <div
@@ -978,11 +1198,12 @@ function CustomerCartPage() {
                   </strong>
                 </div>
 
-                {/* Dual Checkout Action Buttons */}
+                {/* Dual Direct Checkout Action Buttons */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {/* Primary: Dine-In Order */}
-                  <Link
-                    to="/order-review"
+                  {/* Primary: Dine-In Direct Checkout */}
+                  <button
+                    type="button"
+                    onClick={handleOpenDineInModal}
                     className="bistro-button-gold"
                     style={{
                       display: 'flex',
@@ -991,10 +1212,13 @@ function CustomerCartPage() {
                       justifyContent: 'center',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      textDecoration: 'none',
-                      padding: '0.75rem 1.15rem',
-                      fontSize: '0.88rem',
+                      padding: '0.78rem 1.15rem',
+                      fontSize: '0.9rem',
                       fontWeight: 700,
+                      cursor: 'pointer',
+                      border: 'none',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(197, 160, 89, 0.28)',
                     }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -1005,11 +1229,12 @@ function CustomerCartPage() {
                     </svg>
                     <span>Dine-In Order Now</span>
                     <span aria-hidden="true">→</span>
-                  </Link>
+                  </button>
 
-                  {/* Secondary: Pre-Order for Reservation */}
-                  <Link
-                    to="/reservation-pre-order"
+                  {/* Secondary: Pre-Order Direct Checkout */}
+                  <button
+                    type="button"
+                    onClick={handleOpenPreOrderModal}
                     className="bistro-button-outline"
                     style={{
                       display: 'flex',
@@ -1018,11 +1243,12 @@ function CustomerCartPage() {
                       justifyContent: 'center',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      textDecoration: 'none',
-                      padding: '0.7rem 1.15rem',
-                      fontSize: '0.86rem',
+                      padding: '0.72rem 1.15rem',
+                      fontSize: '0.88rem',
                       fontWeight: 600,
                       background: '#faf5ec',
+                      cursor: 'pointer',
+                      borderRadius: '8px',
                     }}
                   >
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1032,7 +1258,7 @@ function CustomerCartPage() {
                       <line x1="3" y1="10" x2="21" y2="10" />
                     </svg>
                     <span>Pre-Order for Booking</span>
-                  </Link>
+                  </button>
                 </div>
 
                 {/* Reassurance note */}
@@ -1057,6 +1283,611 @@ function CustomerCartPage() {
           )}
         </>
       )}
+
+      {/* Direct Dine-In Table Selection Modal */}
+      {showDineInModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(28, 25, 23, 0.72)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem',
+          }}
+          onClick={() => setShowDineInModal(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '520px',
+              width: '100%',
+              padding: '24px',
+              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.25)',
+              position: 'relative',
+              border: '1px solid #eedfc9',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Gold Accent */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background:
+                  'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+                borderTopLeftRadius: '16px',
+                borderTopRightRadius: '16px',
+              }}
+            />
+
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '16px',
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontFamily: "Georgia, serif",
+                    fontSize: '1.25rem',
+                    color: '#282115',
+                  }}
+                >
+                  Select Dining Table
+                </h3>
+                <p
+                  style={{
+                    margin: '4px 0 0',
+                    color: '#78716c',
+                    fontSize: '0.84rem',
+                  }}
+                >
+                  Choose your active table to place your order and proceed directly to payment.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowDineInModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1.3rem',
+                  color: '#78716c',
+                  lineHeight: 1,
+                  padding: '4px',
+                }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {modalError && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#991b1b',
+                  fontSize: '0.84rem',
+                  marginBottom: '14px',
+                }}
+              >
+                {modalError}
+              </div>
+            )}
+
+            {/* Order Brief */}
+            <div
+              style={{
+                background: '#faf5ec',
+                border: '1px solid #eedfc9',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                marginBottom: '16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '0.86rem',
+              }}
+            >
+              <span style={{ color: '#78716c' }}>
+                {items.length} {items.length === 1 ? 'Dish' : 'Dishes'} in Cart
+              </span>
+              <strong style={{ color: '#8c6736', fontSize: '1rem' }}>
+                {formatCurrency(total)}
+              </strong>
+            </div>
+
+            {loadingTables ? (
+              <div style={{ textAlign: 'center', padding: '2rem 0', color: '#78716c' }}>
+                <div
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    border: '3px solid rgba(197, 160, 89, 0.3)',
+                    borderTopColor: '#c5a059',
+                    animation: 'spin 0.8s linear infinite',
+                    margin: '0 auto 8px',
+                  }}
+                />
+                Loading dining tables…
+              </div>
+            ) : tables.length === 0 ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '1.5rem',
+                  background: '#faf5ec',
+                  borderRadius: '10px',
+                  color: '#78716c',
+                  fontSize: '0.88rem',
+                }}
+              >
+                No active tables currently available. Please check with restaurant staff.
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                  gap: '10px',
+                  marginBottom: '20px',
+                  maxHeight: '260px',
+                  overflowY: 'auto',
+                  padding: '2px',
+                }}
+              >
+                {tables.map((table) => {
+                  const tableId = String(table.tableId ?? table.TableId);
+                  const tableNumber =
+                    table.tableNumber ?? table.TableNumber ?? tableId;
+                  const capacity = table.capacity ?? table.Capacity ?? 2;
+                  const location = table.location ?? table.Location ?? 'Main Hall';
+                  const isSelected = selectedTableId === tableId;
+
+                  return (
+                    <button
+                      key={tableId}
+                      type="button"
+                      onClick={() => setSelectedTableId(tableId)}
+                      style={{
+                        padding: '12px 10px',
+                        borderRadius: '10px',
+                        border: isSelected
+                          ? '2px solid #c5a059'
+                          : '1px solid #eedfc9',
+                        background: isSelected ? '#fffdf7' : '#ffffff',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        transition: 'all 0.15s ease',
+                        boxShadow: isSelected
+                          ? '0 2px 8px rgba(197, 160, 89, 0.25)'
+                          : 'none',
+                      }}
+                    >
+                      <strong
+                        style={{
+                          display: 'block',
+                          fontSize: '0.95rem',
+                          color: isSelected ? '#8c6736' : '#282115',
+                          marginBottom: '4px',
+                        }}
+                      >
+                        Table {tableNumber}
+                      </strong>
+                      <span
+                        style={{
+                          display: 'block',
+                          fontSize: '0.74rem',
+                          color: '#78716c',
+                        }}
+                      >
+                        {capacity} Guests • {location}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                type="button"
+                disabled={placingOrder || !selectedTableId || tables.length === 0}
+                onClick={handleConfirmDineInAndPay}
+                className="bistro-button-gold"
+                style={{
+                  width: '100%',
+                  padding: '11px',
+                  fontSize: '0.92rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '6px',
+                  border: 'none',
+                  cursor:
+                    placingOrder || !selectedTableId ? 'not-allowed' : 'pointer',
+                  opacity: placingOrder || !selectedTableId ? 0.65 : 1,
+                  boxShadow: '0 3px 10px rgba(197, 160, 89, 0.3)',
+                }}
+              >
+                {placingOrder
+                  ? 'Placing Order…'
+                  : `💳 Place Order & Pay Now (${formatCurrency(total)}) →`}
+              </button>
+
+              <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                <Link
+                  to="/order-review"
+                  style={{
+                    fontSize: '0.78rem',
+                    color: '#8c6736',
+                    textDecoration: 'underline',
+                  }}
+                  onClick={() => setShowDineInModal(false)}
+                >
+                  Or view full order review page →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Direct Pre-Order Reservation Selection Modal */}
+      {showPreOrderModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(28, 25, 23, 0.72)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem',
+          }}
+          onClick={() => setShowPreOrderModal(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '520px',
+              width: '100%',
+              padding: '24px',
+              boxShadow: '0 20px 45px rgba(0, 0, 0, 0.25)',
+              position: 'relative',
+              border: '1px solid #eedfc9',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Gold Accent */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background:
+                  'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+                borderTopLeftRadius: '16px',
+                borderTopRightRadius: '16px',
+              }}
+            />
+
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '16px',
+              }}
+            >
+              <div>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontFamily: "Georgia, serif",
+                    fontSize: '1.25rem',
+                    color: '#282115',
+                  }}
+                >
+                  Select Upcoming Reservation
+                </h3>
+                <p
+                  style={{
+                    margin: '4px 0 0',
+                    color: '#78716c',
+                    fontSize: '0.84rem',
+                  }}
+                >
+                  Link this pre-order to your confirmed booking and proceed directly to payment.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPreOrderModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1.3rem',
+                  color: '#78716c',
+                  lineHeight: 1,
+                  padding: '4px',
+                }}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {modalError && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#991b1b',
+                  fontSize: '0.84rem',
+                  marginBottom: '14px',
+                }}
+              >
+                {modalError}
+              </div>
+            )}
+
+            {/* Order Brief */}
+            <div
+              style={{
+                background: '#faf5ec',
+                border: '1px solid #eedfc9',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                marginBottom: '16px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '0.86rem',
+              }}
+            >
+              <span style={{ color: '#78716c' }}>
+                Pre-Order Amount ({items.length} {items.length === 1 ? 'Dish' : 'Dishes'})
+              </span>
+              <strong style={{ color: '#8c6736', fontSize: '1rem' }}>
+                {formatCurrency(total)}
+              </strong>
+            </div>
+
+            {loadingReservations ? (
+              <div style={{ textAlign: 'center', padding: '2rem 0', color: '#78716c' }}>
+                <div
+                  style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    border: '3px solid rgba(197, 160, 89, 0.3)',
+                    borderTopColor: '#c5a059',
+                    animation: 'spin 0.8s linear infinite',
+                    margin: '0 auto 8px',
+                  }}
+                />
+                Loading your reservations…
+              </div>
+            ) : reservations.length === 0 ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '1.8rem 1rem',
+                  background: '#faf5ec',
+                  borderRadius: '12px',
+                  border: '1px dashed #eedfc9',
+                  marginBottom: '16px',
+                }}
+              >
+                <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>📅</div>
+                <strong style={{ color: '#282115', display: 'block', marginBottom: '6px' }}>
+                  No Upcoming Reservations Found
+                </strong>
+                <p style={{ color: '#78716c', fontSize: '0.84rem', margin: '0 0 14px' }}>
+                  Please reserve a table before creating a pre-order for your arrival.
+                </p>
+                <Link
+                  to="/reservations"
+                  className="bistro-button-gold"
+                  style={{
+                    display: 'inline-block',
+                    padding: '8px 18px',
+                    fontSize: '0.86rem',
+                    textDecoration: 'none',
+                    fontWeight: 700,
+                  }}
+                  onClick={() => setShowPreOrderModal(false)}
+                >
+                  Book a Table Now →
+                </Link>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  marginBottom: '20px',
+                  maxHeight: '260px',
+                  overflowY: 'auto',
+                  padding: '2px',
+                }}
+              >
+                {reservations.map((res) => {
+                  const resId = String(
+                    res.reservationId ?? res.ReservationId ?? res.id ?? res.Id
+                  );
+                  const isSelected = selectedReservationId === resId;
+                  const dateStr =
+                    res.reservationDate ?? res.ReservationDate ?? res.date;
+                  const timeStr =
+                    res.reservationTime ?? res.ReservationTime ?? res.time;
+                  const guests =
+                    res.guestCount ?? res.GuestCount ?? res.partySize ?? 2;
+                  const tableNum =
+                    res.tableNumber ?? res.TableNumber ?? res.tableId ?? '';
+
+                  return (
+                    <button
+                      key={resId}
+                      type="button"
+                      onClick={() => setSelectedReservationId(resId)}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '10px',
+                        border: isSelected
+                          ? '2px solid #c5a059'
+                          : '1px solid #eedfc9',
+                        background: isSelected ? '#fffdf7' : '#ffffff',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s ease',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div>
+                        <strong
+                          style={{
+                            display: 'block',
+                            fontSize: '0.92rem',
+                            color: isSelected ? '#8c6736' : '#282115',
+                          }}
+                        >
+                          Booking #{resId}
+                          {tableNum ? ` • Table ${tableNum}` : ''}
+                        </strong>
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: '0.78rem',
+                            color: '#78716c',
+                            marginTop: '2px',
+                          }}
+                        >
+                          {dateStr} at {timeStr} • {guests} Guests
+                        </span>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: '999px',
+                          background: '#ecfdf5',
+                          color: '#065f46',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Confirmed
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            {reservations.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  type="button"
+                  disabled={
+                    placingOrder ||
+                    !selectedReservationId ||
+                    reservations.length === 0
+                  }
+                  onClick={handleConfirmPreOrderAndPay}
+                  className="bistro-button-gold"
+                  style={{
+                    width: '100%',
+                    padding: '11px',
+                    fontSize: '0.92rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '6px',
+                    border: 'none',
+                    cursor:
+                      placingOrder || !selectedReservationId
+                        ? 'not-allowed'
+                        : 'pointer',
+                    opacity: placingOrder || !selectedReservationId ? 0.65 : 1,
+                    boxShadow: '0 3px 10px rgba(197, 160, 89, 0.3)',
+                  }}
+                >
+                  {placingOrder
+                    ? 'Placing Pre-Order…'
+                    : `💳 Place Pre-Order & Pay Now (${formatCurrency(total)}) →`}
+                </button>
+
+                <div style={{ textAlign: 'center', marginTop: '4px' }}>
+                  <Link
+                    to="/reservation-pre-order"
+                    style={{
+                      fontSize: '0.78rem',
+                      color: '#8c6736',
+                      textDecoration: 'underline',
+                    }}
+                    onClick={() => setShowPreOrderModal(false)}
+                  >
+                    Or view full pre-order review page →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Global Payment Gateway Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        order={createdOrderForPayment}
+        onPaymentInitiated={(result) => {
+          // If cash or slip was submitted, banner at top reflects status
+        }}
+      />
 
       {/* Responsive Styles */}
       <style>
