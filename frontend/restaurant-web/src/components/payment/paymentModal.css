@@ -395,33 +395,18 @@
   color: #1e40af;
 }
 
-.payment-dev-sandbox-card {
-  background: #ffffff;
-  border: 1px dashed #c5a059;
-  border-radius: 10px;
-  padding: 0.9rem 1.1rem;
-  margin-top: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.payment-dev-sandbox-header {
+.payment-security-assurance {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #8c6736;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.payment-dev-sandbox-desc {
-  font-size: 0.82rem;
-  color: #78716c;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+  padding: 0.65rem 0.85rem;
+  background: #fbf8f2;
+  border: 1px solid #eee5d8;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #60513d;
   line-height: 1.4;
-  margin: 0;
 }
 
 /* Responsive adjustments */

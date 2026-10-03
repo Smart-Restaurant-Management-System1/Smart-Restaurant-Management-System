@@ -4,7 +4,6 @@ import {
   launchPayHereHostedCheckout,
   requestCashPayment,
   submitBankTransferSlip,
-  simulatePayHereSandboxPayment,
 } from '../../services/paymentService';
 import './paymentModal.css';
 
@@ -38,7 +37,7 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
       });
 
       setSuccessMessage(
-        'PayHere Sandbox Checkout opened in a new tab. Settle the payment or use the simulator below.'
+        'Connecting to PayHere Secure Payment Portal...'
       );
       launchPayHereHostedCheckout(checkoutData);
       if (onPaymentInitiated) onPaymentInitiated(checkoutData);
@@ -46,35 +45,6 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
       setError(
         err.response?.data?.message ||
           'Failed to initiate PayHere payment. Please try again.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSimulateSandbox = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      setSuccessMessage('');
-
-      const result = await simulatePayHereSandboxPayment({
-        orderType: order.orderType,
-        orderId: order.orderId,
-      });
-
-      setSuccessMessage(
-        `🎉 Payment of ${formattedAmount} settled successfully via PayHere Sandbox Simulator!`
-      );
-
-      setTimeout(() => {
-        if (onPaymentInitiated) onPaymentInitiated(result);
-        onClose();
-      }, 1200);
-    } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          'Failed to simulate PayHere settlement. Please try again.'
       );
     } finally {
       setLoading(false);
@@ -224,13 +194,14 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
           {activeTab === 'payhere' && (
             <>
               <div className="payment-info-box">
-                <span className="payment-sandbox-pill">⚡ PayHere Sandbox Gateway</span>
+                <span className="payment-sandbox-pill">⚡ PayHere Secure Gateway</span>
                 <p>
-                  Settle your bill securely via card, digital wallet, or online banking.
-                  PayHere supports Visa, MasterCard, FriMi, Genie, eZ Cash, and commercial bank transfers.
+                  Settle your bill securely via Credit / Debit Card, digital wallet, or online banking.
+                  PayHere supports Visa, MasterCard, AMEX, FriMi, Genie, eZ Cash, and commercial bank transfers.
                 </p>
                 <div className="payment-supported-methods">
                   <span className="payment-method-chip">Visa / MasterCard</span>
+                  <span className="payment-method-chip">AMEX</span>
                   <span className="payment-method-chip">FriMi</span>
                   <span className="payment-method-chip">Genie</span>
                   <span className="payment-method-chip">eZ Cash</span>
@@ -238,39 +209,23 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
                 </div>
               </div>
 
-              {/* Dev Mode Sandbox Simulator Card */}
-              <div className="payment-dev-sandbox-card">
-                <div className="payment-dev-sandbox-header">
-                  <span>🧪 Local Development & Evaluation Simulator</span>
-                  <span style={{ fontSize: '0.72rem', background: '#ecfdf5', color: '#15803d', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: 600 }}>Active</span>
-                </div>
-                <p className="payment-dev-sandbox-desc">
-                  Simulate an instant successful PayHere online settlement for local testing without needing an external webhook tunnel.
-                </p>
+              <div className="payment-security-assurance">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>256-Bit SSL Encrypted & Central Bank of Sri Lanka Approved Payment Partner</span>
+              </div>
+
+              <div className="payment-actions" style={{ marginTop: '1.25rem' }}>
                 <button
                   type="button"
                   className="payment-primary-btn"
-                  onClick={handleSimulateSandbox}
-                  disabled={loading}
-                  style={{ width: '100%', marginTop: '0.35rem' }}
-                >
-                  {loading ? 'Processing Settlement…' : `⚡ Complete Payment via Simulator (${formattedAmount})`}
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '0.25rem' }}>
-                <button
-                  type="button"
-                  className="payment-secondary-btn"
                   onClick={handlePayHere}
                   disabled={loading}
                   style={{ width: '100%' }}
                 >
-                  🌐 Open PayHere Sandbox Portal (New Tab) ↗
+                  {loading ? 'Connecting to PayHere…' : `Pay ${formattedAmount} via PayHere`}
                 </button>
-                <span style={{ fontSize: '0.75rem', color: '#78716c', textAlign: 'center', lineHeight: 1.4 }}>
-                  Note: The hosted portal requires credentials configured in <code>appsettings.json</code> from <a href="https://sandbox.payhere.lk" target="_blank" rel="noreferrer" style={{ color: '#8c6736', textDecoration: 'underline' }}>sandbox.payhere.lk</a>.
-                </span>
               </div>
             </>
           )}
