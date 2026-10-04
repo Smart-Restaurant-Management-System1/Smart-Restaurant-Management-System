@@ -15,14 +15,15 @@ import {
   calculateOrderMetrics,
 } from './orderTrackingHelpers';
 
-function StatusBadge({ status }) {
+function StatusBadge({ status, paymentStatus }) {
   const normalized = normalizeStatus(status);
   const statusLower = normalized.toLowerCase();
+  const isExpired = normalized === 'Cancelled' && paymentStatus !== 'Succeeded';
 
   return (
     <span className={`order-status order-status-${statusLower}`}>
       <span className="order-status-dot" />
-      {normalized}
+      {isExpired ? 'Cancelled (Expired)' : normalized}
     </span>
   );
 }
@@ -129,7 +130,7 @@ function OrderCard({ order, onPay, onViewInvoice, onVerifyPayment }) {
             paymentStatus={order.paymentStatus}
             paymentMethod={order.paymentMethod}
           />
-          <StatusBadge status={status} />
+          <StatusBadge status={status} paymentStatus={order.paymentStatus} />
         </div>
       </header>
 
@@ -308,7 +309,31 @@ function OrderCard({ order, onPay, onViewInvoice, onVerifyPayment }) {
             <polyline points="12 6 12 12 16 14" />
           </svg>
           <div>
-            <strong>Pre-Payment Required:</strong> Kitchen preparation begins immediately after your payment is settled. Please complete checkout below.
+            <strong>Pre-Payment Required:</strong> Kitchen preparation begins immediately after your payment is settled. Unpaid orders expire automatically after 30 minutes. Please complete checkout below.
+          </div>
+        </div>
+      )}
+
+      {/* Order Auto-Expired / Cancelled Notice */}
+      {status === 'Cancelled' && order.paymentStatus !== 'Succeeded' && (
+        <div className="order-cancelled-notice">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0 }}
+          >
+            <circle cx="12" cy="12" r="10" />
+            <line x1="15" y1="9" x2="9" y2="15" />
+            <line x1="9" y1="9" x2="15" y2="15" />
+          </svg>
+          <div>
+            <strong>Order Expired:</strong> This order was automatically cancelled as payment was not settled within 30 minutes. Please place a new order when you are ready.
           </div>
         </div>
       )}

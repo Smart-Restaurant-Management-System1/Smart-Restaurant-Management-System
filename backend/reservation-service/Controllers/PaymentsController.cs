@@ -352,6 +352,28 @@ public sealed class PaymentsController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Trigger manual auto-expiry execution for unpaid orders (Staff only).
+    /// </summary>
+    [HttpPost("expire-unpaid")]
+    [Authorize(Policy = AppPolicies.RequireStaff)]
+    [ProducesResponseType(typeof(OrderExpiryResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ExpireUnpaidOrders(
+        [FromQuery] int? thresholdMinutes,
+        [FromServices] IOrderExpiryService orderExpiryService,
+        [FromServices] Microsoft.Extensions.Options.IOptions<OrderExpiryOptions> options,
+        CancellationToken cancellationToken)
+    {
+        var threshold = thresholdMinutes.GetValueOrDefault(options.Value.ExpiryThresholdMinutes);
+        if (threshold <= 0)
+        {
+            return BadRequest(new { message = "Threshold minutes must be a positive integer." });
+        }
+
+        var result = await orderExpiryService.ExpireUnpaidOrdersAsync(threshold, cancellationToken);
+        return Ok(result);
+    }
+
     private bool TryGetCustomerId(out int customerId)
     {
         var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub")?.Value;
