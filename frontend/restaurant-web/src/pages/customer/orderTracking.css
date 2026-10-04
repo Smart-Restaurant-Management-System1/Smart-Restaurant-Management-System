@@ -971,6 +971,26 @@
   color: #78350f;
 }
 
+/* Order Auto-Expired / Non-Payment Notice */
+.order-cancelled-notice {
+  margin: 12px 24px;
+  padding: 12px 18px;
+  border-radius: 9px;
+  background: #fff5f5;
+  border: 1px solid #fed7d7;
+  border-left: 4px solid #e53e3e;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #9b2c2c;
+  line-height: 1.4;
+}
+
+.order-cancelled-notice strong {
+  color: #742a2a;
+}
+
 /* Official Tax Invoice Button */
 .order-invoice-btn {
   display: inline-flex;

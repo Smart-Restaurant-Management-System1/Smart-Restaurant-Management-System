@@ -284,6 +284,19 @@ builder.Services.AddScoped<
     ReservationService.Services.PaymentService
 >();
 
+// Order expiry configuration and service
+builder.Services.Configure<
+    ReservationService.Models.OrderExpiryOptions
+>(
+    builder.Configuration.GetSection(
+        ReservationService.Models.OrderExpiryOptions.SectionName
+    )
+);
+builder.Services.AddScoped<
+    ReservationService.Services.IOrderExpiryService,
+    ReservationService.Services.OrderExpiryService
+>();
+
 // Availability configuration
 builder.Services.Configure<AvailabilityRulesOptions>(
     builder.Configuration.GetSection(
@@ -428,6 +441,11 @@ builder.Services.AddScoped<
 // Outbox background service
 builder.Services.AddHostedService<
     ReservationService.Services.OutboxPublisherService
+>();
+
+// Order expiry background service (auto-cancels unpaid orders older than threshold)
+builder.Services.AddHostedService<
+    ReservationService.Services.OrderExpiryBackgroundService
 >();
 
 var app = builder.Build();
