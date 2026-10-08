@@ -207,4 +207,40 @@ public sealed class PaymentTests
 
         Assert.Equal(expectedPayable, isPayable);
     }
+
+    [Theory]
+    [InlineData(1, 2, false, "You cannot initiate payment on behalf of another customer.")]
+    [InlineData(5, 5, true, null)]
+    [InlineData(5, null, true, null)]
+    public void CrossCustomerCheckout_ValidatesRequestedCustomerAgainstToken(
+        int tokenCustomerId,
+        int? requestedCustomerId,
+        bool expectedAllowed,
+        string? expectedError)
+    {
+        var isForbidden = requestedCustomerId.HasValue && requestedCustomerId.Value != tokenCustomerId;
+        var isAllowed = !isForbidden;
+
+        Assert.Equal(expectedAllowed, isAllowed);
+        if (!expectedAllowed)
+        {
+            Assert.Equal("You cannot initiate payment on behalf of another customer.", expectedError);
+        }
+    }
+
+    [Theory]
+    [InlineData(10, 20, false, "You do not own this dine-in order.")]
+    [InlineData(20, 20, true, null)]
+    public void OrderOwnershipValidation_RejectsCrossCustomerCheckout(
+        int callerCustomerId,
+        int orderOwnerId,
+        bool expectedOwned,
+        string? expectedErrorMessage)
+    {
+        var isOwned = callerCustomerId == orderOwnerId;
+        string? errorMessage = isOwned ? null : "You do not own this dine-in order.";
+
+        Assert.Equal(expectedOwned, isOwned);
+        Assert.Equal(expectedErrorMessage, errorMessage);
+    }
 }

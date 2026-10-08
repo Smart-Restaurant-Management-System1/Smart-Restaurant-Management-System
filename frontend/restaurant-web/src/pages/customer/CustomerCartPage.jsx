@@ -1724,7 +1724,7 @@ function CustomerCartPage() {
                   Please reserve a table before creating a pre-order for your arrival.
                 </p>
                 <Link
-                  to="/reservations"
+                  to="/availability"
                   className="bistro-button-gold"
                   style={{
                     display: 'inline-block',

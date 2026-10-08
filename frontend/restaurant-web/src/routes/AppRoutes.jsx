@@ -152,7 +152,7 @@ export default function AppRoutes() {
         />
       </Route>
 
-      {/* Customer Reservation Pre-Order - SR-134 */}
+      {/* Customer Reservation Pre-Order - SR-134 & UX Route Aliases */}
       <Route
         element={
           <ProtectedRoute
@@ -164,6 +164,34 @@ export default function AppRoutes() {
       >
         <Route
           path="/reservation-pre-order"
+          element={<ReservationPreOrderPage />}
+        />
+        <Route
+          path="/pre-order"
+          element={<ReservationPreOrderPage />}
+        />
+        <Route
+          path="/preorder"
+          element={<ReservationPreOrderPage />}
+        />
+        <Route
+          path="/pre-orders"
+          element={<ReservationPreOrderPage />}
+        />
+        <Route
+          path="/preorder-booking"
+          element={<ReservationPreOrderPage />}
+        />
+        <Route
+          path="/pre-order-booking"
+          element={<ReservationPreOrderPage />}
+        />
+        <Route
+          path="/reservations/pre-order"
+          element={<ReservationPreOrderPage />}
+        />
+        <Route
+          path="/reservation/pre-order"
           element={<ReservationPreOrderPage />}
         />
       </Route>
@@ -226,6 +254,11 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
+        <Route
+          path="/reservations"
+          element={<Navigate to="/availability" replace />}
+        />
+
         <Route
           path="/reservations/new"
           element={<ReservationReviewPage />}
