@@ -48,6 +48,11 @@ public sealed class PaymentsController : ControllerBase
             return Unauthorized(new { message = "Valid customer identity is required." });
         }
 
+        if (request.CustomerId.HasValue && request.CustomerId.Value != customerId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "You cannot initiate payment on behalf of another customer." });
+        }
+
         if (!await _userAccountStatusValidator.IsUserActiveAsync(customerId, cancellationToken))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { message = "Your account is deactivated or blocked." });
@@ -98,6 +103,11 @@ public sealed class PaymentsController : ControllerBase
             return Unauthorized(new { message = "Valid customer identity is required." });
         }
 
+        if (request.CustomerId.HasValue && request.CustomerId.Value != customerId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "You cannot initiate payment on behalf of another customer." });
+        }
+
         if (!await _userAccountStatusValidator.IsUserActiveAsync(customerId, cancellationToken))
         {
             return StatusCode(StatusCodes.Status403Forbidden, new { message = "Your account is deactivated or blocked." });
@@ -144,6 +154,11 @@ public sealed class PaymentsController : ControllerBase
         if (!TryGetCustomerId(out var customerId))
         {
             return Unauthorized(new { message = "Valid customer identity is required." });
+        }
+
+        if (request.CustomerId.HasValue && request.CustomerId.Value != customerId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "You cannot initiate payment on behalf of another customer." });
         }
 
         if (!await _userAccountStatusValidator.IsUserActiveAsync(customerId, cancellationToken))
@@ -193,6 +208,11 @@ public sealed class PaymentsController : ControllerBase
         if (!TryGetCustomerId(out var customerId))
         {
             return Unauthorized(new { message = "Valid customer identity is required." });
+        }
+
+        if (request.CustomerId.HasValue && request.CustomerId.Value != customerId)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "You cannot initiate payment on behalf of another customer." });
         }
 
         if (!await _userAccountStatusValidator.IsUserActiveAsync(customerId, cancellationToken))

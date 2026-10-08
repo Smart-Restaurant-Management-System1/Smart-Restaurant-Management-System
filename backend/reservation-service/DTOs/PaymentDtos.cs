@@ -11,6 +11,11 @@ public sealed class PaymentCheckoutRequest
     [Required]
     [Range(1, int.MaxValue)]
     public int OrderId { get; set; }
+
+    /// <summary>
+    /// Optional customer identifier. When provided by client, must strictly match authenticated token customer identity.
+    /// </summary>
+    public int? CustomerId { get; set; }
 }
 
 public sealed class PayHereCheckoutResponse
@@ -42,6 +47,11 @@ public sealed class CashPaymentRequest
     [Range(1, int.MaxValue)]
     public int OrderId { get; set; }
 
+    /// <summary>
+    /// Optional customer identifier. When provided by client, must strictly match authenticated token customer identity.
+    /// </summary>
+    public int? CustomerId { get; set; }
+
     [MaxLength(500)]
     public string? CustomerNotes { get; set; }
 }
@@ -54,6 +64,11 @@ public sealed class BankTransferPaymentFormRequest
     [Required]
     [Range(1, int.MaxValue)]
     public int OrderId { get; set; }
+
+    /// <summary>
+    /// Optional customer identifier. When provided by client, must strictly match authenticated token customer identity.
+    /// </summary>
+    public int? CustomerId { get; set; }
 
     [MaxLength(64)]
     public string? DepositReference { get; set; }

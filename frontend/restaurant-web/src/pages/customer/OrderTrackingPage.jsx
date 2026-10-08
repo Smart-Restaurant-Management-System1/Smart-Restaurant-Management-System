@@ -4,7 +4,6 @@ import PageHeader from '../../components/common/PageHeader';
 import PaymentModal from '../../components/payment/PaymentModal';
 import OrderInvoiceModal from '../../components/billing/OrderInvoiceModal';
 import { getMyOrders } from '../../services/orderService';
-import { simulatePayHereSandboxPayment } from '../../services/paymentService';
 import './orderTracking.css';
 
 import {
@@ -45,7 +44,7 @@ function PaymentStatusBadge({ paymentStatus, paymentMethod }) {
   );
 }
 
-function OrderCard({ order, onPay, onViewInvoice, onVerifyPayment }) {
+function OrderCard({ order, onPay, onViewInvoice }) {
   const status = normalizeStatus(order.status);
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.id === status);
   const isPreOrder = order.orderType === 'ReservationPreOrder';
@@ -357,16 +356,6 @@ function OrderCard({ order, onPay, onViewInvoice, onVerifyPayment }) {
             >
               💳 Pay Now ({formatOrderCurrency(order.totalAmount)})
             </button>
-            {order.paymentStatus === 'Pending' && order.paymentMethod === 'PayHere' && (
-              <button
-                type="button"
-                className="order-verify-btn"
-                onClick={() => onVerifyPayment && onVerifyPayment(order)}
-                title="Verify and synchronize payment settlement from PayHere gateway"
-              >
-                🔄 Verify Settlement
-              </button>
-            )}
           </div>
         )}
 
@@ -471,25 +460,6 @@ export default function OrderTrackingPage() {
       });
     }
   }, [location.search, loadOrders]);
-
-  const handleVerifyPayment = async (orderToVerify) => {
-    try {
-      setLoading(true);
-      await simulatePayHereSandboxPayment({
-        orderType: orderToVerify.orderType,
-        orderId: orderToVerify.orderId,
-      });
-      setPaymentNotice({
-        type: 'success',
-        message: `Settlement for Order ${orderToVerify.orderReference || orderToVerify.orderId} verified and confirmed!`,
-      });
-      await loadOrders();
-    } catch {
-      await loadOrders();
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Compute live metrics from order list
   const metrics = useMemo(() => calculateOrderMetrics(orders), [orders]);
@@ -929,7 +899,6 @@ export default function OrderTrackingPage() {
               order={order}
               onPay={(selected) => setSelectedOrderForPayment(selected)}
               onViewInvoice={(selected) => setSelectedOrderForInvoice(selected)}
-              onVerifyPayment={(selected) => handleVerifyPayment(selected)}
             />
           ))}
         </div>

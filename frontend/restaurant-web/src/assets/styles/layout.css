@@ -169,19 +169,33 @@
 }
 
 /* Sidebar Section Headers */
+.sidebar-section-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sidebar-section-group + .sidebar-section-group {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(221, 187, 120, 0.14);
+}
+
 .sidebar-section-title {
-  font-size: 0.66rem;
-  font-weight: 600;
+  font-size: 0.64rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   color: #a3998b;
-  padding: 1.35rem 1.25rem 0.5rem;
+  padding: 0.45rem 0.85rem 0.25rem;
   white-space: nowrap;
 }
 
 .app-sidebar.collapsed .sidebar-section-title {
   text-align: center;
-  padding: 1.35rem 0.25rem 0.5rem;
+  padding: 0.45rem 0.25rem 0.25rem;
+  font-size: 0.55rem;
+  letter-spacing: 0.05em;
 }
 
 /* Sidebar Navigation Items */
