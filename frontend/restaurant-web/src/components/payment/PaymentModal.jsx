@@ -216,7 +216,7 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
                 <span>256-Bit SSL Encrypted & Central Bank of Sri Lanka Approved Payment Partner</span>
               </div>
 
-              <div className="payment-actions" style={{ marginTop: '1.25rem' }}>
+              <div className="payment-actions" style={{ marginTop: '0.4rem' }}>
                 <button
                   type="button"
                   className="payment-primary-btn"
@@ -239,7 +239,7 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
                 </p>
               </div>
 
-              <div className="payment-form-group" style={{ marginTop: '1rem', marginBottom: '1.25rem' }}>
+              <div className="payment-form-group" style={{ marginTop: '0.5rem', marginBottom: '0.75rem' }}>
                 <label htmlFor="cashNotes">Special Requests / Notes (Optional)</label>
                 <textarea
                   id="cashNotes"
@@ -283,7 +283,7 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
                 </div>
               </div>
 
-              <div className="payment-form-group" style={{ marginTop: '1rem' }}>
+              <div className="payment-form-group" style={{ marginTop: '0.5rem' }}>
                 <label htmlFor="depositSlip">Deposit Slip / Transfer Receipt *</label>
                 <input
                   type="file"
@@ -307,7 +307,7 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
                 )}
               </div>
 
-              <div className="payment-form-group" style={{ marginTop: '0.75rem' }}>
+              <div className="payment-form-group" style={{ marginTop: '0.45rem' }}>
                 <label htmlFor="depositRef">Transaction Reference Number (Optional)</label>
                 <input
                   type="text"
@@ -319,7 +319,7 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
                 />
               </div>
 
-              <div className="payment-form-group" style={{ marginTop: '0.75rem', marginBottom: '1.25rem' }}>
+              <div className="payment-form-group" style={{ marginTop: '0.45rem', marginBottom: '0.75rem' }}>
                 <label htmlFor="bankNotes">Notes (Optional)</label>
                 <textarea
                   id="bankNotes"
