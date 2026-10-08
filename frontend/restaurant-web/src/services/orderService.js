@@ -44,6 +44,10 @@ export const submitDineInOrder = async (request) => {
     },
   });
 
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('notifications:updated'));
+  }
+
   return response.data;
 };
 
@@ -67,6 +71,10 @@ export const submitReservationPreOrder = async (
       },
     }
   );
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('notifications:updated'));
+  }
 
   return response.data;
 };

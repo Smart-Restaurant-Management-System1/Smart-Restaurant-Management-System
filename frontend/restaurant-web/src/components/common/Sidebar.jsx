@@ -645,6 +645,12 @@ export default function Sidebar({
                 <span className="sidebar-nav-label">
                   {item.label}
                 </span>
+
+                {item.badge && (
+                  <span className="sidebar-nav-badge">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </div>

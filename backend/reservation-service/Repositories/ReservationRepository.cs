@@ -19,7 +19,8 @@ public sealed class ReservationRepository(
     DatabaseHelper databaseHelper,
     IBookingReferenceGenerator referenceGenerator,
     ReservationMaintenancePolicy maintenancePolicy,
-    IOutboxRepository outboxRepository) : IReservationRepository
+    IOutboxRepository outboxRepository,
+    INotificationRepository? notificationRepository = null) : IReservationRepository
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -155,6 +156,45 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
                 ? ReservationEventFactory.Cancelled(updated, occurredAt)
                 : ReservationEventFactory.StatusChanged(updated, currentStatus, occurredAt);
             await InsertOutboxAsync(connection, transaction, envelope, reservationId, cancellationToken);
+
+            if (notificationRepository is not null)
+            {
+                try
+                {
+                    var title = targetStatus switch
+                    {
+                        ReservationStatus.Cancelled => "Reservation Cancelled",
+                        ReservationStatus.Confirmed => "Reservation Confirmed",
+                        ReservationStatus.Completed => "Reservation Completed",
+                        _ => $"Reservation {targetStatus}"
+                    };
+
+                    var message = targetStatus switch
+                    {
+                        ReservationStatus.Cancelled => $"Your table reservation #{updated.BookingReference} for {updated.StartDateTime:MMM dd, yyyy HH:mm} has been cancelled.",
+                        ReservationStatus.Confirmed => $"Your table reservation #{updated.BookingReference} for {updated.StartDateTime:MMM dd, yyyy HH:mm} has been confirmed.",
+                        ReservationStatus.Completed => $"Your dining reservation #{updated.BookingReference} has concluded. Thank you for dining with us at Cinnamon Bistro!",
+                        _ => $"Your reservation #{updated.BookingReference} status is now {targetStatus}."
+                    };
+
+                    await notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = updated.CustomerId,
+                        EventType = targetStatus == ReservationStatus.Cancelled ? NotificationEventTypes.ReservationCancelled : NotificationEventTypes.ReservationUpdated,
+                        Title = title,
+                        Message = message,
+                        ReferenceType = "Reservation",
+                        ReferenceId = updated.Id,
+                        ReferenceCode = updated.BookingReference,
+                        IdempotencyKey = $"notif:res:status:{updated.Id}:{targetStatus}"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must never break reservation operation
+                }
+            }
+
             await transaction.CommitAsync(cancellationToken);
             return true;
         }
@@ -203,6 +243,29 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
                     // SR-115: insert outbox row inside the same transaction — both commit together.
                     var envelope = ReservationEventFactory.Created(reservation, DateTimeOffset.UtcNow);
                     await InsertOutboxAsync(connection, transaction, envelope, reservation.Id, cancellationToken);
+
+                    if (notificationRepository is not null)
+                    {
+                        try
+                        {
+                            await notificationRepository.CreateNotificationAsync(new CustomerNotification
+                            {
+                                CustomerId = reservation.CustomerId,
+                                EventType = NotificationEventTypes.ReservationCreated,
+                                Title = "Reservation Confirmed",
+                                Message = $"Your table reservation #{reservation.BookingReference} for {reservation.StartDateTime:MMM dd, yyyy HH:mm} (Table {table.Value.TableNumber}) has been confirmed.",
+                                ReferenceType = "Reservation",
+                                ReferenceId = reservation.Id,
+                                ReferenceCode = reservation.BookingReference,
+                                IdempotencyKey = $"notif:res:created:{reservation.Id}"
+                            }, connection, transaction, cancellationToken);
+                        }
+                        catch
+                        {
+                            // Notification failure must never break reservation operation
+                        }
+                    }
+
                     await transaction.CommitAsync(cancellationToken);
                     return new(ReservationCreateOutcome.Created, reservation);
                 }
@@ -246,6 +309,29 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
             var updated = await UpdateScheduleAsync(connection, transaction, existing, command, table.Value.TableNumber, cancellationToken);
             var envelope = ReservationEventFactory.Updated(updated, DateTimeOffset.UtcNow);
             await InsertOutboxAsync(connection, transaction, envelope, updated.Id, cancellationToken);
+
+            if (notificationRepository is not null)
+            {
+                try
+                {
+                    await notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = updated.CustomerId,
+                        EventType = NotificationEventTypes.ReservationUpdated,
+                        Title = "Reservation Rescheduled",
+                        Message = $"Your reservation #{updated.BookingReference} has been rescheduled to {updated.StartDateTime:MMM dd, yyyy HH:mm} (Table {table.Value.TableNumber}).",
+                        ReferenceType = "Reservation",
+                        ReferenceId = updated.Id,
+                        ReferenceCode = updated.BookingReference,
+                        IdempotencyKey = $"notif:res:updated:{updated.Id}:{updated.StartDateTime:yyyyMMddHHmm}:{updated.TableId}"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must never break reservation operation
+                }
+            }
+
             await transaction.CommitAsync(cancellationToken);
             return new(ReservationRescheduleOutcome.Updated, updated);
         }
@@ -291,6 +377,28 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
             // SR-115: only insert outbox on actual state transition (not on idempotent replay).
             var envelope = ReservationEventFactory.Cancelled(existing, new DateTimeOffset(now, TimeSpan.Zero));
             await InsertOutboxAsync(connection, transaction, envelope, reservationId, cancellationToken);
+
+            if (notificationRepository is not null)
+            {
+                try
+                {
+                    await notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = existing.CustomerId,
+                        EventType = NotificationEventTypes.ReservationCancelled,
+                        Title = "Reservation Cancelled",
+                        Message = $"Your table reservation #{existing.BookingReference} for {existing.StartDateTime:MMM dd, yyyy HH:mm} has been cancelled.",
+                        ReferenceType = "Reservation",
+                        ReferenceId = existing.Id,
+                        ReferenceCode = existing.BookingReference,
+                        IdempotencyKey = $"notif:res:cancelled:{existing.Id}"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must never break reservation operation
+                }
+            }
         }
         // Idempotent replay: already Cancelled — commit no-op, produce no duplicate event.
         await transaction.CommitAsync(cancellationToken);

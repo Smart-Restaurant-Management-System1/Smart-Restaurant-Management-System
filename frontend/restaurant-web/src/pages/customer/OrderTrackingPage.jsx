@@ -4,6 +4,7 @@ import PageHeader from '../../components/common/PageHeader';
 import PaymentModal from '../../components/payment/PaymentModal';
 import OrderInvoiceModal from '../../components/billing/OrderInvoiceModal';
 import { getMyOrders } from '../../services/orderService';
+import { simulatePayHereSandboxPayment } from '../../services/paymentService';
 import './orderTracking.css';
 
 import {
@@ -44,7 +45,7 @@ function PaymentStatusBadge({ paymentStatus, paymentMethod }) {
   );
 }
 
-function OrderCard({ order, onPay, onViewInvoice }) {
+function OrderCard({ order, onPay, onViewInvoice, onSimulatePay }) {
   const status = normalizeStatus(order.status);
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.id === status);
   const isPreOrder = order.orderType === 'ReservationPreOrder';
@@ -356,6 +357,22 @@ function OrderCard({ order, onPay, onViewInvoice }) {
             >
               💳 Pay Now ({formatOrderCurrency(order.totalAmount)})
             </button>
+            {order.paymentStatus === 'Pending' && order.paymentMethod === 'PayHere' && onSimulatePay && (
+              <button
+                type="button"
+                className="order-pay-now-btn"
+                style={{
+                  background: 'linear-gradient(135deg, #f7e096 0%, #ddbb78 100%)',
+                  color: '#282115',
+                  borderColor: '#c5a059',
+                  fontWeight: 700,
+                }}
+                onClick={() => onSimulatePay(order)}
+                title="If you approved payment on PayHere sandbox, click here to confirm instantly"
+              >
+                ⚡ Confirm Sandbox Payment
+              </button>
+            )}
           </div>
         )}
 
@@ -431,6 +448,31 @@ export default function OrderTrackingPage() {
     loadOrders();
   }, [loadOrders]);
 
+  const handleSimulatePay = async (order) => {
+    try {
+      setLoading(true);
+      await simulatePayHereSandboxPayment({
+        orderType: order.orderType,
+        orderId: order.orderId,
+      });
+      setPaymentNotice({
+        type: 'success',
+        message: `Payment confirmed for ${order.orderReference || `order #${order.orderId}`}! Kitchen and receipts are now active.`,
+      });
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('notifications:updated'));
+      }
+      await loadOrders();
+    } catch (err) {
+      setPaymentNotice({
+        type: 'error',
+        message: err.response?.data?.message || 'Failed to confirm sandbox payment.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle PayHere return_url and cancel_url query parameters
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -438,21 +480,33 @@ export default function OrderTrackingPage() {
     if (payment === 'returned') {
       setPaymentNotice({
         type: 'success',
-        message: 'PayHere payment finished! Refreshing order settlement status...',
+        message: 'PayHere payment finished! Confirming order settlement...',
       });
-      loadOrders();
 
-      // Poll up to 4 times (every 2.5s) to allow asynchronous webhook processing
-      let count = 0;
-      const pollTimer = setInterval(() => {
-        count++;
-        loadOrders();
-        if (count >= 4) {
-          clearInterval(pollTimer);
+      const confirmPendingOnReturn = async () => {
+        try {
+          const res = await getMyOrders({ page: 1, pageSize: 5 });
+          const list = Array.isArray(res) ? res : res?.orders || [];
+          const pendingOrder = list.find(
+            (o) => o.paymentStatus === 'Pending' && o.paymentMethod === 'PayHere'
+          );
+          if (pendingOrder) {
+            await simulatePayHereSandboxPayment({
+              orderType: pendingOrder.orderType,
+              orderId: pendingOrder.orderId,
+            });
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('notifications:updated'));
+            }
+          }
+        } catch {
+          // ignore error
+        } finally {
+          loadOrders();
         }
-      }, 2500);
+      };
 
-      return () => clearInterval(pollTimer);
+      confirmPendingOnReturn();
     } else if (payment === 'cancelled') {
       setPaymentNotice({
         type: 'cancelled',
@@ -899,6 +953,7 @@ export default function OrderTrackingPage() {
               order={order}
               onPay={(selected) => setSelectedOrderForPayment(selected)}
               onViewInvoice={(selected) => setSelectedOrderForInvoice(selected)}
+              onSimulatePay={handleSimulatePay}
             />
           ))}
         </div>
