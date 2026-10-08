@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { getApiErrorMessage } from '../../services/apiErrorMessage';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import PaymentModal from '../../components/payment/PaymentModal';
 import {
@@ -86,6 +86,14 @@ const formatCurrency = (amount) => {
 
 function CustomerCartPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialMode =
+    searchParams.get('mode') === 'preorder' ||
+    searchParams.get('type') === 'preorder' ||
+    searchParams.get('reservationId')
+      ? 'preorder'
+      : 'dinein';
+  const [fulfillmentMode, setFulfillmentMode] = useState(initialMode);
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -1199,68 +1207,167 @@ function CustomerCartPage() {
                   </strong>
                 </div>
 
-                {/* Dual Direct Checkout Action Buttons */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {/* Primary: Dine-In Direct Checkout */}
-                  <button
-                    type="button"
-                    onClick={handleOpenDineInModal}
-                    className="bistro-button-gold"
+                {/* Fulfillment Option Segmented Switch */}
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label
                     style={{
-                      display: 'flex',
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.78rem 1.15rem',
-                      fontSize: '0.9rem',
+                      display: 'block',
+                      fontSize: '0.78rem',
                       fontWeight: 700,
-                      cursor: 'pointer',
-                      border: 'none',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(197, 160, 89, 0.28)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color: '#78716c',
+                      marginBottom: '0.45rem',
                     }}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 18v3" />
-                      <path d="M20 18v3" />
-                      <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
-                      <path d="M2 11h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z" />
-                    </svg>
-                    <span>Dine-In Order Now</span>
-                    <span aria-hidden="true">→</span>
-                  </button>
-
-                  {/* Secondary: Pre-Order Direct Checkout */}
-                  <button
-                    type="button"
-                    onClick={handleOpenPreOrderModal}
-                    className="bistro-button-outline"
+                    Dining Option
+                  </label>
+                  <div
                     style={{
-                      display: 'flex',
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.72rem 1.15rem',
-                      fontSize: '0.88rem',
-                      fontWeight: 600,
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '4px',
                       background: '#faf5ec',
-                      cursor: 'pointer',
+                      border: '1px solid #eedfc9',
                       borderRadius: '8px',
+                      padding: '3px',
                     }}
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    <span>Pre-Order for Booking</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setFulfillmentMode('dinein')}
+                      style={{
+                        padding: '0.55rem 0.5rem',
+                        fontSize: '0.82rem',
+                        fontWeight: fulfillmentMode === 'dinein' ? 700 : 500,
+                        color: fulfillmentMode === 'dinein' ? '#282115' : '#78716c',
+                        background: fulfillmentMode === 'dinein' ? '#ffffff' : 'transparent',
+                        border: fulfillmentMode === 'dinein' ? '1px solid #eedfc9' : 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem',
+                        boxShadow: fulfillmentMode === 'dinein' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                        transition: 'all 0.18s ease',
+                      }}
+                    >
+                      <span>🍽️</span>
+                      <span>Dine-In Table</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setFulfillmentMode('preorder')}
+                      style={{
+                        padding: '0.55rem 0.5rem',
+                        fontSize: '0.82rem',
+                        fontWeight: fulfillmentMode === 'preorder' ? 700 : 500,
+                        color: fulfillmentMode === 'preorder' ? '#282115' : '#78716c',
+                        background: fulfillmentMode === 'preorder' ? '#ffffff' : 'transparent',
+                        border: fulfillmentMode === 'preorder' ? '1px solid #eedfc9' : 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem',
+                        boxShadow: fulfillmentMode === 'preorder' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                        transition: 'all 0.18s ease',
+                      }}
+                    >
+                      <span>📅</span>
+                      <span>Booking Pre-Order</span>
+                    </button>
+                  </div>
                 </div>
+
+                {/* Direct Checkout Action based on Mode */}
+                {fulfillmentMode === 'dinein' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: '#78716c', lineHeight: 1.4 }}>
+                      Enjoy table service right here at Cinnamon Bistro. Select your dining table to order.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleOpenDineInModal}
+                      className="bistro-button-gold"
+                      style={{
+                        display: 'flex',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.78rem 1.15rem',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 8px rgba(197, 160, 89, 0.28)',
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M4 18v3" />
+                        <path d="M20 18v3" />
+                        <path d="M4 11V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4" />
+                        <path d="M2 11h20v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4z" />
+                      </svg>
+                      <span>Select Table & Order ({formatCurrency(total)})</span>
+                      <span aria-hidden="true">→</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: '#78716c', lineHeight: 1.4 }}>
+                      Pre-order your dishes in advance for an upcoming table reservation.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleOpenPreOrderModal}
+                      className="bistro-button-gold"
+                      style={{
+                        display: 'flex',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.78rem 1.15rem',
+                        fontSize: '0.9rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        border: 'none',
+                        borderRadius: '8px',
+                        boxShadow: '0 2px 8px rgba(197, 160, 89, 0.28)',
+                      }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                      <span>Link to Booking ({formatCurrency(total)})</span>
+                      <span aria-hidden="true">→</span>
+                    </button>
+                    <div style={{ textAlign: 'center', marginTop: '0.35rem' }}>
+                      <Link
+                        to="/availability"
+                        style={{
+                          fontSize: '0.78rem',
+                          color: '#8c6736',
+                          textDecoration: 'none',
+                          fontWeight: 600,
+                        }}
+                      >
+                        Don&apos;t have a reservation yet? Book a Table Now →
+                      </Link>
+                    </div>
+                  </div>
+                )}
 
                 {/* Reassurance note */}
                 <div

@@ -429,143 +429,162 @@ export default function Sidebar({
     </svg>
   );
 
-  const customerNavItems = [
+  const customerSections = [
     {
-      to: '/portal',
-      label: 'Dining Dashboard',
-      icon: dashboardIcon,
+      title: 'Dining & Orders',
+      items: [
+        {
+          to: '/menu',
+          label: 'Browse Menu',
+          icon: menuIcon,
+        },
+        {
+          to: '/cart',
+          label: 'My Cart',
+          icon: cartIcon,
+        },
+        {
+          to: '/orders',
+          label: 'My Orders & Tracking',
+          icon: ordersIcon,
+        },
+      ],
     },
     {
-      to: '/menu',
-      label: 'Browse Menu',
-      icon: menuIcon,
+      title: 'Table Reservations',
+      items: [
+        {
+          to: '/availability',
+          label: 'Book a Table',
+          icon: searchIcon,
+        },
+        {
+          to: '/reservations/history',
+          label: 'My Reservations',
+          icon: calendarIcon,
+        },
+      ],
     },
     {
-      to: '/cart',
-      label: 'My Cart',
-      icon: cartIcon,
-    },
-    {
-      to: '/reservation-pre-order',
-      label: 'Pre-Order Dishes',
-      icon: preOrderIcon,
-    },
-    {
-      to: '/orders',
-      label: 'My Orders',
-      icon: ordersIcon,
-    },
-    {
-      to: '/availability',
-      label: 'Find a Table',
-      icon: searchIcon,
-    },
-    {
-      to: '/reservations/history',
-      label: 'My Reservations',
-      icon: calendarIcon,
-    },
-    {
-      to: '/feedback',
-      label: 'Feedback & Ratings',
-      icon: starIcon,
-    },
-    {
-      to: '/tables',
-      label: 'View Tables',
-      icon: tableIcon,
-    },
-    {
-      to: '/profile',
-      label: 'My Profile',
-      icon: profileIcon,
-    },
-  ];
-
-  const adminNavItems = [
-    {
-      to: '/portal',
-      label: 'Admin Dashboard',
-      icon: dashboardIcon,
-    },
-    {
-      to: '/admin/users',
-      label: 'User Management',
-      icon: usersGroupIcon,
-    },
-    {
-      to: '/admin',
-      label: 'Table Management',
-      icon: tableIcon,
-    },
-    {
-      to: '/admin/menu',
-      label: 'Menu Management',
-      icon: menuIcon,
-    },
-      {
-    to: '/kitchen',
-    label: 'Kitchen Management',
-    icon: kitchenIcon,
-  },
-    {
-      to: '/admin/reservations',
-      label: 'Manage Bookings',
-      icon: documentIcon,
-    },
-    {
-      to: '/admin/feedback',
-      label: 'Customer Reviews',
-      icon: starIcon,
-    },
-    {
-      to: '/admin/payments',
-      label: 'Payment Verifications',
-      icon: paymentIcon,
-    },
-    {
-      to: '/admin/reports/reservations',
-      label: 'Reports & Analytics',
-      icon: reportIcon,
-    },
-    {
-      to: '/profile',
-      label: 'System Profile',
-      icon: profileIcon,
+      title: 'My Account',
+      items: [
+        {
+          to: '/portal',
+          label: 'Dining Dashboard',
+          icon: dashboardIcon,
+        },
+        {
+          to: '/feedback',
+          label: 'Feedback & Reviews',
+          icon: starIcon,
+        },
+        {
+          to: '/profile',
+          label: 'My Profile',
+          icon: profileIcon,
+        },
+      ],
     },
   ];
 
-  const kitchenNavItems = [
+  const adminSections = [
     {
-      to: '/kitchen',
-      label: 'Kitchen Queue',
-      icon: kitchenIcon,
+      title: 'Operations',
+      items: [
+        {
+          to: '/portal',
+          label: 'Admin Dashboard',
+          icon: dashboardIcon,
+        },
+        {
+          to: '/admin/users',
+          label: 'User Management',
+          icon: usersGroupIcon,
+        },
+        {
+          to: '/admin',
+          label: 'Table Management',
+          icon: tableIcon,
+        },
+        {
+          to: '/admin/menu',
+          label: 'Menu Management',
+          icon: menuIcon,
+        },
+        {
+          to: '/kitchen',
+          label: 'Kitchen Management',
+          icon: kitchenIcon,
+        },
+      ],
     },
     {
-      to: '/tables',
-      label: 'Dining Tables',
-      icon: tableIcon,
+      title: 'Bookings & Finance',
+      items: [
+        {
+          to: '/admin/reservations',
+          label: 'Manage Bookings',
+          icon: documentIcon,
+        },
+        {
+          to: '/admin/payments',
+          label: 'Payment Verifications',
+          icon: paymentIcon,
+        },
+        {
+          to: '/admin/feedback',
+          label: 'Customer Reviews',
+          icon: starIcon,
+        },
+        {
+          to: '/admin/reports/reservations',
+          label: 'Reports & Analytics',
+          icon: reportIcon,
+        },
+      ],
     },
     {
-      to: '/profile',
-      label: 'Staff Profile',
-      icon: profileIcon,
+      title: 'System',
+      items: [
+        {
+          to: '/profile',
+          label: 'System Profile',
+          icon: profileIcon,
+        },
+      ],
     },
   ];
 
-  const navItems = isAdmin
-    ? adminNavItems
+  const kitchenSections = [
+    {
+      title: 'Kitchen Operations',
+      items: [
+        {
+          to: '/kitchen',
+          label: 'Kitchen Queue',
+          icon: kitchenIcon,
+        },
+        {
+          to: '/tables',
+          label: 'Dining Tables',
+          icon: tableIcon,
+        },
+        {
+          to: '/profile',
+          label: 'Staff Profile',
+          icon: profileIcon,
+        },
+      ],
+    },
+  ];
+
+  const navSections = isAdmin
+    ? adminSections
     : isKitchen
-      ? kitchenNavItems
-      : customerNavItems;
+      ? kitchenSections
+      : customerSections;
 
   const brandTarget = isKitchen ? '/kitchen' : '/portal';
-
-  const sectionLabel = isAdmin
-    ? 'Admin Management'
-    : isKitchen
-      ? 'Kitchen Services'
-      : 'Dining Services';
 
   return (
     <aside
@@ -602,29 +621,33 @@ export default function Sidebar({
         )}
       </Link>
 
-      <div className="sidebar-section-title">
-        {isCollapsed ? 'â€¢â€¢â€¢' : sectionLabel}
-      </div>
-
       <nav className="sidebar-nav">
-        {navItems.map((item) => (
-          <Link
-            key={item.to}
-            to={item.to}
-            className={`sidebar-nav-link ${
-              isActive(item.to) ? 'active' : ''
-            }`}
-            onClick={onCloseMobile}
-            title={item.label}
-          >
-            <span className="sidebar-nav-icon">
-              {item.icon}
-            </span>
+        {navSections.map((section, sIdx) => (
+          <div key={section.title || sIdx} className="sidebar-section-group">
+            <div className="sidebar-section-title">
+              {isCollapsed ? '•••' : section.title}
+            </div>
 
-            <span className="sidebar-nav-label">
-              {item.label}
-            </span>
-          </Link>
+            {section.items.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`sidebar-nav-link ${
+                  isActive(item.to) ? 'active' : ''
+                }`}
+                onClick={onCloseMobile}
+                title={item.label}
+              >
+                <span className="sidebar-nav-icon">
+                  {item.icon}
+                </span>
+
+                <span className="sidebar-nav-label">
+                  {item.label}
+                </span>
+              </Link>
+            ))}
+          </div>
         ))}
       </nav>
 
