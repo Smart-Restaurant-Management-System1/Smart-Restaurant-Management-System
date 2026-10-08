@@ -18,6 +18,7 @@ import AdminUserManagementPage from '../pages/admin/AdminUserManagementPage';
 import AdminFeedbackPage from '../pages/admin/AdminFeedbackPage';
 import AdminPaymentsPage from '../pages/admin/AdminPaymentsPage';
 import CustomerFeedbackPage from '../pages/customer/CustomerFeedbackPage';
+import NotificationsPage from '../pages/customer/NotificationsPage';
 
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
 import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
@@ -215,6 +216,12 @@ export default function AppRoutes() {
         <Route
           path="/feedback"
           element={<CustomerFeedbackPage />}
+        />
+
+        {/* Customer Notification Center - SR-220 / SR-237 */}
+        <Route
+          path="/notifications"
+          element={<NotificationsPage />}
         />
       </Route>
 

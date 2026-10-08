@@ -1,0 +1,493 @@
+/* =========================================================
+   CINNAMON BISTRO · CUSTOMER NOTIFICATION CENTER LUXURY STYLES
+   Boutique Design System: Playfair Display + Poppins + Gold Accents
+   ========================================================= */
+
+.notifications-page {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 0 48px;
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   KPI SUMMARY STRIP
+   ========================================================= */
+.notifications-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.notifications-stat-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  background: #ffffff;
+  border: 1px solid #eedfc9;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(40, 33, 21, 0.04);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notifications-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(40, 33, 21, 0.08);
+}
+
+.notifications-stat-accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%);
+}
+
+.notifications-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #faf5ec;
+  border: 1px solid #eedfc9;
+  color: #a87942;
+  font-size: 1.25rem;
+}
+
+.notifications-stat-icon.unread {
+  background: #fdf2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.notifications-stat-icon.status {
+  background: #f0f7f2;
+  border-color: #c8e6d0;
+  color: #2d6835;
+}
+
+.notifications-stat-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.notifications-stat-label {
+  margin: 0 0 2px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7c7162;
+}
+
+.notifications-stat-value {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.65rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #2b261f;
+}
+
+.notifications-stat-value.highlight {
+  color: #dc2626;
+}
+
+.notifications-stat-value.text {
+  font-size: 1.05rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: #493628;
+}
+
+/* =========================================================
+   TOOLBAR & FILTER TABS
+   ========================================================= */
+.notifications-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  padding: 8px 12px;
+  border: 1px solid #eedfc9;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(40, 33, 21, 0.03);
+}
+
+.notifications-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.notifications-tab-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #7c7162;
+  transition: all 0.2s ease;
+}
+
+.notifications-tab-btn:hover {
+  color: #2b261f;
+  background: #faf5ec;
+}
+
+.notifications-tab-btn.active {
+  background: linear-gradient(135deg, #c5a059 0%, #a87942 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(197, 160, 89, 0.35);
+}
+
+.notifications-counter-text {
+  font-size: 0.82rem;
+  color: #8c8275;
+  font-weight: 500;
+}
+
+/* =========================================================
+   NOTIFICATIONS LIST & CARDS
+   ========================================================= */
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.notification-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 20px 22px;
+  background: #ffffff;
+  border: 1px solid #eedfc9;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(40, 33, 21, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+}
+
+.notification-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 33, 21, 0.08);
+  border-color: #d8c3a5;
+}
+
+.notification-card.unread {
+  background: #fffdf9;
+  border-left: 4px solid #c5a059;
+  border-color: #e5d4bb;
+}
+
+.notification-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  background: #faf5ec;
+  border: 1px solid #eedfc9;
+  color: #a87942;
+}
+
+.notification-icon-wrapper.reservation {
+  background: #fdf8ee;
+  border-color: #eedfc9;
+  color: #a87942;
+}
+
+.notification-icon-wrapper.order {
+  background: #faf5ec;
+  border-color: #ebd3b0;
+  color: #b8860b;
+}
+
+.notification-icon-wrapper.payment {
+  background: #f0f7f2;
+  border-color: #c8e6d0;
+  color: #2d6835;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-meta-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.notification-title {
+  margin: 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #2b261f;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notification-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dc2626;
+  display: inline-block;
+}
+
+.notification-time {
+  font-size: 0.78rem;
+  color: #8c8275;
+  font-weight: 500;
+}
+
+.notification-message {
+  margin: 6px 0 14px;
+  color: #4a4034;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.notification-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid #f5ede1;
+}
+
+.notification-ref-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #faf5ec;
+  color: #6b5a45;
+  border: 1px solid #eedfc9;
+}
+
+.notifications-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notification-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #faf5ec;
+  color: #73531b;
+  border: 1px solid #c5a059;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-link-btn:hover {
+  background: #c5a059;
+  color: #ffffff;
+}
+
+.notification-mark-read-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: #ffffff;
+  color: #7c7162;
+  border: 1px solid #eedfc9;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notification-mark-read-btn:hover {
+  background: #fdfaf4;
+  color: #2b261f;
+  border-color: #c5a059;
+}
+
+/* =========================================================
+   EMPTY, ERROR, AND LOADING STATES
+   ========================================================= */
+.notifications-empty-state {
+  text-align: center;
+  padding: 60px 24px;
+  background: #ffffff;
+  border: 1.5px dashed #eedfc9;
+  border-radius: 16px;
+  margin: 16px 0;
+}
+
+.notifications-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  color: #c5a059;
+}
+
+.notifications-empty-state h3 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.35rem;
+  color: #2b261f;
+  margin: 0 0 8px;
+}
+
+.notifications-empty-state p {
+  color: #7c7162;
+  font-size: 0.92rem;
+  max-width: 440px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.notifications-loading-state {
+  text-align: center;
+  padding: 70px 24px;
+  background: #ffffff;
+  border: 1px solid #eedfc9;
+  border-radius: 16px;
+}
+
+.notifications-loading-state p {
+  color: #7c7162;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.notifications-error-state {
+  text-align: center;
+  padding: 50px 24px;
+  background: #fff8f8;
+  border: 1px solid #fecaca;
+  border-radius: 16px;
+}
+
+.notifications-error-state h3 {
+  color: #b91c1c;
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+.notifications-error-state p {
+  color: #7f1d1d;
+  font-size: 0.9rem;
+  margin: 0 0 16px;
+}
+
+/* =========================================================
+   PAGINATION CONTROLS
+   ========================================================= */
+.notifications-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.notifications-pagination-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  background: #ffffff;
+  border: 1px solid #eedfc9;
+  color: #493628;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(40, 33, 21, 0.04);
+}
+
+.notifications-pagination-btn:hover:not(:disabled) {
+  background: #faf5ec;
+  border-color: #c5a059;
+  color: #2b261f;
+}
+
+.notifications-pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.notifications-page-info {
+  font-size: 0.84rem;
+  color: #7c7162;
+  font-weight: 600;
+}
+
+/* =========================================================
+   RESPONSIVE DESIGN
+   ========================================================= */
+@media (max-width: 768px) {
+  .notifications-summary-strip {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .notifications-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .notifications-tabs {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .notifications-counter-text {
+    text-align: center;
+  }
+
+  .notification-card {
+    padding: 16px;
+    gap: 14px;
+  }
+
+  .notification-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .notifications-links {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

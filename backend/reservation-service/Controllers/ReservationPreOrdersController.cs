@@ -21,14 +21,18 @@ public sealed class ReservationPreOrdersController : ControllerBase
 
 
     private readonly IOutboxRepository _outboxRepository;
+    private readonly INotificationRepository? _notificationRepository;
+
     public ReservationPreOrdersController(
         DatabaseHelper databaseHelper,
         ILogger<ReservationPreOrdersController> logger,
-        IOutboxRepository outboxRepository)
+        IOutboxRepository outboxRepository,
+        INotificationRepository? notificationRepository = null)
     {
         _databaseHelper = databaseHelper;
         _logger = logger;
         _outboxRepository = outboxRepository;
+        _notificationRepository = notificationRepository;
     }
 
     [HttpPost("reservation-pre-order")]
@@ -210,6 +214,28 @@ public sealed class ReservationPreOrdersController : ControllerBase
                 null,
                 idempotencyKey,
                 cancellationToken);
+
+            if (_notificationRepository is not null)
+            {
+                try
+                {
+                    await _notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = customerId,
+                        EventType = NotificationEventTypes.OrderCreated,
+                        Title = "Pre-Order Placed",
+                        Message = $"Your pre-order #PRE-{orderId:D6} for reservation #{reservation.ReservationId} has been placed successfully.",
+                        ReferenceType = "Order",
+                        ReferenceId = orderId,
+                        ReferenceCode = $"PRE-{orderId:D6}",
+                        IdempotencyKey = $"notif:order:created:PRE-{orderId:D6}"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must never break pre-order creation
+                }
+            }
 
             var response = new ReservationPreOrderResponse(
                 orderId,

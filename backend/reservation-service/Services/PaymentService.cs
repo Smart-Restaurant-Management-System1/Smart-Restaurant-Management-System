@@ -20,6 +20,7 @@ public sealed class PaymentService : IPaymentService
     private readonly IImageStorageService _imageStorageService;
     private readonly PayHereOptions _payHereOptions;
     private readonly ILogger<PaymentService> _logger;
+    private readonly INotificationRepository? _notificationRepository;
 
     public PaymentService(
         DatabaseHelper databaseHelper,
@@ -27,7 +28,8 @@ public sealed class PaymentService : IPaymentService
         IOutboxRepository outboxRepository,
         IImageStorageService imageStorageService,
         IOptions<PayHereOptions> payHereOptions,
-        ILogger<PaymentService> logger)
+        ILogger<PaymentService> logger,
+        INotificationRepository? notificationRepository = null)
     {
         _databaseHelper = databaseHelper;
         _paymentRepository = paymentRepository;
@@ -35,6 +37,7 @@ public sealed class PaymentService : IPaymentService
         _imageStorageService = imageStorageService;
         _payHereOptions = payHereOptions.Value;
         _logger = logger;
+        _notificationRepository = notificationRepository;
     }
 
     public async Task<PayHereCheckoutResponse> CreatePayHereCheckoutAsync(
@@ -468,6 +471,45 @@ public sealed class PaymentService : IPaymentService
                 eventType,
                 cancellationToken);
 
+            if (_notificationRepository is not null)
+            {
+                try
+                {
+                    if (targetStatus == PaymentConstants.PaymentStatuses.Succeeded)
+                    {
+                        await _notificationRepository.CreateNotificationAsync(new CustomerNotification
+                        {
+                            CustomerId = payment.CustomerId,
+                            EventType = NotificationEventTypes.PaymentSucceeded,
+                            Title = "Payment Succeeded",
+                            Message = $"Payment of {payment.Amount:F2} {payment.Currency} for {payment.MerchantOrderReference} was successful.",
+                            ReferenceType = "Payment",
+                            ReferenceId = payment.PaymentId,
+                            ReferenceCode = payment.MerchantOrderReference,
+                            IdempotencyKey = $"notif:payment:{payment.MerchantOrderReference}:Succeeded"
+                        }, connection, transaction, cancellationToken);
+                    }
+                    else if (targetStatus == PaymentConstants.PaymentStatuses.Failed)
+                    {
+                        await _notificationRepository.CreateNotificationAsync(new CustomerNotification
+                        {
+                            CustomerId = payment.CustomerId,
+                            EventType = NotificationEventTypes.PaymentFailed,
+                            Title = "Payment Failed",
+                            Message = $"Your payment of {payment.Amount:F2} {payment.Currency} for {payment.MerchantOrderReference} could not be processed. Please retry or choose another payment method.",
+                            ReferenceType = "Payment",
+                            ReferenceId = payment.PaymentId,
+                            ReferenceCode = payment.MerchantOrderReference,
+                            IdempotencyKey = $"notif:payment:{payment.MerchantOrderReference}:Failed"
+                        }, connection, transaction, cancellationToken);
+                    }
+                }
+                catch
+                {
+                    // Never break payment processing
+                }
+            }
+
             await transaction.CommitAsync(cancellationToken);
         }
 
@@ -589,6 +631,45 @@ public sealed class PaymentService : IPaymentService
                 payment,
                 eventType,
                 cancellationToken);
+
+            if (_notificationRepository is not null)
+            {
+                try
+                {
+                    if (isApprove)
+                    {
+                        await _notificationRepository.CreateNotificationAsync(new CustomerNotification
+                        {
+                            CustomerId = payment.CustomerId,
+                            EventType = NotificationEventTypes.PaymentSucceeded,
+                            Title = "Payment Verified",
+                            Message = $"Your {payment.PaymentMethod} payment of {payment.Amount:F2} {payment.Currency} for {payment.MerchantOrderReference} has been verified and confirmed.",
+                            ReferenceType = "Payment",
+                            ReferenceId = payment.PaymentId,
+                            ReferenceCode = payment.MerchantOrderReference,
+                            IdempotencyKey = $"notif:payment:{payment.MerchantOrderReference}:Verified"
+                        }, connection, transaction, cancellationToken);
+                    }
+                    else
+                    {
+                        await _notificationRepository.CreateNotificationAsync(new CustomerNotification
+                        {
+                            CustomerId = payment.CustomerId,
+                            EventType = NotificationEventTypes.PaymentFailed,
+                            Title = "Payment Verification Declined",
+                            Message = $"Your {payment.PaymentMethod} payment verification for {payment.MerchantOrderReference} was declined. Please verify your receipt or contact the counter.",
+                            ReferenceType = "Payment",
+                            ReferenceId = payment.PaymentId,
+                            ReferenceCode = payment.MerchantOrderReference,
+                            IdempotencyKey = $"notif:payment:{payment.MerchantOrderReference}:Declined"
+                        }, connection, transaction, cancellationToken);
+                    }
+                }
+                catch
+                {
+                    // Never break manual payment verification
+                }
+            }
 
             await transaction.CommitAsync(cancellationToken);
         }
@@ -727,6 +808,28 @@ public sealed class PaymentService : IPaymentService
                 payment,
                 PaymentLifecycleEventTypes.PaymentSucceeded,
                 cancellationToken);
+
+            if (_notificationRepository is not null)
+            {
+                try
+                {
+                    await _notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = payment.CustomerId,
+                        EventType = NotificationEventTypes.PaymentSucceeded,
+                        Title = "Payment Succeeded",
+                        Message = $"Payment of {payment.Amount:F2} {payment.Currency} for {payment.MerchantOrderReference} was successful.",
+                        ReferenceType = "Payment",
+                        ReferenceId = payment.PaymentId,
+                        ReferenceCode = payment.MerchantOrderReference,
+                        IdempotencyKey = $"notif:payment:{payment.MerchantOrderReference}:Simulated"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Never break sandbox payment
+                }
+            }
 
             await transaction.CommitAsync(cancellationToken);
         }

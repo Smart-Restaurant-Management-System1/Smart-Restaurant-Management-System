@@ -19,17 +19,20 @@ public sealed class KitchenQueueController : ControllerBase
     private readonly ILogger<KitchenQueueController> _logger;
     private readonly IOutboxRepository _outboxRepository;
     private readonly IPaymentRepository _paymentRepository;
+    private readonly INotificationRepository? _notificationRepository;
 
     public KitchenQueueController(
         DatabaseHelper databaseHelper,
         ILogger<KitchenQueueController> logger,
         IOutboxRepository outboxRepository,
-        IPaymentRepository paymentRepository)
+        IPaymentRepository paymentRepository,
+        INotificationRepository? notificationRepository = null)
     {
         _databaseHelper = databaseHelper;
         _logger = logger;
         _outboxRepository = outboxRepository;
         _paymentRepository = paymentRepository;
+        _notificationRepository = notificationRepository;
     }
 
     [HttpGet("queue")]
@@ -280,13 +283,13 @@ public sealed class KitchenQueueController : ControllerBase
 
             var selectSql = isDineIn
                 ? $"""
-                    SELECT Status, TableId
+                    SELECT Status, TableId, CustomerId
                     FROM {tableName}
                     WHERE OrderId = @OrderId
                     FOR UPDATE;
                     """
                 : $"""
-                    SELECT Status, ReservationId
+                    SELECT Status, ReservationId, CustomerId
                     FROM {tableName}
                     WHERE OrderId = @OrderId
                     FOR UPDATE;
@@ -295,6 +298,7 @@ public sealed class KitchenQueueController : ControllerBase
             string? currentStatus;
             int? tableId = null;
             int? reservationId = null;
+            int? customerId = null;
 
             await using (var selectCommand = new MySqlCommand(
                 selectSql,
@@ -327,6 +331,10 @@ public sealed class KitchenQueueController : ControllerBase
                             ? null
                             : reader.GetInt32(1);
                     }
+
+                    customerId = reader.IsDBNull(2)
+                        ? null
+                        : reader.GetInt32(2);
                 }
                 else
                 {
@@ -462,6 +470,46 @@ public sealed class KitchenQueueController : ControllerBase
                 normalizedCurrentStatus,
                 null,
                 cancellationToken);
+
+            if (_notificationRepository is not null && customerId.HasValue && customerId.Value > 0)
+            {
+                try
+                {
+                    var title = targetStatus switch
+                    {
+                        "Preparing" => "Order Preparing",
+                        "Ready" => "Order Ready",
+                        "Served" => "Order Served",
+                        "Cancelled" => "Order Cancelled",
+                        _ => $"Order {targetStatus}"
+                    };
+
+                    var message = targetStatus switch
+                    {
+                        "Preparing" => $"Your order #{orderReference} is now being prepared in the kitchen.",
+                        "Ready" => $"Your order #{orderReference} is ready! {(isDineIn ? "Our staff will serve it to your table shortly." : "Ready for your reservation.")}",
+                        "Served" => $"Your order #{orderReference} has been served. Enjoy your meal!",
+                        "Cancelled" => $"Your order #{orderReference} has been cancelled.",
+                        _ => $"Your order #{orderReference} status updated to {targetStatus}."
+                    };
+
+                    await _notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = customerId.Value,
+                        EventType = lifecycleEventType,
+                        Title = title,
+                        Message = message,
+                        ReferenceType = "Order",
+                        ReferenceId = orderId,
+                        ReferenceCode = orderReference,
+                        IdempotencyKey = $"notif:order:status:{orderReference}:{targetStatus}"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must never break kitchen queue update
+                }
+            }
 
             await transaction.CommitAsync(
                 cancellationToken);
