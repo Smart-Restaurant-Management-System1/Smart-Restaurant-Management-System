@@ -393,6 +393,8 @@ export default function AdminAuditLogsPage() {
       <div
         className="bistro-card"
         style={{
+          position: 'relative',
+          overflow: 'hidden',
           padding: '1.25rem 1.5rem',
           borderRadius: '12px',
           marginBottom: '1.5rem',
@@ -400,6 +402,19 @@ export default function AdminAuditLogsPage() {
           boxShadow: '0 2px 10px rgba(40, 30, 15, 0.03)'
         }}
       >
+        {/* Luxury Gold Top Strip Accent */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+            zIndex: 1
+          }}
+        />
+
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Quick Date Presets */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -622,12 +637,26 @@ export default function AdminAuditLogsPage() {
       <div
         className="bistro-card"
         style={{
+          position: 'relative',
           borderRadius: '12px',
           overflow: 'hidden',
           border: '1px solid #e8e0d0',
           boxShadow: '0 4px 14px rgba(40, 30, 15, 0.04)'
         }}
       >
+        {/* Luxury Gold Top Strip Accent */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+            zIndex: 1
+          }}
+        />
+
         {/* Table Header Bar */}
         <div
           style={{
@@ -1037,6 +1066,8 @@ export default function AdminAuditLogsPage() {
           <div
             className="bistro-card"
             style={{
+              position: 'relative',
+              overflow: 'hidden',
               backgroundColor: '#fff',
               borderRadius: '14px',
               maxWidth: '650px',
@@ -1048,6 +1079,19 @@ export default function AdminAuditLogsPage() {
               padding: '1.75rem'
             }}
           >
+            {/* Luxury Gold Top Strip Accent */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: 'linear-gradient(90deg, #c5a059 0%, #ecd6aa 50%, #c5a059 100%)',
+                zIndex: 1
+              }}
+            />
+
             {/* Modal Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #f3ede2', paddingBottom: '0.75rem' }}>
               <div>
