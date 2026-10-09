@@ -537,13 +537,9 @@ export default function ProfilePage() {
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'auto auto',
-                gap: '0.45rem 1.5rem',
-                fontSize: '0.78rem',
+                gap: '0.5rem 1.5rem',
+                fontSize: '0.8rem',
                 alignItems: 'center',
-                background: 'rgba(255, 255, 255, 0.65)',
-                padding: '0.65rem 1.1rem',
-                borderRadius: '10px',
-                border: '1px solid #eedfc9',
               }}
             >
               <span style={{ color: '#78716c', fontWeight: 500 }}>User ID</span>
@@ -552,10 +548,7 @@ export default function ProfilePage() {
                   fontFamily: 'monospace',
                   fontWeight: 600,
                   color: '#282115',
-                  background: '#f5efe6',
-                  padding: '0.1rem 0.45rem',
-                  borderRadius: '4px',
-                  fontSize: '0.75rem',
+                  fontSize: '0.82rem',
                   textAlign: 'right',
                 }}
               >
