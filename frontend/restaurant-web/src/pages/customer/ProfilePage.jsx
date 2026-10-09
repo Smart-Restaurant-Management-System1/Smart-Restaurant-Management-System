@@ -7,7 +7,7 @@ import { validateProfileForm, sanitizeProfilePayload, formatProfileForForm, vali
 import { ROLES } from '../../routes/roles';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -46,6 +46,13 @@ export default function ProfilePage() {
         if (isMounted) {
           setOriginalProfile(data);
           setFormData(formatProfileForForm(data));
+          if (updateUser && data) {
+            updateUser({
+              fullName: data.fullName,
+              email: data.email,
+              phoneNumber: data.phoneNumber,
+            });
+          }
         }
       } catch (err) {
         if (isMounted) {
@@ -118,6 +125,13 @@ export default function ProfilePage() {
 
       setOriginalProfile(updatedProfile);
       setFormData(formatProfileForForm(updatedProfile));
+      if (updateUser && updatedProfile) {
+        updateUser({
+          fullName: updatedProfile.fullName,
+          email: updatedProfile.email,
+          phoneNumber: updatedProfile.phoneNumber,
+        });
+      }
       setSuccess(true);
     } catch (err) {
       if (err.response?.status === 409) {
