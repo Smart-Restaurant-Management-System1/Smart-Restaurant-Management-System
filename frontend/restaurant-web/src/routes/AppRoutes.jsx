@@ -13,6 +13,7 @@ import ProfilePage from '../pages/customer/ProfilePage';
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
 import AdminOperationalDashboardPage from '../pages/admin/AdminOperationalDashboardPage';
 import AdminReservationsPage from '../pages/admin/AdminReservationsPage';
+import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
 import ReservationReportsPage from '../pages/admin/ReservationReportsPage';
 import MenuManagementPage from '../pages/admin/MenuManagementPage';
 import AdminUserManagementPage from '../pages/admin/AdminUserManagementPage';
@@ -330,6 +331,12 @@ export default function AppRoutes() {
         <Route
           path="/admin/tables"
           element={<AdminDashboardPage />}
+        />
+
+        {/* Order Management & Search - SR-222 / SR-247 */}
+        <Route
+          path="/admin/orders"
+          element={<AdminOrdersPage />}
         />
 
         <Route

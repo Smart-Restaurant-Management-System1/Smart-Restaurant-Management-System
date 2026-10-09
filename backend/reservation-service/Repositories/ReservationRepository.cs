@@ -1,6 +1,8 @@
 using System.Data;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
 using MySqlConnector;
 using ReservationService.Data;
 using ReservationService.Events;
@@ -20,8 +22,13 @@ public sealed class ReservationRepository(
     IBookingReferenceGenerator referenceGenerator,
     ReservationMaintenancePolicy maintenancePolicy,
     IOutboxRepository outboxRepository,
-    INotificationRepository? notificationRepository = null) : IReservationRepository
+    INotificationRepository? notificationRepository = null,
+    IConfiguration? configuration = null) : IReservationRepository
 {
+    private readonly string _identityDatabaseName = Regex.Replace(
+        configuration?["IdentityDb:DatabaseName"] ?? configuration?["IDENTITY_DB_NAME"] ?? "restaurant_identity_db",
+        @"[^\w]", "");
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -33,12 +40,13 @@ public sealed class ReservationRepository(
     public async Task<ReservationHistoryPage> GetForAdminAsync(AdminReservationQuery query, CancellationToken cancellationToken = default)
     {
         await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        var idDb = string.IsNullOrWhiteSpace(_identityDatabaseName) ? "restaurant_identity_db" : _identityDatabaseName;
         var (where, parameters) = BuildAdminFilters(query);
-        await using var count = new MySqlCommand($"SELECT COUNT(*) FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId {where};", connection);
+        await using var count = new MySqlCommand($"SELECT COUNT(*) FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId LEFT JOIN `{idDb}`.`Users` AS u ON u.UserId = r.CustomerId {where};", connection);
         AddParameters(count, parameters);
         var total = Convert.ToInt32(await count.ExecuteScalarAsync(cancellationToken));
-        const string columns = "r.Id, r.CustomerId, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
-        await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT @PageSize OFFSET @Offset;", connection);
+        var columns = $"r.Id, r.CustomerId, COALESCE(CONCAT(u.FirstName, ' ', u.LastName), '') AS CustomerName, COALESCE(u.Email, '') AS CustomerEmail, COALESCE(u.PhoneNumber, '') AS CustomerPhone, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
+        await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId LEFT JOIN `{idDb}`.`Users` AS u ON u.UserId = r.CustomerId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT @PageSize OFFSET @Offset;", connection);
         AddParameters(command, parameters);
         command.Parameters.AddWithValue("@PageSize", query.PageSize);
         command.Parameters.AddWithValue("@Offset", (query.Page - 1) * query.PageSize);
@@ -46,6 +54,20 @@ public sealed class ReservationRepository(
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken)) items.Add(MapReservation(reader));
         return new ReservationHistoryPage(items, query.Page, query.PageSize, total);
+    }
+
+    public async Task<IReadOnlyList<Reservation>> GetForAdminExportAsync(AdminReservationQuery query, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        var idDb = string.IsNullOrWhiteSpace(_identityDatabaseName) ? "restaurant_identity_db" : _identityDatabaseName;
+        var (where, parameters) = BuildAdminFilters(query);
+        var columns = $"r.Id, r.CustomerId, COALESCE(CONCAT(u.FirstName, ' ', u.LastName), '') AS CustomerName, COALESCE(u.Email, '') AS CustomerEmail, COALESCE(u.PhoneNumber, '') AS CustomerPhone, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
+        await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId LEFT JOIN `{idDb}`.`Users` AS u ON u.UserId = r.CustomerId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT 10000;", connection);
+        AddParameters(command, parameters);
+        var items = new List<Reservation>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken)) items.Add(MapReservation(reader));
+        return items;
     }
 
     public async Task<Reservation?> GetByIdAsync(int reservationId, CancellationToken cancellationToken = default)
@@ -528,6 +550,9 @@ FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Cu
     {
         Id = reader.GetInt32("Id"),
         CustomerId = reader.GetInt32("CustomerId"),
+        CustomerName = SafeGetString(reader, "CustomerName"),
+        CustomerEmail = SafeGetString(reader, "CustomerEmail"),
+        CustomerPhone = SafeGetString(reader, "CustomerPhone"),
         TableId = reader.GetInt32("TableId"),
         TableNumber = reader.GetString("TableNumber"),
         BookingReference = reader.GetString("BookingReference"),
@@ -539,6 +564,19 @@ FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Cu
         UpdatedAt = reader.GetDateTime("UpdatedAt"),
     };
 
+    private static string SafeGetString(MySqlDataReader reader, string column)
+    {
+        try
+        {
+            var ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? string.Empty : reader.GetString(ordinal);
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
     private static (string Where, Dictionary<string, object> Parameters) BuildAdminFilters(AdminReservationQuery query)
     {
         var clauses = new List<string>();
@@ -548,6 +586,12 @@ FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Cu
         if (!string.IsNullOrWhiteSpace(query.Status)) { clauses.Add("r.Status = @Status"); parameters["@Status"] = query.Status; }
         if (!string.IsNullOrWhiteSpace(query.TableNumber)) { clauses.Add("t.TableNumber LIKE @TableNumber"); parameters["@TableNumber"] = $"%{query.TableNumber}%"; }
         if (!string.IsNullOrWhiteSpace(query.BookingReference)) { clauses.Add("r.BookingReference LIKE @BookingReference"); parameters["@BookingReference"] = $"%{query.BookingReference}%"; }
+        if (!string.IsNullOrWhiteSpace(query.Customer))
+        {
+            clauses.Add("(u.FirstName LIKE @Customer OR u.LastName LIKE @Customer OR CONCAT(u.FirstName, ' ', u.LastName) LIKE @Customer OR u.Email LIKE @Customer OR CAST(r.CustomerId AS CHAR) = @CustomerExact)");
+            parameters["@Customer"] = $"%{query.Customer.Trim()}%";
+            parameters["@CustomerExact"] = query.Customer.Trim();
+        }
         return (clauses.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", clauses), parameters);
     }
 

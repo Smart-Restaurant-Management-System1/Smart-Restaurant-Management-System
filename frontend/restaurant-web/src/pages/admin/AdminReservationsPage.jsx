@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getAdminReservations, updateAdminReservationStatus } from '../../services/tableService';
+import { getAdminReservations, updateAdminReservationStatus, exportAdminReservations } from '../../services/tableService';
 import { formatReservationDateTime, statusClassName } from '../availability/reservationHistoryView';
 import PageHeader from '../../components/common/PageHeader';
 
-const initialFilters = { visitFrom: '', visitTo: '', status: '', tableNumber: '', bookingReference: '', page: 1, pageSize: 20 };
+const initialFilters = { visitFrom: '', visitTo: '', status: '', tableNumber: '', bookingReference: '', customer: '', page: 1, pageSize: 20 };
 
 export default function AdminReservationsPage() {
   const [filters, setFilters] = useState(initialFilters);
@@ -11,6 +11,7 @@ export default function AdminReservationsPage() {
   const [error, setError] = useState('');
   const [pending, setPending] = useState(null);
   const [statusConfirm, setStatusConfirm] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const load = async (next = filters) => {
     setData(null);
@@ -18,7 +19,7 @@ export default function AdminReservationsPage() {
     try {
       setData(await getAdminReservations(next));
     } catch (e) {
-      setError(e?.response?.status === 403 ? 'You are not authorised to manage reservations.' : 'Unable to load reservations. Please try again.');
+      setError(e?.response?.data?.message || (e?.response?.status === 403 ? 'You are not authorised to manage reservations.' : 'Unable to load reservations. Please try again.'));
     }
   };
 
@@ -28,8 +29,52 @@ export default function AdminReservationsPage() {
 
   const submit = (event) => {
     event.preventDefault();
+    if (filters.visitFrom && filters.visitTo) {
+      if (new Date(filters.visitFrom) > new Date(filters.visitTo)) {
+        setError('From date must not be later than To date.');
+        return;
+      }
+      const diffDays = Math.ceil((new Date(filters.visitTo) - new Date(filters.visitFrom)) / (1000 * 60 * 60 * 24));
+      if (diffDays > 90) {
+        setError('Date range cannot exceed 90 days.');
+        return;
+      }
+    }
+    setError('');
     setFilters({ ...filters, page: 1 });
     load({ ...filters, page: 1 });
+  };
+
+  const handleExportCsv = async () => {
+    if (filters.visitFrom && filters.visitTo) {
+      if (new Date(filters.visitFrom) > new Date(filters.visitTo)) {
+        setError('From date must not be later than To date.');
+        return;
+      }
+      const diffDays = Math.ceil((new Date(filters.visitTo) - new Date(filters.visitFrom)) / (1000 * 60 * 60 * 24));
+      if (diffDays > 90) {
+        setError('Date range cannot exceed 90 days.');
+        return;
+      }
+    }
+
+    setIsExporting(true);
+    setError('');
+    try {
+      const blob = await exportAdminReservations(filters);
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv;charset=utf-8;' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `reservations-export-${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to export reservations. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const promptChangeStatus = (item, status) => {
@@ -349,8 +394,39 @@ export default function AdminReservationsPage() {
             />
           </div>
 
+          {/* Customer Search */}
+          <div style={{ flex: '1.2 1 135px', minWidth: '115px' }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                color: 'var(--bistro-ink)',
+                fontWeight: 600,
+                marginBottom: '0.35rem',
+              }}
+            >
+              Customer
+            </label>
+            <input
+              placeholder="Name, email or ID"
+              value={filters.customer}
+              onChange={(e) => setFilters({ ...filters, customer: e.target.value })}
+              style={{
+                width: '100%',
+                padding: '0.52rem 0.65rem',
+                border: '1px solid #d9d0bf',
+                borderRadius: '8px',
+                fontSize: '0.86rem',
+                boxSizing: 'border-box',
+                backgroundColor: '#faf8f4',
+                color: 'var(--bistro-ink)',
+                outline: 'none',
+              }}
+            />
+          </div>
+
           {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, paddingBottom: '1px' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0, paddingBottom: '1px', flexWrap: 'wrap' }}>
             <button
               className="bistro-button-gold"
               type="submit"
@@ -386,6 +462,30 @@ export default function AdminReservationsPage() {
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
               </svg>
               Reset
+            </button>
+            <button
+              className="bistro-button-outline"
+              type="button"
+              disabled={isExporting}
+              onClick={handleExportCsv}
+              style={{
+                padding: '0.54rem 1rem',
+                fontSize: '0.86rem',
+                whiteSpace: 'nowrap',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                cursor: isExporting ? 'not-allowed' : 'pointer',
+                opacity: isExporting ? 0.7 : 1,
+              }}
+              title="Export matching reservations to CSV"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              {isExporting ? 'Exporting…' : 'Export CSV'}
             </button>
           </div>
         </div>
@@ -556,11 +656,11 @@ export default function AdminReservationsPage() {
 
                     {/* Customer */}
                     <td style={{ padding: '1rem 1.35rem', verticalAlign: 'middle', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
                         <div
                           style={{
-                            width: '28px',
-                            height: '28px',
+                            width: '32px',
+                            height: '32px',
                             borderRadius: '50%',
                             background: '#faf4eb',
                             border: '1px solid #e8dec8',
@@ -568,15 +668,23 @@ export default function AdminReservationsPage() {
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: '#8c6736',
-                            fontSize: '0.78rem',
+                            fontSize: '0.82rem',
                             fontWeight: 700,
+                            flexShrink: 0,
                           }}
                         >
-                          C
+                          {(item.customerName || 'C')[0]?.toUpperCase()}
                         </div>
-                        <span style={{ fontSize: '0.88rem', color: 'var(--bistro-ink)', fontWeight: 600 }}>
-                          Customer #{item.customerId}
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '0.88rem', color: 'var(--bistro-ink)', fontWeight: 600 }}>
+                            {item.customerName || `Customer #${item.customerId}`}
+                          </span>
+                          {(item.customerEmail || item.customerPhone) && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--bistro-muted)' }}>
+                              {[item.customerEmail, item.customerPhone].filter(Boolean).join(' · ')}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
 

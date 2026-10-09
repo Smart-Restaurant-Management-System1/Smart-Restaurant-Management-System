@@ -131,6 +131,13 @@ export default function Sidebar({
     }
 
     if (
+      path === '/admin/orders' &&
+      location.pathname.startsWith('/admin/orders')
+    ) {
+      return true;
+    }
+
+    if (
       path === '/admin/reports/reservations' &&
       location.pathname === '/admin/reports/reservations'
     ) {
@@ -562,6 +569,11 @@ export default function Sidebar({
           to: '/admin/reservations',
           label: 'Manage Bookings',
           icon: documentIcon,
+        },
+        {
+          to: '/admin/orders',
+          label: 'Manage Orders',
+          icon: ordersIcon,
         },
         {
           to: '/admin/payments',
