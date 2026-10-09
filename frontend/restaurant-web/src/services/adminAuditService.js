@@ -1,6 +1,7 @@
 import { reservationApi } from './tableService.js';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ExcelJS from 'exceljs';
 
 /**
  * Friendly mapping for detail JSON keys into human-readable labels.
@@ -241,12 +242,11 @@ export const generateAuditLogsCsv = (logs = [], filters = {}, adminEmail = '') =
     [''] // Blank spacer row before table
   ];
 
-  // 2. Data Table Column Headers
+  // 2. Data Table Column Headers (Action Code removed as requested)
   const headers = [
     'Audit Log ID',
     'Timestamp (UTC)',
     'Action Type',
-    'Action Code',
     'Administrator Email',
     'Admin ID',
     'Admin Role',
@@ -263,7 +263,6 @@ export const generateAuditLogsCsv = (logs = [], filters = {}, adminEmail = '') =
     sanitizeCell(log.auditLogId),
     sanitizeCell(log.timestampUtc),
     sanitizeCell(formatActionType(log.actionType).label),
-    sanitizeCell(log.actionType),
     sanitizeCell(log.adminEmail),
     sanitizeCell(log.adminId),
     sanitizeCell(log.adminRole),
@@ -308,6 +307,242 @@ export const downloadAuditLogsCsv = (logs = [], filters = {}, adminEmail = '') =
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   return true;
+};
+
+/**
+ * Generates and downloads a beautifully styled Excel workbook (.xlsx) (SR-223 / SR-253).
+ * Features executive metadata banner, custom column widths, zebra striping, and status badges.
+ * @param {Array} logs - Array of audit log objects
+ * @param {object} [filters] - { dateRange: { from, to }, actionType, searchKeyword }
+ * @param {string} [adminEmail] - Generating administrator's email or identity
+ * @returns {Promise<object|null>} ExcelJS workbook instance or null if empty
+ */
+export const downloadAuditLogsExcel = async (logs = [], filters = {}, adminEmail = '') => {
+  if (!logs || logs.length === 0) return null;
+
+  const dateRange = filters?.dateRange || (filters?.from ? filters : {});
+  const fromDate = dateRange.from || 'Start';
+  const toDate = dateRange.to || 'Present';
+  const actionLabel = filters?.actionType ? formatActionType(filters.actionType).label : 'All Actions';
+  const searchLabel = filters?.searchKeyword ? filters.searchKeyword : 'None';
+  const auditor = adminEmail || 'System Administrator';
+  const genUtc = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Cinnamon Bistro Luxury Dining';
+  wb.created = new Date();
+
+  const ws = wb.addWorksheet('Audit Trail', {
+    views: [{ showGridLines: true }]
+  });
+
+  // 1. Column Widths (generous widths so nothing is truncated!)
+  ws.columns = [
+    { key: 'id', width: 14 },
+    { key: 'timestamp', width: 22 },
+    { key: 'action', width: 26 },
+    { key: 'adminEmail', width: 34 },
+    { key: 'adminId', width: 16 },
+    { key: 'adminRole', width: 16 },
+    { key: 'target', width: 22 },
+    { key: 'result', width: 15 },
+    { key: 'service', width: 22 },
+    { key: 'ip', width: 18 },
+    { key: 'details', width: 68 }
+  ];
+
+  // 2. Top Title Banner (Row 2)
+  ws.mergeCells('A2:K2');
+  const titleCell = ws.getCell('A2');
+  titleCell.value = 'CINNAMON BISTRO — ADMINISTRATIVE AUDIT TRAIL REPORT';
+  titleCell.font = { name: 'Segoe UI', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(2).height = 32;
+
+  // 3. Sub-banner / Eyebrow (Row 3)
+  ws.mergeCells('A3:K3');
+  const subCell = ws.getCell('A3');
+  subCell.value = 'SECURITY & COMPLIANCE • AUTHORITATIVE ACTIVITY LOG';
+  subCell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FFFFFFFF' } };
+  subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC5A059' } };
+  subCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(3).height = 18;
+
+  // 4. Metadata Summary Block (Rows 5 to 7)
+  const metaStyleLabel = {
+    font: { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF475569' } },
+    fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } },
+    alignment: { vertical: 'middle', horizontal: 'left' }
+  };
+  const metaStyleVal = {
+    font: { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF1E293B' } },
+    alignment: { vertical: 'middle', horizontal: 'left' }
+  };
+
+  // Row 5
+  ws.getRow(5).height = 20;
+  ws.getCell('B5').value = 'Date Window:';
+  Object.assign(ws.getCell('B5'), metaStyleLabel);
+  ws.getCell('C5').value = `${fromDate} to ${toDate}`;
+  Object.assign(ws.getCell('C5'), metaStyleVal);
+
+  ws.getCell('E5').value = 'Generated Date (UTC):';
+  Object.assign(ws.getCell('E5'), metaStyleLabel);
+  ws.getCell('F5').value = genUtc;
+  Object.assign(ws.getCell('F5'), { font: { name: 'Segoe UI', size: 9, color: { argb: 'FF1E293B' } } });
+
+  // Row 6
+  ws.getRow(6).height = 20;
+  ws.getCell('B6').value = 'Action Filter:';
+  Object.assign(ws.getCell('B6'), metaStyleLabel);
+  ws.getCell('C6').value = actionLabel;
+  Object.assign(ws.getCell('C6'), metaStyleVal);
+
+  ws.getCell('E6').value = 'Generated By:';
+  Object.assign(ws.getCell('E6'), metaStyleLabel);
+  ws.getCell('F6').value = auditor;
+  Object.assign(ws.getCell('F6'), { font: { name: 'Segoe UI', size: 9, color: { argb: 'FF1E293B' } } });
+
+  // Row 7
+  ws.getRow(7).height = 20;
+  ws.getCell('B7').value = 'Search Query:';
+  Object.assign(ws.getCell('B7'), metaStyleLabel);
+  ws.getCell('C7').value = searchLabel;
+  Object.assign(ws.getCell('C7'), metaStyleVal);
+
+  ws.getCell('E7').value = 'Total Recorded Events:';
+  Object.assign(ws.getCell('E7'), metaStyleLabel);
+  ws.getCell('F7').value = `${logs.length} Events`;
+  Object.assign(ws.getCell('F7'), {
+    font: { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF047857' } }
+  });
+
+  // 5. Spacer Row (Row 8)
+  ws.getRow(8).height = 14;
+
+  // 6. Data Table Headers (Row 9)
+  const headerRow = ws.getRow(9);
+  headerRow.height = 26;
+  const headers = [
+    'Audit Log ID',
+    'Timestamp (UTC)',
+    'Action Type',
+    'Administrator Email',
+    'Admin ID',
+    'Admin Role',
+    'Target Resource',
+    'Result',
+    'Originating Service',
+    'IP Address',
+    'Operational Change Details'
+  ];
+  headerRow.values = headers;
+
+  headerRow.eachCell((cell, colNum) => {
+    cell.font = { name: 'Segoe UI', size: 9.5, bold: true, color: { argb: 'FFFFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+    cell.alignment = {
+      vertical: 'middle',
+      horizontal: colNum === 1 || colNum === 8 ? 'center' : 'left'
+    };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'FF1E293B' } },
+      bottom: { style: 'medium', color: { argb: 'FFC5A059' } },
+      left: { style: 'thin', color: { argb: 'FF334155' } },
+      right: { style: 'thin', color: { argb: 'FF334155' } }
+    };
+  });
+
+  // 7. Data Rows (Row 10+)
+  logs.forEach((log, idx) => {
+    const rowNum = 10 + idx;
+    const row = ws.getRow(rowNum);
+    row.height = 24;
+
+    const action = formatActionType(log.actionType).label;
+    const target = `${log.targetType || 'N/A'}${log.targetId ? ' #' + log.targetId : ''}`;
+    const result = log.result || 'Success';
+    const timestamp = log.timestampUtc
+      ? log.timestampUtc.replace('T', ' ').substring(0, 19)
+      : 'N/A';
+
+    row.values = [
+      log.auditLogId,
+      timestamp,
+      action,
+      log.adminEmail || 'Unknown',
+      log.adminId || 'N/A',
+      log.adminRole || 'Admin',
+      target,
+      result,
+      log.sourceService || 'N/A',
+      log.ipAddress || 'N/A',
+      formatOperationalSummary(log)
+    ];
+
+    const isAlternate = idx % 2 === 1;
+    const rowBg = isAlternate ? 'FFFAF8F4' : 'FFFFFFFF';
+
+    row.eachCell({ includeEmpty: true }, (cell, colNum) => {
+      cell.font = { name: 'Segoe UI', size: 9, color: { argb: 'FF201A15' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: rowBg } };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
+        right: { style: 'thin', color: { argb: 'FFE2E8F0' } }
+      };
+
+      // Alignment
+      if (colNum === 1 || colNum === 2) {
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+      } else if (colNum === 8) {
+        // Result Column styling
+        const isSuccess = String(result).toLowerCase() === 'success';
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.font = {
+          name: 'Segoe UI',
+          size: 9,
+          bold: true,
+          color: { argb: isSuccess ? 'FF047857' : 'FF991B1B' }
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: isSuccess ? 'FFECFDF5' : 'FFFEF2F2' }
+        };
+      } else if (colNum === 3) {
+        // Action Type
+        cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: 'FF1E293B' } };
+        cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      } else if (colNum === 11) {
+        // Operational Details
+        cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      } else {
+        cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      }
+    });
+  });
+
+  // 8. Trigger browser download as .xlsx
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const filename = `cinnamon_bistro_audit_report_${dateRange.from || 'all'}_to_${dateRange.to || 'all'}.xlsx`;
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  return wb;
 };
 
 /**

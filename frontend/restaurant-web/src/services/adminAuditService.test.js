@@ -8,6 +8,8 @@ import {
   formatActionType,
   formatOperationalSummary,
   generateAuditLogsCsv,
+  downloadAuditLogsCsv,
+  downloadAuditLogsExcel,
   downloadAuditLogsPdf
 } from './adminAuditService.js';
 
@@ -60,6 +62,8 @@ test('adminAuditService exports required API functions', () => {
   assert.equal(typeof getAuditLogs, 'function');
   assert.equal(typeof getAuditActionTypes, 'function');
   assert.equal(typeof generateAuditLogsCsv, 'function');
+  assert.equal(typeof downloadAuditLogsCsv, 'function');
+  assert.equal(typeof downloadAuditLogsExcel, 'function');
   assert.equal(typeof downloadAuditLogsPdf, 'function');
 });
 
@@ -110,9 +114,39 @@ test('generateAuditLogsCsv produces valid CSV with metadata header and formula m
   assert.ok(csv.includes('"User Blocked"'));
   assert.ok(csv.includes('"Total Events:"'));
   assert.ok(csv.includes('"Audit Log ID"'));
-  assert.ok(csv.includes('"USER_BLOCKED"'));
   assert.ok(csv.includes('"admin@bistro.com"'));
   assert.ok(csv.includes('"Target User ID: 42"'));
+});
+
+test('downloadAuditLogsExcel generates styled Excel workbook successfully', async () => {
+  const sampleLogs = [
+    {
+      auditLogId: 1,
+      timestampUtc: '2026-10-09T08:00:00Z',
+      actionType: 'USER_BLOCKED',
+      adminEmail: 'admin@bistro.com',
+      adminId: 'admin-1',
+      adminRole: 'Admin',
+      targetType: 'User',
+      targetId: '42',
+      result: 'Success',
+      sourceService: 'identity-service',
+      ipAddress: '127.0.0.1',
+      detailsJson: '{"targetUserId": 42}'
+    }
+  ];
+  const wb = await downloadAuditLogsExcel(sampleLogs, {
+    dateRange: { from: '2026-10-01', to: '2026-10-09' },
+    actionType: 'USER_BLOCKED',
+    searchKeyword: ''
+  }, 'admin@bistro.com');
+
+  assert.ok(wb !== null);
+  const sheet = wb.getWorksheet('Audit Trail');
+  assert.ok(sheet !== undefined);
+  assert.equal(sheet.getCell('A2').value, 'CINNAMON BISTRO — ADMINISTRATIVE AUDIT TRAIL REPORT');
+  assert.equal(sheet.getCell('C9').value, 'Action Type');
+  assert.equal(sheet.getCell('C10').value, 'User Blocked');
 });
 
 test('downloadAuditLogsPdf generates PDF document successfully without errors', async () => {

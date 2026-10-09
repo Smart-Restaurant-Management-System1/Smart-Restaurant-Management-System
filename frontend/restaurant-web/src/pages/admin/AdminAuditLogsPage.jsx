@@ -8,6 +8,7 @@ import {
   getAuditDatePreset,
   formatActionType,
   downloadAuditLogsCsv,
+  downloadAuditLogsExcel,
   downloadAuditLogsPdf
 } from '../../services/adminAuditService';
 
@@ -287,7 +288,7 @@ export default function AdminAuditLogsPage() {
         pageSize: 1000
       });
       const records = response.items && response.items.length > 0 ? response.items : logs;
-      downloadAuditLogsCsv(
+      await downloadAuditLogsExcel(
         records,
         {
           dateRange,
@@ -297,7 +298,7 @@ export default function AdminAuditLogsPage() {
         user?.email || 'admin@cinnamonbistro.com'
       );
     } catch {
-      downloadAuditLogsCsv(
+      await downloadAuditLogsExcel(
         logs,
         {
           dateRange,
@@ -658,12 +659,12 @@ export default function AdminAuditLogsPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            {/* Export CSV Button */}
+            {/* Export Excel Button */}
             <button
               type="button"
               onClick={handleExportCsv}
               disabled={isExporting || totalCount === 0}
-              title="Download audit logs as an Excel-compatible CSV file"
+              title="Download styled audit report as an Excel (.xlsx) workbook"
               style={{
                 backgroundColor: '#fff',
                 border: '1px solid #dcd3c1',
@@ -680,7 +681,7 @@ export default function AdminAuditLogsPage() {
                 transition: 'all 0.15s ease'
               }}
               onMouseEnter={(e) => {
-                if (totalCount > 0) {
+                if (totalCount > 0 && !isExporting) {
                   e.currentTarget.style.backgroundColor = '#fdfbf7';
                   e.currentTarget.style.borderColor = 'var(--bistro-gold)';
                 }
@@ -691,7 +692,7 @@ export default function AdminAuditLogsPage() {
               }}
             >
               <IconDownload size={14} color="#047857" />
-              <span>{isExporting ? 'Exporting...' : 'Export to Excel (CSV)'}</span>
+              <span>{isExporting ? 'Exporting...' : 'Export to Excel (.xlsx)'}</span>
             </button>
 
             {/* Download PDF Report Button */}
