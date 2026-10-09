@@ -67,6 +67,21 @@ const IconFileText = ({ size = 15, color = 'currentColor' }) => (
   </svg>
 );
 
+const CANONICAL_ACTIONS = [
+  'USER_BLOCKED',
+  'USER_UNBLOCKED',
+  'USER_DELETED',
+  'MENU_ITEM_CREATED',
+  'MENU_ITEM_UPDATED',
+  'MENU_AVAILABILITY_CHANGED',
+  'MENU_ITEM_DELETED',
+  'RESERVATION_STATUS_CHANGED',
+  'RESERVATION_RESCHEDULED',
+  'TABLE_CREATED',
+  'TABLE_UPDATED',
+  'TABLE_DELETED'
+];
+
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -79,7 +94,7 @@ export default function AdminAuditLogsPage() {
   const [dateRange, setDateRange] = useState(() => getAuditDatePreset('last7'));
   const [actionTypeFilter, setActionTypeFilter] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [availableActions, setAvailableActions] = useState([]);
+  const [availableActions, setAvailableActions] = useState(CANONICAL_ACTIONS);
 
   // States
   const [isLoading, setIsLoading] = useState(true);
@@ -95,11 +110,14 @@ export default function AdminAuditLogsPage() {
     let isMounted = true;
     getAuditActionTypes()
       .then((actions) => {
-        if (isMounted && Array.isArray(actions)) {
-          setAvailableActions(actions);
+        if (isMounted) {
+          const combined = Array.from(new Set([...CANONICAL_ACTIONS, ...(Array.isArray(actions) ? actions : [])]));
+          setAvailableActions(combined);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (isMounted) setAvailableActions(CANONICAL_ACTIONS);
+      });
     return () => {
       isMounted = false;
     };

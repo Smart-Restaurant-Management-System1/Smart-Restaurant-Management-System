@@ -25,6 +25,13 @@ CREATE TABLE IF NOT EXISTS `AdminAuditLogs` (
     INDEX `idx_audit_target` (`TargetType`, `TargetId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Verification Query:
--- SELECT table_name FROM information_schema.tables WHERE table_schema = 'restaurant_reservation_db' AND table_name = 'AdminAuditLogs';
+-- Initial Seed Audit History (SR-223 / SR-253)
+INSERT INTO `AdminAuditLogs` (`TimestampUtc`, `ActionType`, `AdminId`, `AdminEmail`, `AdminRole`, `TargetType`, `TargetId`, `Result`, `DetailsJson`, `SourceService`, `IpAddress`)
+VALUES
+(UTC_TIMESTAMP() - INTERVAL 1 HOUR, 'MENU_AVAILABILITY_CHANGED', 8, 'admin@cinnamonbistro.com', 'Admin', 'MenuItem', '3', 'Success', '{"menuItemId":3,"name":"Signature Cinnamon Duck","isAvailable":true,"updatedBy":"admin@cinnamonbistro.com"}', 'reservation-service', '127.0.0.1'),
+(UTC_TIMESTAMP() - INTERVAL 4 HOUR, 'USER_BLOCKED', 8, 'admin@cinnamonbistro.com', 'Admin', 'User', '14', 'Success', '{"targetUserId":14,"email":"abusive_user@example.com","role":"Customer","newStatus":"Blocked","reason":"Spam activity detected"}', 'identity-service', '127.0.0.1'),
+(UTC_TIMESTAMP() - INTERVAL 1 DAY, 'MENU_ITEM_UPDATED', 8, 'admin@cinnamonbistro.com', 'Admin', 'MenuItem', '5', 'Success', '{"menuItemId":5,"name":"Ceylon Spiced Seafood Curry","price":2850.00,"category":"Mains"}', 'reservation-service', '127.0.0.1'),
+(UTC_TIMESTAMP() - INTERVAL 2 DAY, 'RESERVATION_STATUS_CHANGED', 8, 'admin@cinnamonbistro.com', 'Admin', 'Reservation', '42', 'Success', '{"reservationId":42,"customerName":"Kamal Perera","previousStatus":"Pending","newStatus":"Confirmed"}', 'reservation-service', '127.0.0.1'),
+(UTC_TIMESTAMP() - INTERVAL 3 DAY, 'TABLE_CREATED', 8, 'admin@cinnamonbistro.com', 'Admin', 'Table', '12', 'Success', '{"tableNumber":"T12","capacity":6,"location":"Verandah"}', 'reservation-service', '127.0.0.1'),
+(UTC_TIMESTAMP() - INTERVAL 4 DAY, 'USER_UNBLOCKED', 8, 'admin@cinnamonbistro.com', 'Admin', 'User', '19', 'Success', '{"targetUserId":19,"email":"reinstated@example.com","role":"Customer","newStatus":"Active"}', 'identity-service', '127.0.0.1');
 
