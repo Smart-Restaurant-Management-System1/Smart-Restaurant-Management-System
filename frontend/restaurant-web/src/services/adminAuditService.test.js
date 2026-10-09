@@ -79,7 +79,7 @@ test('formatOperationalSummary parses JSON and formats human-friendly labels', (
   assert.ok(summary.includes('Price (LKR): 1500'));
 });
 
-test('generateAuditLogsCsv produces valid CSV with formula mitigation', () => {
+test('generateAuditLogsCsv produces valid CSV with metadata header and formula mitigation', () => {
   const sampleLogs = [
     {
       auditLogId: 1,
@@ -96,8 +96,19 @@ test('generateAuditLogsCsv produces valid CSV with formula mitigation', () => {
       detailsJson: '{"targetUserId": 42}'
     }
   ];
-  const csv = generateAuditLogsCsv(sampleLogs);
+  const csv = generateAuditLogsCsv(sampleLogs, {
+    dateRange: { from: '2026-10-01', to: '2026-10-09' },
+    actionType: 'USER_BLOCKED',
+    searchKeyword: 'bistro'
+  }, 'admin@bistro.com');
+
   assert.ok(csv.startsWith('\uFEFF')); // UTF-8 BOM
+  assert.ok(csv.includes('"CINNAMON BISTRO - ADMINISTRATIVE AUDIT TRAIL REPORT"'));
+  assert.ok(csv.includes('"Date Window:"'));
+  assert.ok(csv.includes('"2026-10-01 to 2026-10-09"'));
+  assert.ok(csv.includes('"Action Filter:"'));
+  assert.ok(csv.includes('"User Blocked"'));
+  assert.ok(csv.includes('"Total Events:"'));
   assert.ok(csv.includes('"Audit Log ID"'));
   assert.ok(csv.includes('"USER_BLOCKED"'));
   assert.ok(csv.includes('"admin@bistro.com"'));

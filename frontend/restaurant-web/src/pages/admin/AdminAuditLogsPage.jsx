@@ -287,9 +287,25 @@ export default function AdminAuditLogsPage() {
         pageSize: 1000
       });
       const records = response.items && response.items.length > 0 ? response.items : logs;
-      downloadAuditLogsCsv(records, dateRange);
+      downloadAuditLogsCsv(
+        records,
+        {
+          dateRange,
+          actionType: actionTypeFilter,
+          searchKeyword: searchKeyword.trim()
+        },
+        user?.email || 'admin@cinnamonbistro.com'
+      );
     } catch {
-      downloadAuditLogsCsv(logs, dateRange);
+      downloadAuditLogsCsv(
+        logs,
+        {
+          dateRange,
+          actionType: actionTypeFilter,
+          searchKeyword: searchKeyword.trim()
+        },
+        user?.email || 'admin@cinnamonbistro.com'
+      );
     } finally {
       setIsExporting(false);
     }
