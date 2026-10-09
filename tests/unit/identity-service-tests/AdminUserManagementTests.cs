@@ -1,4 +1,4 @@
-﻿using IdentityService.DTOs;
+using IdentityService.DTOs;
 using IdentityService.Models;
 using IdentityService.Repositories;
 using IdentityService.Services;
@@ -224,5 +224,85 @@ public class AdminUserManagementTests
         Assert.True(result);
         _userRepoMock.Verify(r => r.SoftDeleteUserAsync(targetUserId), Times.Once);
     }
+
+    [Fact]
+    public async Task UpdateUserStatusAsync_CallsAuditWriter_OnBlockAndUnblock()
+    {
+        // Arrange
+        var auditMock = new Mock<IIdentityAuditWriter>();
+        var userServiceWithAudit = new UserService(_userRepoMock.Object, _loggerMock.Object, auditMock.Object);
+
+        int currentAdminId = 1;
+        int targetUserId = 15;
+        var adminUser = new User { UserId = 1, Email = "admin@bistro.lk", Roles = new List<string> { "Admin" } };
+        var customer = new User { UserId = targetUserId, Email = "badguy@bistro.lk", Roles = new List<string> { "Customer" }, Status = "Active", IsActive = true };
+
+        _userRepoMock.Setup(r => r.GetByIdAsync(currentAdminId)).ReturnsAsync(adminUser);
+        _userRepoMock.Setup(r => r.GetByIdAsync(targetUserId)).ReturnsAsync(customer);
+        _userRepoMock.Setup(r => r.UpdateUserStatusAsync(targetUserId, "Blocked", false)).ReturnsAsync(true);
+
+        // Act
+        var response = await userServiceWithAudit.UpdateUserStatusAsync(targetUserId, currentAdminId, "Blocked", "Violation of policy");
+
+        // Assert
+        Assert.NotNull(response);
+        auditMock.Verify(a => a.LogActionAsync(
+            "USER_BLOCKED",
+            currentAdminId,
+            "admin@bistro.lk",
+            "User",
+            targetUserId.ToString(),
+            "Success",
+            It.IsAny<object>(),
+            null,
+            default), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_CallsAuditWriter_OnSuccessAndOnDenied()
+    {
+        // Arrange
+        var auditMock = new Mock<IIdentityAuditWriter>();
+        var userServiceWithAudit = new UserService(_userRepoMock.Object, _loggerMock.Object, auditMock.Object);
+
+        int currentAdminId = 1;
+        int targetUserId = 25;
+        var adminUser = new User { UserId = 1, Email = "superadmin@bistro.lk", Roles = new List<string> { "Admin" } };
+        var targetUser = new User { UserId = targetUserId, Email = "todelete@bistro.lk", Roles = new List<string> { "Customer" }, Status = "Active", IsActive = true };
+
+        _userRepoMock.Setup(r => r.GetByIdAsync(currentAdminId)).ReturnsAsync(adminUser);
+        _userRepoMock.Setup(r => r.GetByIdAsync(targetUserId)).ReturnsAsync(targetUser);
+        _userRepoMock.Setup(r => r.SoftDeleteUserAsync(targetUserId)).ReturnsAsync(true);
+
+        // Act 1: Success delete
+        var res = await userServiceWithAudit.DeleteUserAsync(targetUserId, currentAdminId);
+        Assert.True(res);
+        auditMock.Verify(a => a.LogActionAsync(
+            "USER_DELETED",
+            currentAdminId,
+            "superadmin@bistro.lk",
+            "User",
+            targetUserId.ToString(),
+            "Success",
+            It.IsAny<object>(),
+            null,
+            default), Times.Once);
+
+        // Act 2: Self delete attempt (Denied)
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            userServiceWithAudit.DeleteUserAsync(currentAdminId, currentAdminId));
+
+        auditMock.Verify(a => a.LogActionAsync(
+            "USER_DELETE_DENIED",
+            currentAdminId,
+            It.IsAny<string>(),
+            "User",
+            currentAdminId.ToString(),
+            "Denied",
+            It.IsAny<object>(),
+            null,
+            default), Times.Once);
+    }
 }
+
 

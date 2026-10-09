@@ -5,6 +5,7 @@ using ReservationService.DTOs;
 using ReservationService.Exceptions;
 using ReservationService.Models;
 using ReservationService.Repositories;
+using ReservationService.Services;
 
 namespace ReservationService.Controllers;
 
@@ -14,11 +15,27 @@ public class TablesController : ControllerBase
 {
     private readonly ITableRepository _tableRepository;
     private readonly ILogger<TablesController> _logger;
+    private readonly IAuditLogWriter? _auditWriter;
 
-    public TablesController(ITableRepository tableRepository, ILogger<TablesController> logger)
+    public TablesController(ITableRepository tableRepository, ILogger<TablesController> logger, IAuditLogWriter? auditWriter = null)
     {
         _tableRepository = tableRepository ?? throw new ArgumentNullException(nameof(tableRepository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _auditWriter = auditWriter;
+    }
+
+    private (int AdminId, string AdminEmail) GetAdminIdentity()
+    {
+        var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                   ?? User.FindFirst("sub")?.Value
+                   ?? User.FindFirst("userId")?.Value;
+
+        var adminId = int.TryParse(idClaim, out var id) ? id : 0;
+        var adminEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                      ?? User.FindFirst("email")?.Value
+                      ?? "admin@cinnamonbistro.com";
+
+        return (adminId, adminEmail);
     }
 
     /// <summary>
@@ -194,6 +211,20 @@ public class TablesController : ControllerBase
         {
             var created = await _tableRepository.CreateTableAsync(table, cancellationToken);
 
+            if (_auditWriter != null)
+            {
+                var (adminId, adminEmail) = GetAdminIdentity();
+                await _auditWriter.LogAsync(
+                    AuditActionTypes.TableCreated,
+                    adminId,
+                    adminEmail,
+                    AuditActionTypes.Targets.Table,
+                    created.Id.ToString(),
+                    AuditActionTypes.Results.Success,
+                    new { TableNumber = created.TableNumber, Capacity = created.Capacity, Location = created.Location, Status = created.Status },
+                    cancellationToken: cancellationToken);
+            }
+
             var response = new TableResponseDto
             {
                 Id = created.Id,
@@ -288,6 +319,20 @@ public class TablesController : ControllerBase
                 return NotFound(new { message = $"Table with ID {id} was not found." });
             }
 
+            if (_auditWriter != null)
+            {
+                var (adminId, adminEmail) = GetAdminIdentity();
+                await _auditWriter.LogAsync(
+                    AuditActionTypes.TableUpdated,
+                    adminId,
+                    adminEmail,
+                    AuditActionTypes.Targets.Table,
+                    updated.Id.ToString(),
+                    AuditActionTypes.Results.Success,
+                    new { TableNumber = updated.TableNumber, Capacity = updated.Capacity, Location = updated.Location, Status = ResolveStatus(updated) },
+                    cancellationToken: cancellationToken);
+            }
+
             var response = new TableResponseDto
             {
                 Id = updated.Id,
@@ -345,6 +390,20 @@ public class TablesController : ControllerBase
         if (result == TableDeactivationResult.NotFound)
         {
             return NotFound(new { message = $"Table with ID {id} was not found." });
+        }
+
+        if (_auditWriter != null)
+        {
+            var (adminId, adminEmail) = GetAdminIdentity();
+            await _auditWriter.LogAsync(
+                AuditActionTypes.TableDeleted,
+                adminId,
+                adminEmail,
+                AuditActionTypes.Targets.Table,
+                id.ToString(),
+                AuditActionTypes.Results.Success,
+                new { TableNumber = existingTable.TableNumber },
+                cancellationToken: cancellationToken);
         }
 
         return NoContent();

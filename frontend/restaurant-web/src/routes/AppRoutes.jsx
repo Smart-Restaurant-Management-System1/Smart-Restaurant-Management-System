@@ -18,6 +18,7 @@ import MenuManagementPage from '../pages/admin/MenuManagementPage';
 import AdminUserManagementPage from '../pages/admin/AdminUserManagementPage';
 import AdminFeedbackPage from '../pages/admin/AdminFeedbackPage';
 import AdminPaymentsPage from '../pages/admin/AdminPaymentsPage';
+import AdminAuditLogsPage from '../pages/admin/AdminAuditLogsPage';
 import CustomerFeedbackPage from '../pages/customer/CustomerFeedbackPage';
 import NotificationsPage from '../pages/customer/NotificationsPage';
 
@@ -351,6 +352,12 @@ export default function AppRoutes() {
         <Route
           path="/admin/payments"
           element={<AdminPaymentsPage />}
+        />
+
+        {/* Admin Audit Trail - SR-223 / SR-253 */}
+        <Route
+          path="/admin/audit-logs"
+          element={<AdminAuditLogsPage />}
         />
       </Route>
 

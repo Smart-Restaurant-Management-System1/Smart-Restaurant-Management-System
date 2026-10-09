@@ -35,12 +35,30 @@ public class MenuItemsController : ControllerBase
         "Gluten-Free"
     };
 
+    private readonly IAuditLogWriter? _auditWriter;
+
     public MenuItemsController(
         IMenuItemRepository menuItemRepository,
-        IImageStorageService imageStorageService)
+        IImageStorageService imageStorageService,
+        IAuditLogWriter? auditWriter = null)
     {
         _menuItemRepository = menuItemRepository;
         _imageStorageService = imageStorageService;
+        _auditWriter = auditWriter;
+    }
+
+    private (int AdminId, string AdminEmail) GetAdminIdentity()
+    {
+        var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                   ?? User.FindFirst("sub")?.Value
+                   ?? User.FindFirst("userId")?.Value;
+
+        var adminId = int.TryParse(idClaim, out var id) ? id : 0;
+        var adminEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                      ?? User.FindFirst("email")?.Value
+                      ?? "admin@cinnamonbistro.com";
+
+        return (adminId, adminEmail);
     }
 
     [HttpPost("upload-image")]
@@ -199,6 +217,20 @@ public class MenuItemsController : ControllerBase
 
         menuItem.MenuItemId = menuItemId;
 
+        if (_auditWriter != null)
+        {
+            var (adminId, adminEmail) = GetAdminIdentity();
+            await _auditWriter.LogAsync(
+                AuditActionTypes.MenuItemCreated,
+                adminId,
+                adminEmail,
+                AuditActionTypes.Targets.MenuItem,
+                menuItemId.ToString(),
+                AuditActionTypes.Results.Success,
+                new { ItemName = menuItem.ItemName, Category = menuItem.Category, Price = menuItem.Price, IsAvailable = menuItem.IsAvailable },
+                cancellationToken: cancellationToken);
+        }
+
         return CreatedAtAction(
             nameof(GetById),
             new
@@ -271,6 +303,20 @@ public class MenuItemsController : ControllerBase
             });
         }
 
+        if (_auditWriter != null)
+        {
+            var (adminId, adminEmail) = GetAdminIdentity();
+            await _auditWriter.LogAsync(
+                AuditActionTypes.MenuItemUpdated,
+                adminId,
+                adminEmail,
+                AuditActionTypes.Targets.MenuItem,
+                id.ToString(),
+                AuditActionTypes.Results.Success,
+                new { ItemName = menuItem.ItemName, Category = menuItem.Category, Price = menuItem.Price, IsAvailable = menuItem.IsAvailable },
+                cancellationToken: cancellationToken);
+        }
+
         return Ok(menuItem);
     }
 
@@ -311,6 +357,20 @@ public class MenuItemsController : ControllerBase
             {
                 message = "Menu item not found."
             });
+        }
+
+        if (_auditWriter != null)
+        {
+            var (adminId, adminEmail) = GetAdminIdentity();
+            await _auditWriter.LogAsync(
+                AuditActionTypes.MenuAvailabilityChanged,
+                adminId,
+                adminEmail,
+                AuditActionTypes.Targets.MenuItem,
+                id.ToString(),
+                AuditActionTypes.Results.Success,
+                new { ItemName = existingMenuItem.ItemName, IsAvailable = request.IsAvailable },
+                cancellationToken: cancellationToken);
         }
 
         return Ok(new
@@ -356,6 +416,20 @@ public class MenuItemsController : ControllerBase
             {
                 message = "Menu item could not be deleted."
             });
+        }
+
+        if (_auditWriter != null)
+        {
+            var (adminId, adminEmail) = GetAdminIdentity();
+            await _auditWriter.LogAsync(
+                AuditActionTypes.MenuItemDeleted,
+                adminId,
+                adminEmail,
+                AuditActionTypes.Targets.MenuItem,
+                id.ToString(),
+                AuditActionTypes.Results.Success,
+                new { ItemName = existingMenuItem.ItemName },
+                cancellationToken: cancellationToken);
         }
 
         return Ok(new

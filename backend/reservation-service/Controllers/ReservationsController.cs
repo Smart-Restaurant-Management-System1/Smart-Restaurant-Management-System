@@ -23,8 +23,20 @@ public sealed class ReservationsController : ControllerBase
     private readonly IReservationRescheduleService? _rescheduleService;
     private readonly IReservationRepository? _reservationRepository;
     private readonly ReservationMaintenancePolicy? _maintenancePolicy;
+    private readonly IAuditLogWriter? _auditWriter;
 
-    public ReservationsController(IAvailabilitySearchValidator validator, IAvailabilitySearchService service, IReservationCreationService creationService, ILogger<ReservationsController> logger, IReservationHistoryService? historyService = null, IReservationLifecycleService? lifecycleService = null, IAdminReservationService? adminService = null, IReservationRescheduleService? rescheduleService = null, IReservationRepository? reservationRepository = null, ReservationMaintenancePolicy? maintenancePolicy = null)
+    public ReservationsController(
+        IAvailabilitySearchValidator validator,
+        IAvailabilitySearchService service,
+        IReservationCreationService creationService,
+        ILogger<ReservationsController> logger,
+        IReservationHistoryService? historyService = null,
+        IReservationLifecycleService? lifecycleService = null,
+        IAdminReservationService? adminService = null,
+        IReservationRescheduleService? rescheduleService = null,
+        IReservationRepository? reservationRepository = null,
+        ReservationMaintenancePolicy? maintenancePolicy = null,
+        IAuditLogWriter? auditWriter = null)
     {
         _validator = validator;
         _service = service;
@@ -36,6 +48,21 @@ public sealed class ReservationsController : ControllerBase
         _rescheduleService = rescheduleService;
         _reservationRepository = reservationRepository;
         _maintenancePolicy = maintenancePolicy;
+        _auditWriter = auditWriter;
+    }
+
+    private (int AdminId, string AdminEmail) GetAdminIdentity()
+    {
+        var idClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                   ?? User.FindFirst("sub")?.Value
+                   ?? User.FindFirst("userId")?.Value;
+
+        var adminId = int.TryParse(idClaim, out var id) ? id : 0;
+        var adminEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                      ?? User.FindFirst("email")?.Value
+                      ?? "admin@cinnamonbistro.com";
+
+        return (adminId, adminEmail);
     }
 
     /// <summary>SR-57 advisory availability search. It does not reserve or lock a table; SR-58 must revalidate atomically.</summary>
@@ -143,9 +170,26 @@ public sealed class ReservationsController : ControllerBase
         try
         {
             var result = await _rescheduleService.RescheduleAsync(new ReservationRescheduleCommand(reservationId, actorUserId, User.IsInRole(AppRoles.Admin), request.TableId.Value, criteria!), cancellationToken);
+            if (result.Outcome == ReservationRescheduleOutcome.Updated)
+            {
+                if (User.IsInRole(AppRoles.Admin) && _auditWriter != null)
+                {
+                    var (adminId, adminEmail) = GetAdminIdentity();
+                    await _auditWriter.LogAsync(
+                        AuditActionTypes.ReservationRescheduled,
+                        adminId,
+                        adminEmail,
+                        AuditActionTypes.Targets.Reservation,
+                        reservationId.ToString(),
+                        AuditActionTypes.Results.Success,
+                        new { TableId = request.TableId, Date = request.Date, StartTime = request.StartTime, GuestCount = request.GuestCount },
+                        cancellationToken: cancellationToken);
+                }
+                return Ok(ToConfirmation(result.Reservation!));
+            }
+
             return result.Outcome switch
             {
-                ReservationRescheduleOutcome.Updated => Ok(ToConfirmation(result.Reservation!)),
                 ReservationRescheduleOutcome.NotFound or ReservationRescheduleOutcome.TableNotFound => NotFound(new { message = "The requested reservation or table was not found." }),
                 ReservationRescheduleOutcome.Forbidden => Forbid(),
                 ReservationRescheduleOutcome.InvalidState => Conflict(new { code = "INVALID_RESERVATION_STATE", message = "This reservation cannot be rescheduled in its current state." }),
@@ -309,6 +353,20 @@ public sealed class ReservationsController : ControllerBase
         var outcome = await _lifecycleService.ChangeStatusAsync(reservationId, customerId, targetStatus, cancellationToken);
         if (outcome == ReservationStatusUpdateOutcome.Updated)
         {
+            if (User.IsInRole(AppRoles.Admin) && _auditWriter != null)
+            {
+                var (adminId, adminEmail) = GetAdminIdentity();
+                await _auditWriter.LogAsync(
+                    AuditActionTypes.ReservationStatusChanged,
+                    adminId,
+                    adminEmail,
+                    AuditActionTypes.Targets.Reservation,
+                    reservationId.ToString(),
+                    AuditActionTypes.Results.Success,
+                    new { TargetStatus = targetStatus },
+                    cancellationToken: cancellationToken);
+            }
+
             if (returnReservation && _adminService is not null)
             {
                 var updated = await _adminService.GetAsync(reservationId, cancellationToken);
