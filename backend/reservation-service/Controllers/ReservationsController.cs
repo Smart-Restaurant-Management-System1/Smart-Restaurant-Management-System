@@ -347,6 +347,7 @@ public sealed class ReservationsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ExportAdminReservations(
         [FromQuery] AdminReservationQueryDto request,
+        [FromQuery] string format = "csv",
         CancellationToken cancellationToken = default)
     {
         var errors = new Dictionary<string, string[]>();
@@ -356,6 +357,10 @@ public sealed class ReservationsController : ControllerBase
             errors["visitTo"] = [$"Date range cannot exceed {SearchDateRangeValidator.MaxRangeDays} days."];
         if (!string.IsNullOrWhiteSpace(request.Status) && !ReservationStatus.IsKnown(request.Status))
             errors["status"] = ["Status must be Pending, Confirmed, Cancelled, or Completed."];
+
+        var normalizedFormat = format?.Trim().ToLowerInvariant() ?? "csv";
+        if (normalizedFormat is not ("csv" or "xlsx"))
+            errors["format"] = ["Format must be csv or xlsx."];
 
         if (errors.Count > 0)
             return BadRequest(new ValidationProblemDetails(errors) { Status = StatusCodes.Status400BadRequest });
@@ -374,44 +379,20 @@ public sealed class ReservationsController : ControllerBase
             request.Customer);
 
         var reservations = await _adminService.GetForExportAsync(query, cancellationToken);
+        var adminEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "admin@cinnamonbistro.com";
 
-        var headers = new[]
+        if (normalizedFormat == "xlsx")
         {
-            "Reservation ID",
-            "Booking Reference",
-            "Customer ID",
-            "Customer Name",
-            "Customer Email",
-            "Customer Phone",
-            "Table",
-            "Date",
-            "Start Time",
-            "End Time",
-            "Guest Count",
-            "Status",
-            "Created At"
-        };
-
-        var rows = reservations.Select(r => new[]
+            var xlsxBytes = SpreadsheetExportHelper.BuildReservationsXlsx(reservations, query, adminEmail);
+            var filename = $"cinnamon-bistro-reservations-{DateTime.UtcNow:yyyyMMdd-HHmmss}.xlsx";
+            return File(xlsxBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
+        }
+        else
         {
-            r.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            r.BookingReference,
-            r.CustomerId.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            r.CustomerName,
-            r.CustomerEmail,
-            r.CustomerPhone,
-            r.TableNumber,
-            r.StartDateTime.ToString("yyyy-MM-dd"),
-            r.StartDateTime.ToString("HH:mm"),
-            r.EndDateTime.ToString("HH:mm"),
-            r.GuestCount.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            r.Status,
-            r.CreatedAt.ToString("yyyy-MM-dd HH:mm")
-        });
-
-        var bytes = CsvExportHelper.BuildCsv(headers, rows);
-        var filename = $"reservations-export-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
-        return File(bytes, "text/csv; charset=utf-8", filename);
+            var csvBytes = SpreadsheetExportHelper.BuildReservationsCsvWithMetadata(reservations, query, adminEmail);
+            var filename = $"cinnamon-bistro-reservations-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+            return File(csvBytes, "text/csv; charset=utf-8", filename);
+        }
     }
 
     [Authorize(Roles = AppRoles.Admin)]

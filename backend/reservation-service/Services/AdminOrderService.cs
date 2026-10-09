@@ -24,40 +24,14 @@ public sealed class AdminOrderService : IAdminOrderService
     public async Task<byte[]> ExportOrdersToCsvAsync(AdminOrderQueryDto query, CancellationToken cancellationToken = default)
     {
         var items = await _repository.GetOrdersForExportAsync(query, cancellationToken);
+        return SpreadsheetExportHelper.BuildOrdersCsvWithMetadata(items, query);
+    }
 
-        var headers = new[]
-        {
-            "Order Reference",
-            "Order Type",
-            "Customer ID",
-            "Customer Name",
-            "Customer Email",
-            "Customer Phone",
-            "Table",
-            "Status",
-            "Total Amount (LKR)",
-            "Payment Status",
-            "Payment Method",
-            "Created At"
-        };
-
-        var rows = items.Select(item => new[]
-        {
-            item.OrderReference,
-            item.OrderType,
-            item.CustomerId.ToString(CultureInfo.InvariantCulture),
-            item.CustomerName,
-            item.CustomerEmail,
-            item.CustomerPhone,
-            item.TableNumber,
-            item.Status,
-            item.TotalAmount.ToString("F2", CultureInfo.InvariantCulture),
-            item.PaymentStatus,
-            item.PaymentMethod ?? "N/A",
-            item.CreatedAt.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)
-        });
-
-        return CsvExportHelper.BuildCsv(headers, rows);
+    public async Task<byte[]> ExportOrdersToXlsxAsync(AdminOrderQueryDto query, string? adminEmail = null, CancellationToken cancellationToken = default)
+    {
+        var items = await _repository.GetOrdersForExportAsync(query, cancellationToken);
+        return SpreadsheetExportHelper.BuildOrdersXlsx(items, query, adminEmail);
     }
 }
+
 

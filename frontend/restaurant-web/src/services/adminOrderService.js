@@ -21,9 +21,9 @@ export const getAdminOrders = async (filters = {}) => {
  * @param {Object} filters - Search filter criteria
  * @returns {Promise<Blob>} CSV file blob
  */
-export const exportAdminOrders = async (filters = {}) => {
+export const exportAdminOrders = async (filters = {}, format = 'xlsx') => {
   const response = await reservationApi.get('/admin/orders/export', {
-    params: filters,
+    params: { ...filters, format },
     responseType: 'blob',
   });
   return response.data;

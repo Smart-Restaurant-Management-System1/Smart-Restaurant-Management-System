@@ -150,6 +150,24 @@ public sealed class AdminOrderSearchAndExportTests
     }
 
     [Fact]
+    public async Task ExportOrders_FormatXlsx_ReturnsExcelFileResult()
+    {
+        var mockService = new Mock<IAdminOrderService>();
+        mockService.Setup(s => s.ExportOrdersToXlsxAsync(It.IsAny<AdminOrderQueryDto>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new byte[] { 0x50, 0x4B, 0x03, 0x04 }); // PK zip header
+
+        var controller = CreateController(mockService);
+        var result = await controller.ExportOrders(new AdminOrderQueryDto
+        {
+            OrderType = "DineIn"
+        }, format: "xlsx");
+
+        var fileResult = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileResult.ContentType);
+        Assert.EndsWith(".xlsx", fileResult.FileDownloadName);
+    }
+
+    [Fact]
     public void AdminOrdersController_RBAC_EnforcesRequireStaffPolicy()
     {
         var authAttr = typeof(AdminOrdersController).GetCustomAttributes(typeof(AuthorizeAttribute), false)

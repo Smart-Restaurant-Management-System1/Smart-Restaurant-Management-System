@@ -91,9 +91,9 @@ export const getMyReservationDetail = async (reservationId) => (await reservatio
 export const rescheduleReservation = async (reservationId, request) => (await reservationApi.put(`/reservations/${reservationId}`, request)).data;
 
 export const getAdminReservations = async (filters) => (await reservationApi.get('/reservations', { params: filters })).data;
-export const exportAdminReservations = async (filters) => {
+export const exportAdminReservations = async (filters, format = 'xlsx') => {
   const response = await reservationApi.get('/reservations/export', {
-    params: filters,
+    params: { ...filters, format },
     responseType: 'blob',
   });
   return response.data;

@@ -63,7 +63,7 @@ export default function AdminOrdersPage() {
     load({ ...filters, page: 1 });
   };
 
-  const handleExportCsv = async () => {
+  const handleExportExcel = async (format = 'xlsx') => {
     if (filters.dateFrom && filters.dateTo) {
       if (new Date(filters.dateFrom) > new Date(filters.dateTo)) {
         setError('From date must not be later than To date.');
@@ -82,15 +82,19 @@ export default function AdminOrdersPage() {
     setIsExporting(true);
     setError('');
     try {
-      const blob = await exportAdminOrders(filters);
+      const blob = await exportAdminOrders(filters, format);
+      const isXlsx = format === 'xlsx';
+      const mime = isXlsx
+        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        : 'text/csv;charset=utf-8;';
       const url = window.URL.createObjectURL(
-        new Blob([blob], { type: 'text/csv;charset=utf-8;' })
+        new Blob([blob], { type: mime })
       );
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute(
         'download',
-        `orders-export-${new Date().toISOString().slice(0, 10)}.csv`
+        `cinnamon-bistro-orders-${new Date().toISOString().slice(0, 10)}.${isXlsx ? 'xlsx' : 'csv'}`
       );
       document.body.appendChild(link);
       link.click();
@@ -464,7 +468,7 @@ export default function AdminOrdersPage() {
               className="bistro-button-outline"
               type="button"
               disabled={isExporting}
-              onClick={handleExportCsv}
+              onClick={() => handleExportExcel('xlsx')}
               style={{
                 padding: '0.54rem 1rem',
                 fontSize: '0.86rem',
@@ -474,15 +478,19 @@ export default function AdminOrdersPage() {
                 gap: '0.45rem',
                 cursor: isExporting ? 'not-allowed' : 'pointer',
                 opacity: isExporting ? 0.7 : 1,
+                backgroundColor: '#fff',
+                borderColor: '#047857',
+                color: '#065f46',
+                fontWeight: 600,
               }}
-              title="Export matching orders to CSV"
+              title="Download styled orders report as an Excel spreadsheet (.xlsx)"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#047857" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              {isExporting ? 'Exporting…' : 'Export CSV'}
+              {isExporting ? 'Exporting…' : 'Export to Excel'}
             </button>
           </div>
         </div>

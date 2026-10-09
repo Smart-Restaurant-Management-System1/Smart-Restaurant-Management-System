@@ -174,6 +174,46 @@ public sealed class AdminReservationSearchAndExportTests
     }
 
     [Fact]
+    public async Task ExportAdminReservations_FormatXlsx_ReturnsExcelFileResult()
+    {
+        var mockAdminService = new Mock<IAdminReservationService>();
+        var sampleReservations = new List<Reservation>
+        {
+            new()
+            {
+                Id = 201,
+                CustomerId = 88,
+                CustomerName = "Kamal Silva",
+                CustomerEmail = "kamal@bistro.lk",
+                CustomerPhone = "0719876543",
+                TableId = 2,
+                TableNumber = "T-02",
+                BookingReference = "CB-201",
+                StartDateTime = new DateTime(2026, 10, 15, 19, 0, 0),
+                EndDateTime = new DateTime(2026, 10, 15, 21, 0, 0),
+                GuestCount = 2,
+                Status = "Confirmed",
+                CreatedAt = new DateTime(2026, 10, 10, 10, 0, 0),
+                UpdatedAt = new DateTime(2026, 10, 10, 10, 0, 0)
+            }
+        };
+
+        mockAdminService.Setup(s => s.GetForExportAsync(It.IsAny<AdminReservationQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(sampleReservations);
+
+        var controller = CreateController(mockAdminService);
+        var result = await controller.ExportAdminReservations(new AdminReservationQueryDto
+        {
+            Status = "Confirmed"
+        }, format: "xlsx");
+
+        var fileResult = Assert.IsType<FileContentResult>(result);
+        Assert.Equal("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileResult.ContentType);
+        Assert.EndsWith(".xlsx", fileResult.FileDownloadName);
+        Assert.True(fileResult.FileContents.Length > 0);
+    }
+
+    [Fact]
     public void ReservationEndpoints_RBAC_EnforcesAdminRole()
     {
         var getAdminReservationsMethod = typeof(ReservationsController).GetMethod("GetAdminReservations");

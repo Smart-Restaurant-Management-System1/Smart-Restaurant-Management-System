@@ -9,5 +9,6 @@ public interface IAdminOrderService
 {
     Task<AdminOrderResponseDto> SearchOrdersAsync(AdminOrderQueryDto query, CancellationToken cancellationToken = default);
     Task<byte[]> ExportOrdersToCsvAsync(AdminOrderQueryDto query, CancellationToken cancellationToken = default);
+    Task<byte[]> ExportOrdersToXlsxAsync(AdminOrderQueryDto query, string? adminEmail = null, CancellationToken cancellationToken = default);
 }
 

@@ -102,6 +102,7 @@ public sealed class AdminOrdersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ExportOrders(
         [FromQuery] AdminOrderQueryDto query,
+        [FromQuery] string format = "csv",
         CancellationToken cancellationToken = default)
     {
         var errors = new Dictionary<string, string[]>();
@@ -112,6 +113,12 @@ public sealed class AdminOrdersController : ControllerBase
             errors["dateTo"] = [errorMessage!];
         }
 
+        var normalizedFormat = format?.Trim().ToLowerInvariant() ?? "csv";
+        if (normalizedFormat is not ("csv" or "xlsx"))
+        {
+            errors["format"] = ["Format must be csv or xlsx."];
+        }
+
         if (errors.Count > 0)
         {
             return BadRequest(new ValidationProblemDetails(errors) { Status = StatusCodes.Status400BadRequest });
@@ -119,9 +126,19 @@ public sealed class AdminOrdersController : ControllerBase
 
         try
         {
-            var csvBytes = await _orderService.ExportOrdersToCsvAsync(query, cancellationToken);
-            var fileName = $"orders-export-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
-            return File(csvBytes, "text/csv; charset=utf-8", fileName);
+            var adminEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "admin@cinnamonbistro.com";
+            if (normalizedFormat == "xlsx")
+            {
+                var xlsxBytes = await _orderService.ExportOrdersToXlsxAsync(query, adminEmail, cancellationToken);
+                var fileName = $"cinnamon-bistro-orders-{DateTime.UtcNow:yyyyMMdd-HHmmss}.xlsx";
+                return File(xlsxBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            else
+            {
+                var csvBytes = await _orderService.ExportOrdersToCsvAsync(query, cancellationToken);
+                var fileName = $"cinnamon-bistro-orders-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+                return File(csvBytes, "text/csv; charset=utf-8", fileName);
+            }
         }
         catch (MySqlException ex)
         {
