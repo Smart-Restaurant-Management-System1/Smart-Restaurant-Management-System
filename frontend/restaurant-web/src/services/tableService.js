@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { handleAuthResponseError } from './api';
+import { handleAuthResponseError } from './api.js';
 
 const RESERVATION_API_BASE =
-  import.meta.env.VITE_RESERVATION_API_URL || 'http://localhost:5000/api';
+  import.meta.env?.VITE_RESERVATION_API_URL || 'http://localhost:5000/api';
 
 export const reservationApi = axios.create({
   baseURL: RESERVATION_API_BASE,

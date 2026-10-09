@@ -12,9 +12,25 @@ export default function CustomerPortalPage() {
   const adminCards = [
     {
       number: '01',
+      title: 'Operational Dashboard',
+      description: 'Review real-time restaurant performance, active reservations, kitchen order pipeline, and daily volume trends.',
+      link: '/admin',
+      buttonLabel: 'View Dashboard',
+      buttonClass: 'bistro-button-gold',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+        </svg>
+      ),
+    },
+    {
+      number: '02',
       title: 'Table Management',
       description: 'Configure restaurant floor layouts, seating capacities, table numbers, and toggle real-time availability.',
-      link: '/admin',
+      link: '/admin/tables',
       buttonLabel: 'Manage Tables',
       buttonClass: 'bistro-button-gold',
       icon: (

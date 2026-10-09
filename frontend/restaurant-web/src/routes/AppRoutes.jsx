@@ -11,6 +11,7 @@ import CustomerCartPage from '../pages/customer/CustomerCartPage';
 import ProfilePage from '../pages/customer/ProfilePage';
 
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import AdminOperationalDashboardPage from '../pages/admin/AdminOperationalDashboardPage';
 import AdminReservationsPage from '../pages/admin/AdminReservationsPage';
 import ReservationReportsPage from '../pages/admin/ReservationReportsPage';
 import MenuManagementPage from '../pages/admin/MenuManagementPage';
@@ -243,7 +244,7 @@ export default function AppRoutes() {
           path="/tables"
           element={
             user?.roles?.includes(ROLES.ADMIN) ? (
-              <Navigate to="/admin" replace />
+              <Navigate to="/admin/tables" replace />
             ) : (
               <ActiveTablesPage />
             )
@@ -302,10 +303,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        {/* Admin Dashboard */}
+        {/* Admin Operational Dashboard - SR-221 */}
         <Route
           path="/admin"
-          element={<AdminDashboardPage />}
+          element={<AdminOperationalDashboardPage />}
+        />
+        <Route
+          path="/admin/dashboard"
+          element={<AdminOperationalDashboardPage />}
         />
 
         {/* Menu Management - SR-130 */}
@@ -320,10 +325,10 @@ export default function AppRoutes() {
           element={<AdminUserManagementPage />}
         />
 
-        {/* Existing Admin Routes */}
+        {/* Table Management - SR-01 */}
         <Route
           path="/admin/tables"
-          element={<Navigate to="/admin" replace />}
+          element={<AdminDashboardPage />}
         />
 
         <Route
