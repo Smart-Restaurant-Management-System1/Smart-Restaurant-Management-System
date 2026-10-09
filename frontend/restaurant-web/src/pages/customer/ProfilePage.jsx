@@ -347,98 +347,28 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="profile-page-content profile-no-scroll-container">
+    <div className="portal-page-content profile-master-container">
       {/* Unified Page Header */}
       <PageHeader
         eyebrow="Account Settings"
-        title={<>Account <em>Profile</em></>}
+        title={<>Customer <em>Profile</em></>}
         subtitle="View and manage your personal credentials, contact details, and dining privileges."
       />
 
-      {/* Alerts */}
-      {error && (
-        <div
-          role="alert"
-          style={{
-            background: '#fff5f5',
-            border: '1px solid #fecaca',
-            borderRadius: '8px',
-            padding: '0.55rem 0.9rem',
-            marginBottom: '0.85rem',
-            color: '#991b1b',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            fontSize: '0.85rem',
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#991b1b"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ flexShrink: 0 }}
-          >
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          <span style={{ fontWeight: 500 }}>{error}</span>
-        </div>
-      )}
-
-      {success && (
-        <div
-          role="alert"
-          style={{
-            background: '#edf7ee',
-            border: '1px solid #c2e2c6',
-            borderRadius: '8px',
-            padding: '0.55rem 0.9rem',
-            marginBottom: '0.85rem',
-            color: '#1e5e29',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            fontSize: '0.85rem',
-          }}
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#2e7d32"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{ flexShrink: 0 }}
-          >
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-          </svg>
-          <span style={{ fontWeight: 500 }}>Profile updated successfully!</span>
-        </div>
-      )}
-
-      {/* Executive Split Card */}
-      <div className="profile-split-card">
+      {/* Master Executive Card */}
+      <div className="profile-master-card">
         {/* Top Gold Accent Strip */}
         <div className="profile-card-accent-bar" />
 
         {/* Identity & Access Overview Banner */}
-        <div className="profile-identity-panel">
+        <div className="profile-identity-banner">
           <div
             style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               flexWrap: 'wrap',
-              gap: '1.25rem',
+              gap: '1rem',
             }}
           >
             {/* Left: User Avatar + Identity + Status Badges */}
@@ -446,8 +376,8 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
                 <div
                   style={{
-                    width: '54px',
-                    height: '54px',
+                    width: '52px',
+                    height: '52px',
                     borderRadius: '50%',
                     background: 'linear-gradient(135deg, #f5efe6 0%, #ecd6aa 100%)',
                     border: '2px solid #c5a059',
@@ -492,13 +422,13 @@ export default function ProfilePage() {
               </div>
 
               {/* Role & Status Pills */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginTop: '0.75rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginTop: '0.65rem' }}>
                 <span
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.35rem',
-                    padding: '0.24rem 0.65rem',
+                    padding: '0.22rem 0.65rem',
                     borderRadius: '9999px',
                     fontSize: '0.72rem',
                     fontWeight: 700,
@@ -517,7 +447,7 @@ export default function ProfilePage() {
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    padding: '0.24rem 0.65rem',
+                    padding: '0.22rem 0.65rem',
                     borderRadius: '9999px',
                     fontSize: '0.72rem',
                     fontWeight: 600,
@@ -537,7 +467,7 @@ export default function ProfilePage() {
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'auto auto',
-                gap: '0.5rem 1.5rem',
+                gap: '0.45rem 1.5rem',
                 fontSize: '0.8rem',
                 alignItems: 'center',
               }}
@@ -588,10 +518,11 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Right Panel: Personal Details Form */}
-        <div className="profile-form-panel">
-          <div>
-            <div style={{ marginBottom: '0.85rem' }}>
+        {/* Dual Side-by-Side Panels: Personal Information (Left) + Password Security (Right) */}
+        <div className="profile-dual-panels">
+          {/* Left Column: Personal Information Form */}
+          <div className="profile-column-panel">
+            <div style={{ marginBottom: '0.75rem' }}>
               <h3 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '1.05rem', fontWeight: 600, color: '#282115', margin: 0 }}>
                 Personal Information
               </h3>
@@ -600,17 +531,67 @@ export default function ProfilePage() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} noValidate>
+            {/* Profile Alerts */}
+            {error && (
+              <div
+                role="alert"
+                style={{
+                  background: '#fff5f5',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  padding: '0.45rem 0.8rem',
+                  marginBottom: '0.75rem',
+                  color: '#991b1b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.82rem',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#991b1b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span style={{ fontWeight: 500 }}>{error}</span>
+              </div>
+            )}
+
+            {success && (
+              <div
+                role="alert"
+                style={{
+                  background: '#edf7ee',
+                  border: '1px solid #c2e2c6',
+                  borderRadius: '8px',
+                  padding: '0.45rem 0.8rem',
+                  marginBottom: '0.75rem',
+                  color: '#1e5e29',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.82rem',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                <span style={{ fontWeight: 500 }}>Profile updated successfully!</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
               <div className="profile-form-grid">
                 {/* Full Name */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="profileFullName" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.8rem', marginBottom: '0.3rem' }}>
+                  <label htmlFor="profileFullName" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
                     Full Name <span style={{ color: '#c5a059' }}>*</span>
                   </label>
                   <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <svg
-                      width="15"
-                      height="15"
+                      width="14"
+                      height="14"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="#c5a059"
@@ -631,21 +612,20 @@ export default function ProfilePage() {
                       value={formData.fullName}
                       onChange={handleChange}
                       disabled={isSaving}
-                      style={{ paddingLeft: '2.55rem' }}
                     />
                   </div>
-                  {fieldErrors.fullName && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem' }}>{fieldErrors.fullName}</div>}
+                  {fieldErrors.fullName && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '0.2rem' }}>{fieldErrors.fullName}</div>}
                 </div>
 
                 {/* Email Address - Fixed & Locked for Customers (SR-224) */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="profileEmail" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.8rem', marginBottom: '0.3rem' }}>
+                  <label htmlFor="profileEmail" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
                     Email Address
                   </label>
                   <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <svg
-                      width="15"
-                      height="15"
+                      width="14"
+                      height="14"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="#8c6736"
@@ -667,7 +647,6 @@ export default function ProfilePage() {
                       readOnly
                       disabled
                       style={{
-                        paddingLeft: '2.55rem',
                         backgroundColor: '#f9f6f0',
                         color: '#6b7280',
                         cursor: 'not-allowed',
@@ -676,20 +655,17 @@ export default function ProfilePage() {
                       title="Account email address is permanent and cannot be modified."
                     />
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#8c7e6c', marginTop: '0.25rem', fontStyle: 'italic' }}>
-                    Account email is permanent and cannot be modified.
-                  </div>
                 </div>
 
                 {/* Phone Number */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label htmlFor="profilePhone" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.8rem', marginBottom: '0.3rem' }}>
+                  <label htmlFor="profilePhone" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
                     Phone Number
                   </label>
                   <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <svg
-                      width="15"
-                      height="15"
+                      width="14"
+                      height="14"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="#c5a059"
@@ -709,34 +685,33 @@ export default function ProfilePage() {
                       value={formData.phoneNumber}
                       onChange={handleChange}
                       disabled={isSaving}
-                      style={{ paddingLeft: '2.55rem' }}
                     />
                   </div>
-                  {fieldErrors.phoneNumber && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem' }}>{fieldErrors.phoneNumber}</div>}
+                  {fieldErrors.phoneNumber && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '0.2rem' }}>{fieldErrors.phoneNumber}</div>}
                 </div>
 
-                {/* System Permissions (Read-only status card that completes the 2x2 grid) */}
+                {/* System Authorization */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.8rem', marginBottom: '0.3rem' }}>
+                  <label style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
                     System Authorization
                   </label>
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.55rem',
-                      padding: '0.52rem 0.85rem',
+                      gap: '0.5rem',
+                      padding: '0.45rem 0.8rem',
                       background: '#faf7f2',
                       border: '1px solid #eedfc9',
                       borderRadius: '8px',
-                      fontSize: '0.82rem',
+                      fontSize: '0.8rem',
                       color: '#282115',
                       fontWeight: 500,
-                      minHeight: '38px',
+                      minHeight: '36px',
                       boxSizing: 'border-box',
                     }}
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8c6736" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8c6736" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
@@ -747,14 +722,14 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Actions Toolbar */}
+              {/* Personal Details Actions Toolbar */}
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.65rem',
-                  marginTop: '1.25rem',
-                  paddingTop: '0.95rem',
+                  marginTop: '1rem',
+                  paddingTop: '0.75rem',
                   borderTop: '1px solid #eedfc9',
                 }}
               >
@@ -762,7 +737,7 @@ export default function ProfilePage() {
                   type="submit"
                   disabled={isSaving}
                   className="bistro-button-gold"
-                  style={{ padding: '0.48rem 1.25rem', fontSize: '0.86rem' }}
+                  style={{ padding: '0.45rem 1.25rem', fontSize: '0.85rem' }}
                 >
                   {isSaving ? (
                     <>
@@ -793,7 +768,7 @@ export default function ProfilePage() {
                   onClick={handleReset}
                   disabled={isSaving}
                   className="bistro-button-outline"
-                  style={{ padding: '0.48rem 0.95rem', fontSize: '0.86rem' }}
+                  style={{ padding: '0.45rem 0.95rem', fontSize: '0.85rem' }}
                   title="Revert to previously saved values"
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -804,257 +779,257 @@ export default function ProfilePage() {
                 </button>
               </div>
             </form>
+          </div>
 
-            {/* Account Security & Password Change Section (SR-224 / SR-254) */}
-            <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '2px dashed #eedfc9' }}>
-              <div style={{ marginBottom: '0.85rem' }}>
-                <h3 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '1.05rem', fontWeight: 600, color: '#282115', margin: 0 }}>
-                  Account Security & Password
-                </h3>
-                <p style={{ fontSize: '0.78rem', color: '#78716c', margin: '0.2rem 0 0' }}>
-                  Update your password by providing your current credentials and a new secure password.
-                </p>
+          {/* Right Column: Account Security & Password */}
+          <div className="profile-column-panel right-panel">
+            <div style={{ marginBottom: '0.75rem' }}>
+              <h3 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '1.05rem', fontWeight: 600, color: '#282115', margin: 0 }}>
+                Account Security & Password
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: '#78716c', margin: '0.2rem 0 0' }}>
+                Update your credentials by providing your current password and a new secure password.
+              </p>
+            </div>
+
+            {/* Password Alerts */}
+            {passwordError && (
+              <div
+                role="alert"
+                style={{
+                  background: '#fff5f5',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  padding: '0.45rem 0.8rem',
+                  marginBottom: '0.75rem',
+                  color: '#991b1b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.82rem',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#991b1b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span style={{ fontWeight: 500 }}>{passwordError}</span>
+              </div>
+            )}
+
+            {passwordSuccess && (
+              <div
+                role="alert"
+                style={{
+                  background: '#edf7ee',
+                  border: '1px solid #c2e2c6',
+                  borderRadius: '8px',
+                  padding: '0.45rem 0.8rem',
+                  marginBottom: '0.75rem',
+                  color: '#1e5e29',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  fontSize: '0.82rem',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                <span style={{ fontWeight: 500 }}>Password updated successfully!</span>
+              </div>
+            )}
+
+            <form onSubmit={handlePasswordSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+              <div className="profile-form-grid">
+                {/* Current Password - Full Width */}
+                <div className="form-group" style={{ gridColumn: 'span 2', marginBottom: 0 }}>
+                  <label htmlFor="currentPassword" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
+                    Current Password <span style={{ color: '#c5a059' }}>*</span>
+                  </label>
+                  <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: '0.8rem', pointerEvents: 'none', zIndex: 2 }}>
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <input
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      id="currentPassword"
+                      name="currentPassword"
+                      className={`profile-input-field with-icon ${passwordFieldErrors.currentPassword ? 'is-invalid' : ''}`}
+                      placeholder="••••••••"
+                      value={passwordData.currentPassword}
+                      onChange={handlePasswordChange}
+                      disabled={isChangingPassword}
+                      style={{ paddingRight: '2.3rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      style={{ position: 'absolute', right: '0.65rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.2rem', color: '#78716c', display: 'flex', alignItems: 'center' }}
+                      title={showCurrentPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
+                    >
+                      {showCurrentPassword ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {passwordFieldErrors.currentPassword && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '0.2rem' }}>{passwordFieldErrors.currentPassword}</div>}
+                </div>
+
+                {/* New Password */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="newPassword" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
+                    New Password <span style={{ color: '#c5a059' }}>*</span>
+                  </label>
+                  <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: '0.8rem', pointerEvents: 'none', zIndex: 2 }}>
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      id="newPassword"
+                      name="newPassword"
+                      className={`profile-input-field with-icon ${passwordFieldErrors.newPassword ? 'is-invalid' : ''}`}
+                      placeholder="Min. 6 chars"
+                      value={passwordData.newPassword}
+                      onChange={handlePasswordChange}
+                      disabled={isChangingPassword}
+                      style={{ paddingRight: '2.3rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      style={{ position: 'absolute', right: '0.65rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.2rem', color: '#78716c', display: 'flex', alignItems: 'center' }}
+                      title={showNewPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                    >
+                      {showNewPassword ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {passwordFieldErrors.newPassword && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '0.2rem' }}>{passwordFieldErrors.newPassword}</div>}
+                </div>
+
+                {/* Confirm New Password */}
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label htmlFor="confirmPassword" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
+                    Confirm Password <span style={{ color: '#c5a059' }}>*</span>
+                  </label>
+                  <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: '0.8rem', pointerEvents: 'none', zIndex: 2 }}>
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      className={`profile-input-field with-icon ${passwordFieldErrors.confirmPassword ? 'is-invalid' : ''}`}
+                      placeholder="Repeat password"
+                      value={passwordData.confirmPassword}
+                      onChange={handlePasswordChange}
+                      disabled={isChangingPassword}
+                      style={{ paddingRight: '2.3rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      style={{ position: 'absolute', right: '0.65rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.2rem', color: '#78716c', display: 'flex', alignItems: 'center' }}
+                      title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                    >
+                      {showConfirmPassword ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      ) : (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                  {passwordFieldErrors.confirmPassword && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '0.2rem' }}>{passwordFieldErrors.confirmPassword}</div>}
+                </div>
               </div>
 
-              {/* Password Specific Alerts */}
-              {passwordError && (
-                <div
-                  role="alert"
-                  style={{
-                    background: '#fff5f5',
-                    border: '1px solid #fecaca',
-                    borderRadius: '8px',
-                    padding: '0.55rem 0.9rem',
-                    marginBottom: '0.85rem',
-                    color: '#991b1b',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    fontSize: '0.85rem',
-                  }}
+              {/* Password Actions Toolbar */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.65rem',
+                  marginTop: '1rem',
+                  paddingTop: '0.75rem',
+                  borderTop: '1px solid #eedfc9',
+                }}
+              >
+                <button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="bistro-button-gold"
+                  style={{ padding: '0.45rem 1.25rem', fontSize: '0.85rem' }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#991b1b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  <span style={{ fontWeight: 500 }}>{passwordError}</span>
-                </div>
-              )}
-
-              {passwordSuccess && (
-                <div
-                  role="alert"
-                  style={{
-                    background: '#edf7ee',
-                    border: '1px solid #c2e2c6',
-                    borderRadius: '8px',
-                    padding: '0.55rem 0.9rem',
-                    marginBottom: '0.85rem',
-                    color: '#1e5e29',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    fontSize: '0.85rem',
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                  <span style={{ fontWeight: 500 }}>Password updated successfully!</span>
-                </div>
-              )}
-
-              <form onSubmit={handlePasswordSubmit} noValidate>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.85rem' }}>
-                  {/* Current Password */}
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label htmlFor="currentPassword" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.8rem', marginBottom: '0.3rem' }}>
-                      Current Password <span style={{ color: '#c5a059' }}>*</span>
-                    </label>
-                    <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: '0.8rem', pointerEvents: 'none', zIndex: 2 }}>
+                  {isChangingPassword ? (
+                    <>
+                      <div
+                        style={{
+                          width: '14px',
+                          height: '14px',
+                          borderRadius: '50%',
+                          border: '2px solid #282115',
+                          borderTopColor: 'transparent',
+                          animation: 'spin 0.75s linear infinite',
+                        }}
+                      />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                       </svg>
-                      <input
-                        type={showCurrentPassword ? 'text' : 'password'}
-                        id="currentPassword"
-                        name="currentPassword"
-                        className={`profile-input-field with-icon ${passwordFieldErrors.currentPassword ? 'is-invalid' : ''}`}
-                        placeholder="••••••••"
-                        value={passwordData.currentPassword}
-                        onChange={handlePasswordChange}
-                        disabled={isChangingPassword}
-                        style={{ paddingLeft: '2.55rem', paddingRight: '2.3rem' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        style={{ position: 'absolute', right: '0.65rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.2rem', color: '#78716c', display: 'flex', alignItems: 'center' }}
-                        title={showCurrentPassword ? 'Hide password' : 'Show password'}
-                        aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
-                      >
-                        {showCurrentPassword ? (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                            <line x1="1" y1="1" x2="23" y2="23" />
-                          </svg>
-                        ) : (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                    {passwordFieldErrors.currentPassword && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem' }}>{passwordFieldErrors.currentPassword}</div>}
-                  </div>
+                      <span>Update Password</span>
+                    </>
+                  )}
+                </button>
 
-                  {/* New Password */}
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label htmlFor="newPassword" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.8rem', marginBottom: '0.3rem' }}>
-                      New Password <span style={{ color: '#c5a059' }}>*</span>
-                    </label>
-                    <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: '0.8rem', pointerEvents: 'none', zIndex: 2 }}>
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                      </svg>
-                      <input
-                        type={showNewPassword ? 'text' : 'password'}
-                        id="newPassword"
-                        name="newPassword"
-                        className={`profile-input-field with-icon ${passwordFieldErrors.newPassword ? 'is-invalid' : ''}`}
-                        placeholder="Min. 6 chars"
-                        value={passwordData.newPassword}
-                        onChange={handlePasswordChange}
-                        disabled={isChangingPassword}
-                        style={{ paddingLeft: '2.55rem', paddingRight: '2.3rem' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        style={{ position: 'absolute', right: '0.65rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.2rem', color: '#78716c', display: 'flex', alignItems: 'center' }}
-                        title={showNewPassword ? 'Hide password' : 'Show password'}
-                        aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
-                      >
-                        {showNewPassword ? (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                            <line x1="1" y1="1" x2="23" y2="23" />
-                          </svg>
-                        ) : (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                    {passwordFieldErrors.newPassword && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem' }}>{passwordFieldErrors.newPassword}</div>}
-                  </div>
-
-                  {/* Confirm New Password */}
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label htmlFor="confirmPassword" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.8rem', marginBottom: '0.3rem' }}>
-                      Confirm New Password <span style={{ color: '#c5a059' }}>*</span>
-                    </label>
-                    <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', left: '0.8rem', pointerEvents: 'none', zIndex: 2 }}>
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        className={`profile-input-field with-icon ${passwordFieldErrors.confirmPassword ? 'is-invalid' : ''}`}
-                        placeholder="Repeat new password"
-                        value={passwordData.confirmPassword}
-                        onChange={handlePasswordChange}
-                        disabled={isChangingPassword}
-                        style={{ paddingLeft: '2.55rem', paddingRight: '2.3rem' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        style={{ position: 'absolute', right: '0.65rem', background: 'none', border: 'none', cursor: 'pointer', padding: '0.2rem', color: '#78716c', display: 'flex', alignItems: 'center' }}
-                        title={showConfirmPassword ? 'Hide password' : 'Show password'}
-                        aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
-                      >
-                        {showConfirmPassword ? (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                            <line x1="1" y1="1" x2="23" y2="23" />
-                          </svg>
-                        ) : (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                    {passwordFieldErrors.confirmPassword && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem' }}>{passwordFieldErrors.confirmPassword}</div>}
-                  </div>
-                </div>
-
-                {/* Password Actions Toolbar */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.65rem',
-                    marginTop: '1.25rem',
-                    paddingTop: '0.95rem',
-                    borderTop: '1px solid #eedfc9',
-                  }}
+                <button
+                  type="button"
+                  onClick={handlePasswordClear}
+                  disabled={isChangingPassword}
+                  className="bistro-button-outline"
+                  style={{ padding: '0.45rem 0.95rem', fontSize: '0.85rem' }}
+                  title="Clear password fields"
                 >
-                  <button
-                    type="submit"
-                    disabled={isChangingPassword}
-                    className="bistro-button-gold"
-                    style={{ padding: '0.48rem 1.25rem', fontSize: '0.86rem' }}
-                  >
-                    {isChangingPassword ? (
-                      <>
-                        <div
-                          style={{
-                            width: '14px',
-                            height: '14px',
-                            borderRadius: '50%',
-                            border: '2px solid #282115',
-                            borderTopColor: 'transparent',
-                            animation: 'spin 0.75s linear infinite',
-                          }}
-                        />
-                        <span>Updating Password...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                        <span>Update Password</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handlePasswordClear}
-                    disabled={isChangingPassword}
-                    className="bistro-button-outline"
-                    style={{ padding: '0.48rem 0.95rem', fontSize: '0.86rem' }}
-                    title="Clear password fields"
-                  >
-                    <span>Clear</span>
-                  </button>
-                </div>
-              </form>
-            </div>
+                  <span>Clear</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
