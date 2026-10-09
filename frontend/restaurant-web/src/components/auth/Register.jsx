@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { registerUser } from '../../services/authService';
 import registrationIllustration from '../../assets/images/registrationbg.png';
+import { isDisposableEmail, validateRegisterEmail } from './registerValidation';
 
 export default function Register({ onNavigateToLogin }) {
   const [accountType, setAccountType] = useState('Customer'); // 'Customer' or 'Staff'
@@ -66,10 +67,13 @@ export default function Register({ onNavigateToLogin }) {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
+    const cleanEmail = formData.email.trim();
+    if (!cleanEmail) {
       errors.email = 'Email address is required';
-    } else if (!emailRegex.test(formData.email.trim())) {
+    } else if (!emailRegex.test(cleanEmail)) {
       errors.email = 'Please enter a valid email address';
+    } else if (isDisposableEmail(cleanEmail)) {
+      errors.email = 'Temporary or disposable email addresses are prohibited. Please use a permanent email.';
     }
 
     if (formData.phoneNumber && !/^[+0-9\s-]{7,15}$/.test(formData.phoneNumber.trim())) {
@@ -124,9 +128,11 @@ export default function Register({ onNavigateToLogin }) {
     setIsSubmitted(true);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const cleanEmail = formData.email.trim();
     const isBasicValid =
       formData.fullName.trim().length >= 2 &&
-      emailRegex.test(formData.email.trim()) &&
+      emailRegex.test(cleanEmail) &&
+      !isDisposableEmail(cleanEmail) &&
       formData.password.length >= 6 &&
       formData.password === formData.confirmPassword;
 
