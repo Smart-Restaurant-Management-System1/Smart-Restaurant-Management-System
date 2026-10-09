@@ -51,3 +51,4 @@ test('adminDashboardService exports required API functions', () => {
   assert.equal(typeof getReservationsSummary, 'function');
   assert.equal(typeof getOrdersSummary, 'function');
 });
+

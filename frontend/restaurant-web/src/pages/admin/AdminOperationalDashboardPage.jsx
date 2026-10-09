@@ -109,19 +109,20 @@ export default function AdminOperationalDashboardPage() {
     (overview.reservationTrends || []).forEach((r) => {
       dateMap.set(r.date, {
         date: r.date,
-        reservations: r.reservationsCount || 0,
+        reservations: r.total ?? r.reservationsCount ?? 0,
         orders: 0
       });
     });
 
     (overview.orderTrends || []).forEach((o) => {
+      const orderCount = o.total ?? o.ordersCount ?? 0;
       if (dateMap.has(o.date)) {
-        dateMap.get(o.date).orders = o.ordersCount || 0;
+        dateMap.get(o.date).orders = orderCount;
       } else {
         dateMap.set(o.date, {
           date: o.date,
           reservations: 0,
-          orders: o.ordersCount || 0
+          orders: orderCount
         });
       }
     });
@@ -130,12 +131,17 @@ export default function AdminOperationalDashboardPage() {
   }, [overview]);
 
   // Summary counts extracted safely
-  const users = overview?.customerStaff || { totalCustomers: 0, totalStaff: 0 };
+  const users = overview?.users || overview?.customerStaff || { totalCustomers: 0, totalStaff: 0 };
   const reservations = overview?.reservations || {
     activeReservations: 0,
+    todaysReservations: 0,
     todayReservations: 0,
-    totalReservationsInRange: 0
+    totalReservations: 0
   };
+  const activeReservationsCount = reservations.activeReservations || 0;
+  const todayReservationsCount = reservations.todaysReservations ?? reservations.todayReservations ?? 0;
+  const totalReservationsCount = reservations.totalReservations ?? reservations.totalReservationsInRange ?? 0;
+
   const orders = overview?.orders || {
     totalOrders: 0,
     pendingOrders: 0,
@@ -143,21 +149,23 @@ export default function AdminOperationalDashboardPage() {
     readyOrders: 0,
     servedOrders: 0,
     cancelledOrders: 0,
-    dineInOrders: 0,
-    reservationPreOrders: 0
+    totalDineInOrders: 0,
+    totalPreOrders: 0
   };
-  const menu = overview?.menu || {
-    totalItems: 0,
-    availableItems: 0,
-    unavailableItems: 0,
-    availabilityRate: 0,
-    categoryBreakdown: []
-  };
+  const dineInOrdersCount = orders.totalDineInOrders ?? orders.dineInOrders ?? 0;
+  const reservationPreOrdersCount = orders.totalPreOrders ?? orders.reservationPreOrders ?? 0;
+
+  const rawMenu = overview?.menu || {};
+  const totalDishes = rawMenu.totalMenuItems ?? rawMenu.totalItems ?? 0;
+  const availableDishes = rawMenu.availableMenuItems ?? rawMenu.availableItems ?? 0;
+  const unavailableDishes = rawMenu.unavailableMenuItems ?? rawMenu.unavailableItems ?? 0;
+  const availabilityRate = totalDishes > 0 ? (availableDishes / totalDishes) * 100 : 0;
+  const categories = rawMenu.categories || rawMenu.categoryBreakdown || [];
 
   const hasActivity =
-    reservations.totalReservationsInRange > 0 ||
-    orders.totalOrders > 0 ||
-    reservations.activeReservations > 0;
+    totalReservationsCount > 0 ||
+    (orders.totalOrders || 0) > 0 ||
+    activeReservationsCount > 0;
 
   return (
     <div className="admin-operational-dashboard" style={{ paddingBottom: '3rem' }}>
@@ -510,7 +518,7 @@ export default function AdminOperationalDashboardPage() {
                     Active Reservations
                   </span>
                   <div style={{ fontSize: '2.1rem', fontWeight: 700, color: 'var(--bistro-ink)', fontFamily: 'Georgia, serif', marginTop: '0.2rem' }}>
-                    {reservations.activeReservations}
+                    {activeReservationsCount}
                   </div>
                 </div>
                 <div
@@ -548,7 +556,7 @@ export default function AdminOperationalDashboardPage() {
                     Today's Bookings
                   </span>
                   <div style={{ fontSize: '2.1rem', fontWeight: 700, color: '#b45309', fontFamily: 'Georgia, serif', marginTop: '0.2rem' }}>
-                    {reservations.todayReservations}
+                    {todayReservationsCount}
                   </div>
                 </div>
                 <div
@@ -586,7 +594,7 @@ export default function AdminOperationalDashboardPage() {
                     Total Orders
                   </span>
                   <div style={{ fontSize: '2.1rem', fontWeight: 700, color: '#1e40af', fontFamily: 'Georgia, serif', marginTop: '0.2rem' }}>
-                    {orders.totalOrders}
+                    {orders.totalOrders || 0}
                   </div>
                 </div>
                 <div
@@ -604,7 +612,7 @@ export default function AdminOperationalDashboardPage() {
                 </div>
               </div>
               <div style={{ marginTop: '0.75rem', fontSize: '0.78rem', color: 'var(--bistro-muted)' }}>
-                {orders.dineInOrders} Dine-In • {orders.reservationPreOrders} Pre-Orders
+                {dineInOrdersCount} Dine-In • {reservationPreOrdersCount} Pre-Orders
               </div>
             </div>
 
@@ -861,31 +869,31 @@ export default function AdminOperationalDashboardPage() {
               <div style={{ padding: '0.9rem 1.1rem', backgroundColor: '#faf8f4', border: '1px solid #ede5d8', borderRadius: '10px' }}>
                 <span style={{ fontSize: '0.78rem', color: 'var(--bistro-muted)', fontWeight: 600 }}>Total Dishes</span>
                 <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--bistro-ink)', fontFamily: 'Georgia, serif' }}>
-                  {menu.totalItems}
+                  {totalDishes}
                 </div>
               </div>
               <div style={{ padding: '0.9rem 1.1rem', backgroundColor: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '10px' }}>
                 <span style={{ fontSize: '0.78rem', color: '#065f46', fontWeight: 600 }}>Available to Order</span>
                 <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#065f46', fontFamily: 'Georgia, serif' }}>
-                  {menu.availableItems}
+                  {availableDishes}
                 </div>
               </div>
               <div style={{ padding: '0.9rem 1.1rem', backgroundColor: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '10px' }}>
                 <span style={{ fontSize: '0.78rem', color: '#be123c', fontWeight: 600 }}>Unavailable / 86'd</span>
                 <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#be123c', fontFamily: 'Georgia, serif' }}>
-                  {menu.unavailableItems}
+                  {unavailableDishes}
                 </div>
               </div>
               <div style={{ padding: '0.9rem 1.1rem', backgroundColor: '#faf6ee', border: '1px solid #ebdcc5', borderRadius: '10px' }}>
                 <span style={{ fontSize: '0.78rem', color: '#92400e', fontWeight: 600 }}>Availability Ratio</span>
                 <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#92400e', fontFamily: 'Georgia, serif' }}>
-                  {menu.availabilityRate.toFixed(1)}%
+                  {Number(availabilityRate || 0).toFixed(1)}%
                 </div>
               </div>
             </div>
 
             {/* Category Breakdown Table */}
-            {menu.categoryBreakdown && menu.categoryBreakdown.length > 0 && (
+            {categories && categories.length > 0 && (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
                   <thead>
@@ -898,8 +906,11 @@ export default function AdminOperationalDashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {menu.categoryBreakdown.map((cat, idx) => {
-                      const rate = cat.totalCount > 0 ? ((cat.availableCount / cat.totalCount) * 100).toFixed(0) : 0;
+                    {categories.map((cat, idx) => {
+                      const catTotal = cat.total ?? cat.totalCount ?? 0;
+                      const catAvailable = cat.available ?? cat.availableCount ?? 0;
+                      const catUnavailable = cat.unavailable ?? cat.unavailableCount ?? 0;
+                      const rate = catTotal > 0 ? ((catAvailable / catTotal) * 100).toFixed(0) : 0;
                       return (
                         <tr
                           key={cat.category || idx}
@@ -911,12 +922,12 @@ export default function AdminOperationalDashboardPage() {
                           <td style={{ padding: '0.6rem 0.8rem', fontWeight: 500, color: 'var(--bistro-ink)' }}>
                             {cat.category || 'Uncategorized'}
                           </td>
-                          <td style={{ padding: '0.6rem 0.8rem', textAlign: 'center' }}>{cat.totalCount}</td>
+                          <td style={{ padding: '0.6rem 0.8rem', textAlign: 'center' }}>{catTotal}</td>
                           <td style={{ padding: '0.6rem 0.8rem', textAlign: 'center', color: '#065f46', fontWeight: 600 }}>
-                            {cat.availableCount}
+                            {catAvailable}
                           </td>
-                          <td style={{ padding: '0.6rem 0.8rem', textAlign: 'center', color: cat.unavailableCount > 0 ? '#b91c1c' : '#64748b' }}>
-                            {cat.unavailableCount}
+                          <td style={{ padding: '0.6rem 0.8rem', textAlign: 'center', color: catUnavailable > 0 ? '#b91c1c' : '#64748b' }}>
+                            {catUnavailable}
                           </td>
                           <td style={{ padding: '0.6rem 0.8rem', textAlign: 'right' }}>
                             <span
@@ -1095,7 +1106,7 @@ export default function AdminOperationalDashboardPage() {
                     <tr style={{ borderTop: '2px solid #ebdcc5', fontWeight: 700, backgroundColor: '#f5f0e6' }}>
                       <td style={{ padding: '0.65rem 0.8rem' }}>Totals in Period</td>
                       <td style={{ padding: '0.65rem 0.8rem', textAlign: 'center', color: '#b45309' }}>
-                        {reservations.totalReservationsInRange}
+                        {totalReservationsCount}
                       </td>
                       <td style={{ padding: '0.65rem 0.8rem', textAlign: 'center', color: '#1e40af' }}>
                         {orders.totalOrders}
@@ -1111,3 +1122,4 @@ export default function AdminOperationalDashboardPage() {
     </div>
   );
 }
+

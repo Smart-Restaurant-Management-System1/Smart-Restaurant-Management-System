@@ -87,3 +87,4 @@ test('validateDashboardDateRange: rejects reverse date range', () => {
   const result = validateDashboardDateRange('2026-10-10', '2026-10-09');
   assert.equal(result, 'From date must not be later than To date.');
 });
+
