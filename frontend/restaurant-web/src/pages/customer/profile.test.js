@@ -1,9 +1,10 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   validateProfileForm,
   sanitizeProfilePayload,
   formatProfileForForm,
+  validatePasswordChangeForm,
 } from './profileValidation.js';
 
 test('validateProfileForm succeeds with valid customer profile data', () => {
@@ -110,3 +111,66 @@ test('formatProfileForForm handles null backend payload safely', () => {
   assert.equal(formState.email, '');
   assert.equal(formState.phoneNumber, '');
 });
+
+test('validatePasswordChangeForm succeeds with valid new password and matching confirmation', () => {
+  const data = {
+    currentPassword: 'CurrentPass123!',
+    newPassword: 'NewSecurePass456!',
+    confirmPassword: 'NewSecurePass456!',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, true);
+  assert.deepEqual(result.errors, {});
+});
+
+test('validatePasswordChangeForm flags missing required fields', () => {
+  const data = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.currentPassword, 'Current password is required');
+  assert.equal(result.errors.newPassword, 'New password is required');
+  assert.equal(result.errors.confirmPassword, 'Confirmation password is required');
+});
+
+test('validatePasswordChangeForm catches new password under 6 characters', () => {
+  const data = {
+    currentPassword: 'CurrentPass123!',
+    newPassword: '12345',
+    confirmPassword: '12345',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.newPassword, 'New password must be at least 6 characters long');
+});
+
+test('validatePasswordChangeForm catches new password identical to current password', () => {
+  const data = {
+    currentPassword: 'SamePassword123!',
+    newPassword: 'SamePassword123!',
+    confirmPassword: 'SamePassword123!',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.newPassword, 'New password cannot be the same as the current password');
+});
+
+test('validatePasswordChangeForm catches confirmation mismatch', () => {
+  const data = {
+    currentPassword: 'CurrentPass123!',
+    newPassword: 'NewSecurePass456!',
+    confirmPassword: 'DifferentPass789!',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.confirmPassword, 'Passwords do not match');
+});
+

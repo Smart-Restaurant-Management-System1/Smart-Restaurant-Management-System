@@ -1,4 +1,4 @@
-﻿import api from './api';
+import api from './api';
 
 /**
  * Retrieves authenticated user profile from GET /api/users/profile
@@ -13,5 +13,13 @@ export const getUserProfile = async () => {
  */
 export const updateUserProfile = async (profileData) => {
   const response = await api.put('/users/profile', profileData);
+  return response.data;
+};
+
+/**
+ * Changes authenticated user password via POST /api/users/change-password
+ */
+export const changeUserPassword = async (passwordData) => {
+  const response = await api.post('/users/change-password', passwordData);
   return response.data;
 };

@@ -10,12 +10,18 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly ILogger<UserService> _logger;
     private readonly IIdentityAuditWriter? _auditWriter;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public UserService(IUserRepository userRepository, ILogger<UserService> logger, IIdentityAuditWriter? auditWriter = null)
+    public UserService(
+        IUserRepository userRepository, 
+        ILogger<UserService> logger, 
+        IIdentityAuditWriter? auditWriter = null,
+        IPasswordHasher? passwordHasher = null)
     {
         _userRepository = userRepository;
         _logger = logger;
         _auditWriter = auditWriter;
+        _passwordHasher = passwordHasher ?? new BcryptPasswordHasher();
     }
 
     public async Task<UserResponseDto?> GetProfileAsync(int userId)
@@ -65,6 +71,61 @@ public class UserService : IUserService
         }
 
         return MapToDto(freshUser);
+    }
+
+    public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequestDto request)
+    {
+        if (request == null) throw new ArgumentNullException(nameof(request));
+
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException("User not found");
+        }
+
+        // Verify current password against stored BCrypt hash
+        if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+        {
+            _logger.LogWarning("Change password rejected for userId {UserId}: Invalid current password", userId);
+            throw new InvalidOperationException("Current password is incorrect.");
+        }
+
+        // New password cannot be the same as current password
+        if (_passwordHasher.VerifyPassword(request.NewPassword, user.PasswordHash))
+        {
+            _logger.LogWarning("Change password rejected for userId {UserId}: New password cannot be the same as current password", userId);
+            throw new InvalidOperationException("New password cannot be the same as the current password.");
+        }
+
+        var newPasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+        var updated = await _userRepository.UpdatePasswordHashAsync(userId, newPasswordHash);
+        if (!updated)
+        {
+            throw new InvalidOperationException("Failed to update password. Please try again.");
+        }
+
+        _logger.LogInformation("Password successfully updated for userId {UserId}", userId);
+
+        if (_auditWriter != null)
+        {
+            try
+            {
+                await _auditWriter.LogActionAsync(
+                    "PASSWORD_CHANGE",
+                    userId,
+                    user.Email,
+                    "User",
+                    userId.ToString(),
+                    "Success",
+                    new { Message = "User successfully changed account password" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to record audit log for password change on userId {UserId}", userId);
+            }
+        }
+
+        return true;
     }
 
     public async Task<AdminUserListResponseDto> GetAdminUsersAsync(AdminUserQueryDto query)
