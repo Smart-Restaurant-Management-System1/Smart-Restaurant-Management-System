@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using IdentityService.DTOs;
 using IdentityService.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -94,6 +94,49 @@ public class UsersController : ControllerBase
         {
             _logger.LogError(ex, "Error updating profile for userId {UserId}", userId.Value);
             return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while updating your profile." });
+        }
+    }
+
+    /// <summary>
+    /// POST /api/users/change-password
+    /// Securely changes the authenticated user's password after verifying current credentials.
+    /// </summary>
+    [Authorize]
+    [HttpPost("change-password")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new { message = "Invalid or missing user identity in token" });
+        }
+
+        try
+        {
+            await _userService.ChangePasswordAsync(userId.Value, request);
+            return Ok(new { message = "Password changed successfully." });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error changing password for userId {UserId}", userId.Value);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "An error occurred while changing your password." });
         }
     }
 
