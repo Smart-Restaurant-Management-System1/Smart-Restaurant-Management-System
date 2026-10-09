@@ -71,7 +71,7 @@ export const getAuditLogs = async (params = {}) => {
   if (params.page) queryParams.append('page', params.page);
   if (params.pageSize) queryParams.append('pageSize', params.pageSize);
 
-  const response = await reservationApi.get(`/api/admin/audit-logs?${queryParams.toString()}`);
+  const response = await reservationApi.get(`/admin/audit-logs?${queryParams.toString()}`);
   return response.data;
 };
 
@@ -80,7 +80,7 @@ export const getAuditLogs = async (params = {}) => {
  * @returns {Promise<string[]>}
  */
 export const getAuditActionTypes = async () => {
-  const response = await reservationApi.get('/api/admin/audit-logs/actions');
+  const response = await reservationApi.get('/admin/audit-logs/actions');
   return response.data || [];
 };
 
