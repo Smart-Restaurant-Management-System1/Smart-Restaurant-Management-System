@@ -265,95 +265,199 @@ export const downloadAuditLogsCsv = (logs = [], dateRange = {}) => {
 };
 
 /**
+ * Safely loads the brand logo image for PDF rendering.
+ * Checks existing DOM element or creates a new Image instance.
+ * @returns {Promise<HTMLImageElement|null>}
+ */
+export const loadLogoImage = () => {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return Promise.resolve(null);
+  }
+
+  try {
+    const existing = document.querySelector('img[src*="brand-logo"]');
+    if (existing && existing.complete && existing.naturalWidth > 0) {
+      return Promise.resolve(existing);
+    }
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = '/brand-logo.png';
+    });
+  } catch {
+    return Promise.resolve(null);
+  }
+};
+
+/**
  * Generates and downloads an organized, branded PDF audit report (SR-223 / SR-253).
+ * Redesigned to match web theme with brand logo, executive card, and friendly action names.
  * @param {Array} logs - Array of audit log objects
  * @param {object} filters - { dateRange: { from, to }, actionType, searchKeyword }
  * @param {string} [adminEmail] - Generating administrator's email or identity
- * @returns {object|null} jsPDF document instance or null if empty
+ * @returns {Promise<object|null>} jsPDF document instance or null if empty
  */
-export const downloadAuditLogsPdf = (logs = [], filters = {}, adminEmail = '') => {
+export const downloadAuditLogsPdf = async (logs = [], filters = {}, adminEmail = '') => {
   if (!logs || logs.length === 0) return null;
 
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
-    format: 'a4'
+    format: 'a4',
+    compress: true
   });
 
   const pageWidth = doc.internal.pageSize.getWidth(); // 297 mm
   const pageHeight = doc.internal.pageSize.getHeight(); // 210 mm
   const margin = 14;
 
-  // 1. Top Bistro Gold Accent Bar
-  doc.setFillColor(197, 160, 89); // #c5a059
-  doc.rect(0, 0, pageWidth, 3.5, 'F');
+  // 1. Dual Accent Top Strip matching Cinnamon Bistro branding
+  doc.setFillColor(197, 160, 89); // Gold
+  doc.rect(0, 0, pageWidth, 2.8, 'F');
+  doc.setFillColor(30, 41, 59); // Navy
+  doc.rect(0, 2.8, pageWidth, 1.2, 'F');
 
-  // 2. Brand & Header Information
+  // 2. Brand Logo & Typography
+  const logoImg = await loadLogoImage();
+  let hasImageLogo = false;
+
+  if (logoImg) {
+    try {
+      doc.addImage(logoImg, 'PNG', margin, 7.5, 42, 11.35, undefined, 'FAST');
+      hasImageLogo = true;
+    } catch {
+      hasImageLogo = false;
+    }
+  }
+
+  if (!hasImageLogo) {
+    doc.setFont('times', 'bold');
+    doc.setFontSize(15);
+    doc.setTextColor(30, 41, 59);
+    doc.text('CINNAMON BISTRO', margin, 14);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(197, 160, 89);
+    doc.text('LUXURY DINING & MANAGEMENT SYSTEM', margin, 18);
+  }
+
+  // Eyebrow & Page Header
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(15);
-  doc.setTextColor(30, 41, 59); // #1e293b
-  doc.text('CINNAMON BISTRO', margin, 13);
+  doc.setFontSize(7.2);
+  doc.setTextColor(180, 130, 60); // Bronze gold
+  doc.text('SECURITY & COMPLIANCE   •   OFFICIAL AUDIT TRAIL', margin, 23);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(32, 26, 21); // Dark ink
+  doc.text('Admin Audit Trail & Activity Log', margin, 28);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(197, 160, 89);
-  doc.text('LUXURY DINING & ADMINISTRATIVE COMPLIANCE SYSTEM', margin, 17.5);
+  doc.setFontSize(7.2);
+  doc.setTextColor(107, 114, 128); // Muted grey
+  doc.text(
+    'Authoritative, immutable tracking of administrative operations, user lifecycle updates, menu changes, and table modifications.',
+    margin,
+    32.5
+  );
 
+  // 3. Right Side: Official Verification Card
+  const cardWidth = 78;
+  const cardHeight = 25;
+  const cardX = pageWidth - margin - cardWidth;
+  const cardY = 7.5;
+
+  doc.setFillColor(252, 250, 246); // Warm bistro sand
+  doc.setDrawColor(232, 224, 208); // Bistro border
+  doc.roundedRect(cardX, cardY, cardWidth, cardHeight, 2, 2, 'FD');
+
+  // Badge pill
+  doc.setFillColor(197, 160, 89);
+  doc.roundedRect(cardX + 4, cardY + 3.5, 36, 4.2, 1, 1, 'F');
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11.5);
-  doc.setTextColor(30, 41, 59);
-  doc.text('ADMINISTRATIVE AUDIT TRAIL REPORT', pageWidth - margin, 13, { align: 'right' });
+  doc.setFontSize(5.8);
+  doc.setTextColor(255, 255, 255);
+  doc.text('OFFICIAL AUDIT REPORT', cardX + 6, cardY + 6.5);
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(107, 114, 128);
   const genUtc = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
-  doc.text(`Generated: ${genUtc}`, pageWidth - margin, 17.5, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(75, 85, 99);
+  doc.text(`Generated: ${genUtc}`, cardX + 4, cardY + 12);
+  doc.text(`Auditor: ${adminEmail || 'System Administrator'}`, cardX + 4, cardY + 16.5);
+  doc.text('Ledger: Append-Only Immutable Store', cardX + 4, cardY + 21);
 
-  // 3. Metadata & Filter Summary Box
-  const summaryBoxY = 21;
-  const summaryBoxHeight = 13.5;
-  doc.setFillColor(250, 248, 244); // #faf8f4
-  doc.setDrawColor(232, 224, 208); // #e8e0d0
-  doc.roundedRect(margin, summaryBoxY, pageWidth - margin * 2, summaryBoxHeight, 2, 2, 'FD');
+  // 4. Metric & Filter Overview Bar (matching web card)
+  const barY = 36;
+  const barHeight = 8.5;
+  doc.setFillColor(250, 248, 244);
+  doc.setDrawColor(232, 224, 208);
+  doc.roundedRect(margin, barY, pageWidth - margin * 2, barHeight, 1.5, 1.5, 'FD');
 
   const fromDate = filters?.dateRange?.from || 'Start';
   const toDate = filters?.dateRange?.to || 'Present';
-  const actionLabel = filters?.actionType ? formatActionType(filters.actionType).label : 'All Action Types';
+  const actionLabel = filters?.actionType ? formatActionType(filters.actionType).label : 'All Actions';
   const searchLabel = filters?.searchKeyword ? `"${filters.searchKeyword}"` : 'None';
-  const auditor = adminEmail || 'System Administrator';
 
-  doc.setFontSize(7.8);
-  doc.setTextColor(55, 65, 81);
-  const summaryLine1 = `Date Window: ${fromDate} to ${toDate}   |   Action Filter: ${actionLabel}   |   Search: ${searchLabel}`;
-  const summaryLine2 = `Total Events in Report: ${logs.length}   |   Generated By: ${auditor}   |   Integrity: Append-Only Immutable Store`;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.2);
+  doc.setTextColor(30, 41, 59);
 
-  doc.text(summaryLine1, margin + 4, summaryBoxY + 5.5);
-  doc.text(summaryLine2, margin + 4, summaryBoxY + 10.5);
+  // 4 Segments across the bar
+  doc.text('Period: ', margin + 4, barY + 5.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text(`${fromDate} to ${toDate}`, margin + 15, barY + 5.5);
 
-  // 4. Data Table
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 41, 59);
+  doc.text('Action Filter: ', margin + 70, barY + 5.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text(actionLabel, margin + 88, barY + 5.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 41, 59);
+  doc.text('Search Keyword: ', margin + 138, barY + 5.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text(searchLabel, margin + 160, barY + 5.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 41, 59);
+  doc.text('Total Events: ', margin + 208, barY + 5.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(75, 85, 99);
+  doc.text(`${logs.length} Records`, margin + 226, barY + 5.5);
+
+  // 5. Data Table
   const tableData = logs.map((log) => {
     const timestamp = log.timestampUtc
       ? log.timestampUtc.replace('T', ' ').substring(0, 19)
       : 'N/A';
-    const action = `${formatActionType(log.actionType).label}\n(${log.actionType})`;
+    // User requested: ONLY the friendly action label, NO parentheses with raw codes!
+    const action = formatActionType(log.actionType).label;
     const admin = `${log.adminEmail || 'Unknown'}${log.adminRole ? `\n[${log.adminRole}]` : ''}`;
     const target = `${log.targetType || 'N/A'}${log.targetId ? ` #${log.targetId}` : ''}`;
-    const result = log.result || 'SUCCESS';
+    const result = log.result || 'Success';
     const operationalDetails = formatOperationalSummary(log);
 
     return [timestamp, action, admin, target, result, operationalDetails];
   });
 
   autoTable(doc, {
-    startY: 38,
+    startY: 47.5,
     margin: { left: margin, right: margin, bottom: 16 },
     head: [['Timestamp (UTC)', 'Action Type', 'Administrator', 'Target Resource', 'Result', 'Operational Change Summary']],
     body: tableData,
     theme: 'grid',
     styles: {
       fontSize: 7.2,
-      cellPadding: 2.2,
+      cellPadding: 2.3,
       textColor: [32, 26, 21],
       lineColor: [232, 224, 208],
       lineWidth: 0.1
@@ -362,7 +466,7 @@ export const downloadAuditLogsPdf = (logs = [], filters = {}, adminEmail = '') =
       fillColor: [30, 41, 59], // Navy
       textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 7.6,
+      fontSize: 7.5,
       halign: 'left'
     },
     alternateRowStyles: {
@@ -370,19 +474,19 @@ export const downloadAuditLogsPdf = (logs = [], filters = {}, adminEmail = '') =
     },
     columnStyles: {
       0: { cellWidth: 32 },
-      1: { cellWidth: 42 },
-      2: { cellWidth: 48 },
-      3: { cellWidth: 30 },
+      1: { cellWidth: 36 },
+      2: { cellWidth: 46 },
+      3: { cellWidth: 28 },
       4: { cellWidth: 20, halign: 'center' },
       5: { cellWidth: 'auto' }
     },
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 4) {
-        const text = String(data.cell.raw || '');
-        if (text === 'SUCCESS') {
+        const text = String(data.cell.raw || '').toLowerCase();
+        if (text === 'success') {
           data.cell.styles.textColor = [4, 120, 87]; // Green
           data.cell.styles.fontStyle = 'bold';
-        } else if (text.includes('DENIED') || text.includes('FAILED')) {
+        } else if (text.includes('denied') || text.includes('failed')) {
           data.cell.styles.textColor = [153, 27, 27]; // Red
           data.cell.styles.fontStyle = 'bold';
         }
@@ -390,7 +494,7 @@ export const downloadAuditLogsPdf = (logs = [], filters = {}, adminEmail = '') =
     }
   });
 
-  // 5. Page Numbering & Footer across all pages
+  // 6. Page Numbering & Footer across all pages
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
@@ -398,7 +502,7 @@ export const downloadAuditLogsPdf = (logs = [], filters = {}, adminEmail = '') =
     doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.2);
+    doc.setFontSize(7);
     doc.setTextColor(107, 114, 128);
     doc.text(
       'Strictly Confidential - Cinnamon Bistro Administrative Audit Trail - For Internal Auditing & Compliance Only',
@@ -408,7 +512,7 @@ export const downloadAuditLogsPdf = (logs = [], filters = {}, adminEmail = '') =
     doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageHeight - 6.5, { align: 'right' });
   }
 
-  // 6. Download / Save File
+  // 7. Download / Save File
   const filename = `cinnamon_bistro_audit_report_${filters?.dateRange?.from || 'all'}_to_${filters?.dateRange?.to || 'all'}.pdf`;
   if (typeof window !== 'undefined' && typeof doc.save === 'function') {
     doc.save(filename);

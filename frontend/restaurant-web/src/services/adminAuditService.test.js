@@ -104,7 +104,7 @@ test('generateAuditLogsCsv produces valid CSV with formula mitigation', () => {
   assert.ok(csv.includes('"Target User ID: 42"'));
 });
 
-test('downloadAuditLogsPdf generates PDF document successfully without errors', () => {
+test('downloadAuditLogsPdf generates PDF document successfully without errors', async () => {
   const sampleLogs = [
     {
       auditLogId: 1,
@@ -121,7 +121,7 @@ test('downloadAuditLogsPdf generates PDF document successfully without errors', 
       detailsJson: '{"targetUserId": 42}'
     }
   ];
-  const doc = downloadAuditLogsPdf(sampleLogs, {
+  const doc = await downloadAuditLogsPdf(sampleLogs, {
     dateRange: { from: '2026-10-01', to: '2026-10-09' },
     actionType: '',
     searchKeyword: ''

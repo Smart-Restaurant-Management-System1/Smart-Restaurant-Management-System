@@ -307,7 +307,7 @@ export default function AdminAuditLogsPage() {
         pageSize: 500
       });
       const records = response.items && response.items.length > 0 ? response.items : logs;
-      downloadAuditLogsPdf(
+      await downloadAuditLogsPdf(
         records,
         {
           dateRange,
@@ -317,7 +317,7 @@ export default function AdminAuditLogsPage() {
         user?.email || 'admin@cinnamonbistro.com'
       );
     } catch {
-      downloadAuditLogsPdf(
+      await downloadAuditLogsPdf(
         logs,
         {
           dateRange,
