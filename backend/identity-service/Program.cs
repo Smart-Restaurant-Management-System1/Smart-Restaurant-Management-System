@@ -161,6 +161,7 @@ builder.Services.AddSingleton<DatabaseHelper>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+builder.Services.AddScoped<IEmailValidatorService, EmailValidatorService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IIdentityAuditWriter, IdentityAuditWriter>();
 builder.Services.AddScoped<IUserService, UserService>();
