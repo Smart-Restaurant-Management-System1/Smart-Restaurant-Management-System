@@ -430,132 +430,167 @@ export default function ProfilePage() {
         {/* Top Gold Accent Strip */}
         <div className="profile-card-accent-bar" />
 
-        {/* Left Panel: Identity & Access Overview */}
+        {/* Identity & Access Overview Banner */}
         <div className="profile-identity-panel">
-          <div>
-            {/* User Avatar + Identity */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
-              <div
-                style={{
-                  width: '54px',
-                  height: '54px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #f5efe6 0%, #ecd6aa 100%)',
-                  border: '2px solid #c5a059',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: "Georgia, 'Times New Roman', serif",
-                  fontSize: '1.25rem',
-                  fontWeight: 700,
-                  color: '#282115',
-                  boxShadow: '0 3px 10px rgba(197, 160, 89, 0.2)',
-                  flexShrink: 0,
-                }}
-              >
-                {getInitials(formData.fullName || user?.fullName)}
-              </div>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <h2
-                  style={{
-                    fontFamily: "Georgia, 'Times New Roman', serif",
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    color: '#282115',
-                    margin: 0,
-                    lineHeight: 1.25,
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {formData.fullName || user?.fullName || 'Bistro User'}
-                </h2>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '1.25rem',
+            }}
+          >
+            {/* Left: User Avatar + Identity + Status Badges */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem' }}>
                 <div
                   style={{
-                    fontSize: '0.78rem',
-                    color: '#78716c',
-                    marginTop: '0.15rem',
-                    wordBreak: 'break-all',
+                    width: '54px',
+                    height: '54px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #f5efe6 0%, #ecd6aa 100%)',
+                    border: '2px solid #c5a059',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    fontSize: '1.25rem',
+                    fontWeight: 700,
+                    color: '#282115',
+                    boxShadow: '0 3px 10px rgba(197, 160, 89, 0.2)',
+                    flexShrink: 0,
                   }}
                 >
-                  {formData.email || user?.email || 'No email registered'}
+                  {getInitials(formData.fullName || user?.fullName)}
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <h2
+                    style={{
+                      fontFamily: "Georgia, 'Times New Roman', serif",
+                      fontSize: '1.1rem',
+                      fontWeight: 600,
+                      color: '#282115',
+                      margin: 0,
+                      lineHeight: 1.25,
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {formData.fullName || user?.fullName || 'Bistro User'}
+                  </h2>
+                  <div
+                    style={{
+                      fontSize: '0.78rem',
+                      color: '#78716c',
+                      marginTop: '0.15rem',
+                      wordBreak: 'break-all',
+                    }}
+                  >
+                    {formData.email || user?.email || 'No email registered'}
+                  </div>
                 </div>
               </div>
+
+              {/* Role & Status Pills */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginTop: '0.75rem' }}>
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    padding: '0.24rem 0.65rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.04em',
+                    textTransform: 'uppercase',
+                    background: roleDisplay.bg,
+                    color: roleDisplay.color,
+                    border: `1px solid ${roleDisplay.border}`,
+                  }}
+                >
+                  {roleDisplay.icon}
+                  {roleDisplay.label}
+                </span>
+
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '0.24rem 0.65rem',
+                    borderRadius: '9999px',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    background: originalProfile?.isActive !== false ? '#ecfdf5' : '#fef2f2',
+                    color: originalProfile?.isActive !== false ? '#15803d' : '#991b1b',
+                    border: `1px solid ${originalProfile?.isActive !== false ? '#bbf7d0' : '#fecaca'}`,
+                  }}
+                >
+                  {originalProfile?.isActive !== false && <span className="profile-avatar-pulse-dot" />}
+                  {originalProfile?.isActive !== false ? 'Active Account' : 'Inactive'}
+                </span>
+              </div>
             </div>
 
-            {/* Role & Status Pills */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem', marginTop: '1rem' }}>
+            {/* Right: Account Metadata (User ID, Member Since, Access Tier) */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'auto auto',
+                gap: '0.45rem 1.5rem',
+                fontSize: '0.78rem',
+                alignItems: 'center',
+                background: 'rgba(255, 255, 255, 0.65)',
+                padding: '0.65rem 1.1rem',
+                borderRadius: '10px',
+                border: '1px solid #eedfc9',
+              }}
+            >
+              <span style={{ color: '#78716c', fontWeight: 500 }}>User ID</span>
               <span
                 style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.24rem 0.65rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.72rem',
-                  fontWeight: 700,
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  background: roleDisplay.bg,
-                  color: roleDisplay.color,
-                  border: `1px solid ${roleDisplay.border}`,
-                }}
-              >
-                {roleDisplay.icon}
-                {roleDisplay.label}
-              </span>
-
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '0.24rem 0.65rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.72rem',
+                  fontFamily: 'monospace',
                   fontWeight: 600,
-                  background: originalProfile?.isActive !== false ? '#ecfdf5' : '#fef2f2',
-                  color: originalProfile?.isActive !== false ? '#15803d' : '#991b1b',
-                  border: `1px solid ${originalProfile?.isActive !== false ? '#bbf7d0' : '#fecaca'}`,
+                  color: '#282115',
+                  background: '#f5efe6',
+                  padding: '0.1rem 0.45rem',
+                  borderRadius: '4px',
+                  fontSize: '0.75rem',
+                  textAlign: 'right',
                 }}
               >
-                {originalProfile?.isActive !== false && <span className="profile-avatar-pulse-dot" />}
-                {originalProfile?.isActive !== false ? 'Active Account' : 'Inactive'}
+                #{originalProfile?.userId || user?.userId || 'N/A'}
               </span>
-            </div>
-          </div>
 
-          {/* Bottom Account Metadata */}
-          <div style={{ borderTop: '1px solid #eedfc9', paddingTop: '0.85rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.45rem', fontSize: '0.78rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#78716c', fontWeight: 500 }}>User ID</span>
-                <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#282115', background: '#f5efe6', padding: '0.1rem 0.45rem', borderRadius: '4px', fontSize: '0.75rem' }}>
-                  #{originalProfile?.userId || user?.userId || 'N/A'}
-                </span>
-              </div>
+              <span style={{ color: '#78716c', fontWeight: 500 }}>Member Since</span>
+              <span style={{ fontWeight: 600, color: '#282115', textAlign: 'right' }}>
+                {originalProfile?.createdAt
+                  ? new Date(originalProfile.createdAt).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })
+                  : 'Recent'}
+              </span>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#78716c', fontWeight: 500 }}>Member Since</span>
-                <span style={{ fontWeight: 600, color: '#282115' }}>
-                  {originalProfile?.createdAt
-                    ? new Date(originalProfile.createdAt).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })
-                    : 'Recent'}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#78716c', fontWeight: 500 }}>Access Tier</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#15803d', fontWeight: 600 }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                  </svg>
-                  Verified
-                </span>
-              </div>
+              <span style={{ color: '#78716c', fontWeight: 500 }}>Access Tier</span>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: '0.25rem',
+                  color: '#15803d',
+                  fontWeight: 600,
+                  textAlign: 'right',
+                }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                Verified
+              </span>
             </div>
           </div>
         </div>
@@ -609,34 +644,11 @@ export default function ProfilePage() {
                   {fieldErrors.fullName && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem' }}>{fieldErrors.fullName}</div>}
                 </div>
 
-                {/* Email Address - Fixed Account Identifier (SR-224) */}
+                {/* Email Address - Fixed & Locked for Customers (SR-224) */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                    <label htmlFor="profileEmail" style={{ color: '#374151', fontWeight: 600, fontSize: '0.8rem', margin: 0 }}>
-                      Email Address
-                    </label>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        fontSize: '0.68rem',
-                        fontWeight: 600,
-                        color: '#8c6736',
-                        background: '#fbf4e6',
-                        border: '1px solid #edd9b5',
-                        padding: '0.1rem 0.45rem',
-                        borderRadius: '4px',
-                      }}
-                      title="Primary account identifier is permanent and locked"
-                    >
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                      Fixed Account Identifier
-                    </span>
-                  </div>
+                  <label htmlFor="profileEmail" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.8rem', marginBottom: '0.3rem' }}>
+                    Email Address
+                  </label>
                   <div className="input-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <svg
                       width="15"
@@ -802,34 +814,13 @@ export default function ProfilePage() {
 
             {/* Account Security & Password Change Section (SR-224 / SR-254) */}
             <div style={{ marginTop: '1.75rem', paddingTop: '1.25rem', borderTop: '2px dashed #eedfc9' }}>
-              <div style={{ marginBottom: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div>
-                  <h3 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '1.05rem', fontWeight: 600, color: '#282115', margin: 0 }}>
-                    Account Security & Password
-                  </h3>
-                  <p style={{ fontSize: '0.78rem', color: '#78716c', margin: '0.2rem 0 0' }}>
-                    Update your password by providing your current credentials and a new secure password.
-                  </p>
-                </div>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                    fontSize: '0.72rem',
-                    fontWeight: 600,
-                    color: '#1e5e29',
-                    background: '#edf7ee',
-                    border: '1px solid #c2e2c6',
-                    padding: '0.2rem 0.55rem',
-                    borderRadius: '9999px',
-                  }}
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                  BCrypt Encrypted
-                </span>
+              <div style={{ marginBottom: '0.85rem' }}>
+                <h3 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: '1.05rem', fontWeight: 600, color: '#282115', margin: 0 }}>
+                  Account Security & Password
+                </h3>
+                <p style={{ fontSize: '0.78rem', color: '#78716c', margin: '0.2rem 0 0' }}>
+                  Update your password by providing your current credentials and a new secure password.
+                </p>
               </div>
 
               {/* Password Specific Alerts */}

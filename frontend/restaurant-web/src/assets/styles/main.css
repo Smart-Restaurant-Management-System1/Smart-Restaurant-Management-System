@@ -2415,8 +2415,8 @@ body {
 }
 
 .profile-split-card {
-  display: grid;
-  grid-template-columns: 320px 1fr;
+  display: flex;
+  flex-direction: column;
   background: #ffffff;
   border: 1px solid #eedfc9;
   border-radius: 16px;
@@ -2437,12 +2437,9 @@ body {
 
 .profile-identity-panel {
   background: #faf7f2;
-  border-right: 1px solid #eedfc9;
-  padding: 1.5rem 1.4rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 1.25rem;
+  border-bottom: 1px solid #eedfc9;
+  border-right: none;
+  padding: 1.25rem 1.75rem;
 }
 
 .profile-form-panel {
@@ -2450,7 +2447,6 @@ body {
   padding: 1.5rem 1.75rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
 
 .profile-form-grid {
@@ -2518,12 +2514,7 @@ input[type="tel"].profile-input-field {
 }
 
 @media (max-width: 860px) {
-  .profile-split-card {
-    grid-template-columns: 1fr;
-  }
   .profile-identity-panel {
-    border-right: none;
-    border-bottom: 1px solid #eedfc9;
     padding: 1.25rem;
   }
   .profile-form-panel {
