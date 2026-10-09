@@ -570,7 +570,7 @@ export default function AdminOperationalDashboardPage() {
                     border: '1px solid #fde68a'
                   }}
                 >
-                  Asia/Colombo
+                  Today
                 </div>
               </div>
               <div style={{ marginTop: '0.75rem', fontSize: '0.78rem', color: 'var(--bistro-muted)' }}>
