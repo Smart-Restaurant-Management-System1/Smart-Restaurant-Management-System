@@ -29,6 +29,7 @@ services:
       - ./database/reservation-db/11_customer_feedback.sql:/docker-entrypoint-initdb.d/13_customer_feedback.sql
       - ./database/reservation-db/12_payments.sql:/docker-entrypoint-initdb.d/14_payments.sql
       - ./database/reservation-db/13_customer_notifications.sql:/docker-entrypoint-initdb.d/15_customer_notifications.sql
+      - ./database/reservation-db/14_admin_audit_logs.sql:/docker-entrypoint-initdb.d/16_admin_audit_logs.sql
     networks:
       - restaurant-network
     healthcheck:

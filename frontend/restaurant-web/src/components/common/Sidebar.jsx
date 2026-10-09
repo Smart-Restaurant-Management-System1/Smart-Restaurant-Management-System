@@ -82,6 +82,13 @@ export default function Sidebar({
     }
 
     if (
+      path === '/admin/audit-logs' &&
+      location.pathname.startsWith('/admin/audit-logs')
+    ) {
+      return true;
+    }
+
+    if (
       path === '/admin/payments' &&
       location.pathname.startsWith('/admin/payments')
     ) {
@@ -339,6 +346,22 @@ export default function Sidebar({
     </svg>
   );
 
+  const auditShieldIcon = (
+    <svg
+      width="19"
+      height="19"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+
   const documentIcon = (
     <svg
       width="19"
@@ -524,6 +547,11 @@ export default function Sidebar({
           to: '/kitchen',
           label: 'Kitchen Management',
           icon: kitchenIcon,
+        },
+        {
+          to: '/admin/audit-logs',
+          label: 'Audit Trail',
+          icon: auditShieldIcon,
         },
       ],
     },

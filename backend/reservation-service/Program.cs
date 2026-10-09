@@ -407,6 +407,16 @@ builder.Services.AddScoped<
     ReservationService.Services.AdminDashboardService
 >();
 
+// Admin audit log repository and writer (SR-223 / SR-250)
+builder.Services.AddScoped<
+    ReservationService.Repositories.IAuditLogRepository,
+    ReservationService.Repositories.AdminAuditLogRepository
+>();
+builder.Services.AddScoped<
+    ReservationService.Services.IAuditLogWriter,
+    ReservationService.Services.AuditLogWriter
+>();
+
 // Order cart service
 // Handles cart validation and customer cart operations
 builder.Services.AddScoped<

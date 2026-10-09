@@ -149,7 +149,21 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '09',
+      number: '10',
+      title: 'Audit Trail & Activity Log',
+      description: 'Inspect immutable records of administrative actions, user updates, menu changes, and security events.',
+      link: '/admin/audit-logs',
+      buttonLabel: 'View Audit Logs',
+      buttonClass: 'bistro-button-gold',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <path d="m9 12 2 2 4-4" />
+        </svg>
+      ),
+    },
+    {
+      number: '11',
       title: 'System Profile',
       description: 'Manage administrative account credentials, verified contact details, and system security preferences.',
       link: '/profile',
@@ -439,7 +453,7 @@ export default function CustomerPortalPage() {
       >
         {cards.map((card) => (
           <div
-            key={card.number}
+            key={`${card.number}-${card.link}`}
             className="bistro-card bistro-journey-card"
             style={{
               position: 'relative',

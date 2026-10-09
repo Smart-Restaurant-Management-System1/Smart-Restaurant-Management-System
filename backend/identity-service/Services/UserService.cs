@@ -9,11 +9,13 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly ILogger<UserService> _logger;
+    private readonly IIdentityAuditWriter? _auditWriter;
 
-    public UserService(IUserRepository userRepository, ILogger<UserService> logger)
+    public UserService(IUserRepository userRepository, ILogger<UserService> logger, IIdentityAuditWriter? auditWriter = null)
     {
         _userRepository = userRepository;
         _logger = logger;
+        _auditWriter = auditWriter;
     }
 
     public async Task<UserResponseDto?> GetProfileAsync(int userId)
@@ -109,6 +111,10 @@ public class UserService : IUserService
 
         if (targetUserId == currentAdminUserId)
         {
+            if (_auditWriter != null)
+            {
+                await _auditWriter.LogActionAsync("USER_STATUS_CHANGE_DENIED", currentAdminUserId, "admin@cinnamonbistro.com", "User", targetUserId.ToString(), "Denied", new { Reason = "Attempted to alter status of own administrative account" });
+            }
             throw new InvalidOperationException("You cannot alter the status of your own administrative account.");
         }
 
@@ -124,6 +130,10 @@ public class UserService : IUserService
             var activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
             if (activeAdminCount <= 1)
             {
+                if (_auditWriter != null)
+                {
+                    await _auditWriter.LogActionAsync("USER_STATUS_CHANGE_DENIED", currentAdminUserId, "admin@cinnamonbistro.com", "User", targetUserId.ToString(), "Denied", new { Reason = "Cannot deactivate or block the only remaining active Administrator" });
+                }
                 throw new InvalidOperationException("Cannot deactivate or block the only remaining active Administrator.");
             }
         }
@@ -138,6 +148,20 @@ public class UserService : IUserService
         _logger.LogInformation("Admin {AdminId} changed status of user {UserId} ({Email}) to {Status}. Reason: {Reason}",
             currentAdminUserId, targetUserId, targetUser.Email, normalizedStatus, reason ?? "N/A");
 
+        if (_auditWriter != null)
+        {
+            var adminUser = await _userRepository.GetByIdAsync(currentAdminUserId);
+            var adminEmail = adminUser?.Email ?? "admin@cinnamonbistro.com";
+            var actionType = normalizedStatus == "Blocked" ? "USER_BLOCKED" : (normalizedStatus == "Active" ? "USER_UNBLOCKED" : "USER_STATUS_CHANGED");
+            await _auditWriter.LogActionAsync(actionType, currentAdminUserId, adminEmail, "User", targetUserId.ToString(), "Success", new
+            {
+                TargetEmail = targetUser.Email,
+                TargetRoles = string.Join(",", targetUser.Roles),
+                NewStatus = normalizedStatus,
+                Reason = reason ?? "N/A"
+            });
+        }
+
         var freshUser = await _userRepository.GetByIdAsync(targetUserId);
         return MapToDto(freshUser!);
     }
@@ -146,6 +170,10 @@ public class UserService : IUserService
     {
         if (targetUserId == currentAdminUserId)
         {
+            if (_auditWriter != null)
+            {
+                await _auditWriter.LogActionAsync("USER_DELETE_DENIED", currentAdminUserId, "admin@cinnamonbistro.com", "User", targetUserId.ToString(), "Denied", new { Reason = "Attempted to delete own administrative account" });
+            }
             throw new InvalidOperationException("You cannot delete your own administrative account.");
         }
 
@@ -161,6 +189,10 @@ public class UserService : IUserService
             var activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
             if (activeAdminCount <= 1)
             {
+                if (_auditWriter != null)
+                {
+                    await _auditWriter.LogActionAsync("USER_DELETE_DENIED", currentAdminUserId, "admin@cinnamonbistro.com", "User", targetUserId.ToString(), "Denied", new { Reason = "Cannot delete the only remaining active Administrator" });
+                }
                 throw new InvalidOperationException("Cannot delete the only remaining active Administrator.");
             }
         }
@@ -170,6 +202,17 @@ public class UserService : IUserService
         if (deleted)
         {
             _logger.LogInformation("Admin {AdminId} safely soft-deleted user {UserId} ({Email}).", currentAdminUserId, targetUserId, targetUser.Email);
+
+            if (_auditWriter != null)
+            {
+                var adminUser = await _userRepository.GetByIdAsync(currentAdminUserId);
+                var adminEmail = adminUser?.Email ?? "admin@cinnamonbistro.com";
+                await _auditWriter.LogActionAsync("USER_DELETED", currentAdminUserId, adminEmail, "User", targetUserId.ToString(), "Success", new
+                {
+                    TargetEmail = targetUser.Email,
+                    TargetRoles = string.Join(",", targetUser.Roles)
+                });
+            }
         }
 
         return deleted;
