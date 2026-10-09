@@ -217,7 +217,6 @@ public static class SpreadsheetExportHelper
             }
         }
 
-        ws.SheetView.FreezeRows(9);
         ws.Columns().AdjustToContents();
 
         ws.Column(1).Width = Math.Max(ws.Column(1).Width, 16);
@@ -436,7 +435,6 @@ public static class SpreadsheetExportHelper
             }
         }
 
-        ws.SheetView.FreezeRows(9);
         ws.Columns().AdjustToContents();
 
         ws.Column(1).Width = Math.Max(ws.Column(1).Width, 14);
