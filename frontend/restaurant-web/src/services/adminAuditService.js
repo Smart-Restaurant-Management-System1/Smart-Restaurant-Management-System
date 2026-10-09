@@ -1,4 +1,68 @@
 import { reservationApi } from './tableService.js';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+/**
+ * Friendly mapping for detail JSON keys into human-readable labels.
+ */
+export const KEY_LABEL_MAP = {
+  targetUserId: 'Target User ID',
+  email: 'User Email',
+  role: 'User Role',
+  newStatus: 'New Status',
+  previousStatus: 'Previous Status',
+  reason: 'Reason / Notes',
+  isAvailable: 'Dish Availability',
+  menuItemId: 'Dish ID',
+  name: 'Dish / Item Name',
+  price: 'Price (LKR)',
+  category: 'Item Category',
+  reservationId: 'Reservation ID',
+  customerName: 'Customer Name',
+  tableNumber: 'Table Number',
+  capacity: 'Seating Capacity',
+  location: 'Dining Location',
+  updatedBy: 'Initiated By'
+};
+
+/**
+ * Formats camelCase or mapped detail keys into title case labels.
+ * @param {string} key
+ * @returns {string}
+ */
+export const formatDetailKey = (key) => {
+  if (KEY_LABEL_MAP[key]) return KEY_LABEL_MAP[key];
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+};
+
+/**
+ * Formats operational details into a clean, human-readable summary string (SR-223 / SR-253).
+ * @param {object} log
+ * @returns {string}
+ */
+export const formatOperationalSummary = (log) => {
+  if (!log || !log.detailsJson) return 'No additional details recorded.';
+  try {
+    const parsed = typeof log.detailsJson === 'string' ? JSON.parse(log.detailsJson) : log.detailsJson;
+    if (!parsed || typeof parsed !== 'object') return String(log.detailsJson);
+    const parts = [];
+    for (const [key, value] of Object.entries(parsed)) {
+      if (value === null || value === undefined) continue;
+      const label = formatDetailKey(key);
+      let valStr = String(value);
+      if (typeof value === 'boolean') {
+        valStr = value ? 'Active' : 'Inactive';
+      }
+      parts.push(`${label}: ${valStr}`);
+    }
+    return parts.length > 0 ? parts.join('; ') : 'No additional details recorded.';
+  } catch {
+    return String(log.detailsJson);
+  }
+};
 
 /**
  * Validates an audit log date range filter (SR-223 / SR-253).
@@ -170,20 +234,22 @@ export const generateAuditLogsCsv = (logs = []) => {
     sanitizeCell(log.result),
     sanitizeCell(log.sourceService),
     sanitizeCell(log.ipAddress || 'N/A'),
-    sanitizeCell(log.detailsJson || '')
+    sanitizeCell(formatOperationalSummary(log))
   ]);
 
-  return '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+  return '\uFEFF' + [headers.map(sanitizeCell).join(','), ...rows.map((r) => r.join(','))].join('\r\n');
 };
 
 /**
  * Triggers a browser file download of the CSV data.
  * @param {Array} logs
  * @param {{ from?: string, to?: string }} dateRange
+ * @returns {boolean}
  */
 export const downloadAuditLogsCsv = (logs = [], dateRange = {}) => {
   const csvContent = generateAuditLogsCsv(logs);
   if (!csvContent) return false;
+  if (typeof window === 'undefined' || typeof document === 'undefined') return true;
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -196,5 +262,158 @@ export const downloadAuditLogsCsv = (logs = [], dateRange = {}) => {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   return true;
+};
+
+/**
+ * Generates and downloads an organized, branded PDF audit report (SR-223 / SR-253).
+ * @param {Array} logs - Array of audit log objects
+ * @param {object} filters - { dateRange: { from, to }, actionType, searchKeyword }
+ * @param {string} [adminEmail] - Generating administrator's email or identity
+ * @returns {object|null} jsPDF document instance or null if empty
+ */
+export const downloadAuditLogsPdf = (logs = [], filters = {}, adminEmail = '') => {
+  if (!logs || logs.length === 0) return null;
+
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth(); // 297 mm
+  const pageHeight = doc.internal.pageSize.getHeight(); // 210 mm
+  const margin = 14;
+
+  // 1. Top Bistro Gold Accent Bar
+  doc.setFillColor(197, 160, 89); // #c5a059
+  doc.rect(0, 0, pageWidth, 3.5, 'F');
+
+  // 2. Brand & Header Information
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(30, 41, 59); // #1e293b
+  doc.text('CINNAMON BISTRO', margin, 13);
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(197, 160, 89);
+  doc.text('LUXURY DINING & ADMINISTRATIVE COMPLIANCE SYSTEM', margin, 17.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11.5);
+  doc.setTextColor(30, 41, 59);
+  doc.text('ADMINISTRATIVE AUDIT TRAIL REPORT', pageWidth - margin, 13, { align: 'right' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(107, 114, 128);
+  const genUtc = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+  doc.text(`Generated: ${genUtc}`, pageWidth - margin, 17.5, { align: 'right' });
+
+  // 3. Metadata & Filter Summary Box
+  const summaryBoxY = 21;
+  const summaryBoxHeight = 13.5;
+  doc.setFillColor(250, 248, 244); // #faf8f4
+  doc.setDrawColor(232, 224, 208); // #e8e0d0
+  doc.roundedRect(margin, summaryBoxY, pageWidth - margin * 2, summaryBoxHeight, 2, 2, 'FD');
+
+  const fromDate = filters?.dateRange?.from || 'Start';
+  const toDate = filters?.dateRange?.to || 'Present';
+  const actionLabel = filters?.actionType ? formatActionType(filters.actionType).label : 'All Action Types';
+  const searchLabel = filters?.searchKeyword ? `"${filters.searchKeyword}"` : 'None';
+  const auditor = adminEmail || 'System Administrator';
+
+  doc.setFontSize(7.8);
+  doc.setTextColor(55, 65, 81);
+  const summaryLine1 = `Date Window: ${fromDate} to ${toDate}   |   Action Filter: ${actionLabel}   |   Search: ${searchLabel}`;
+  const summaryLine2 = `Total Events in Report: ${logs.length}   |   Generated By: ${auditor}   |   Integrity: Append-Only Immutable Store`;
+
+  doc.text(summaryLine1, margin + 4, summaryBoxY + 5.5);
+  doc.text(summaryLine2, margin + 4, summaryBoxY + 10.5);
+
+  // 4. Data Table
+  const tableData = logs.map((log) => {
+    const timestamp = log.timestampUtc
+      ? log.timestampUtc.replace('T', ' ').substring(0, 19)
+      : 'N/A';
+    const action = `${formatActionType(log.actionType).label}\n(${log.actionType})`;
+    const admin = `${log.adminEmail || 'Unknown'}${log.adminRole ? `\n[${log.adminRole}]` : ''}`;
+    const target = `${log.targetType || 'N/A'}${log.targetId ? ` #${log.targetId}` : ''}`;
+    const result = log.result || 'SUCCESS';
+    const operationalDetails = formatOperationalSummary(log);
+
+    return [timestamp, action, admin, target, result, operationalDetails];
+  });
+
+  autoTable(doc, {
+    startY: 38,
+    margin: { left: margin, right: margin, bottom: 16 },
+    head: [['Timestamp (UTC)', 'Action Type', 'Administrator', 'Target Resource', 'Result', 'Operational Change Summary']],
+    body: tableData,
+    theme: 'grid',
+    styles: {
+      fontSize: 7.2,
+      cellPadding: 2.2,
+      textColor: [32, 26, 21],
+      lineColor: [232, 224, 208],
+      lineWidth: 0.1
+    },
+    headStyles: {
+      fillColor: [30, 41, 59], // Navy
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 7.6,
+      halign: 'left'
+    },
+    alternateRowStyles: {
+      fillColor: [252, 250, 246]
+    },
+    columnStyles: {
+      0: { cellWidth: 32 },
+      1: { cellWidth: 42 },
+      2: { cellWidth: 48 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 20, halign: 'center' },
+      5: { cellWidth: 'auto' }
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 4) {
+        const text = String(data.cell.raw || '');
+        if (text === 'SUCCESS') {
+          data.cell.styles.textColor = [4, 120, 87]; // Green
+          data.cell.styles.fontStyle = 'bold';
+        } else if (text.includes('DENIED') || text.includes('FAILED')) {
+          data.cell.styles.textColor = [153, 27, 27]; // Red
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    }
+  });
+
+  // 5. Page Numbering & Footer across all pages
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(229, 231, 235);
+    doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.setTextColor(107, 114, 128);
+    doc.text(
+      'Strictly Confidential - Cinnamon Bistro Administrative Audit Trail - For Internal Auditing & Compliance Only',
+      margin,
+      pageHeight - 6.5
+    );
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth - margin, pageHeight - 6.5, { align: 'right' });
+  }
+
+  // 6. Download / Save File
+  const filename = `cinnamon_bistro_audit_report_${filters?.dateRange?.from || 'all'}_to_${filters?.dateRange?.to || 'all'}.pdf`;
+  if (typeof window !== 'undefined' && typeof doc.save === 'function') {
+    doc.save(filename);
+  }
+
+  return doc;
 };
 

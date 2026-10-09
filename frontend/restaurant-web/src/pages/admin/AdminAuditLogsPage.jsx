@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PageHeader from '../../components/common/PageHeader';
+import { useAuth } from '../../context/AuthContext';
 import {
   getAuditLogs,
   getAuditActionTypes,
   validateAuditDateRange,
   getAuditDatePreset,
   formatActionType,
-  downloadAuditLogsCsv
+  downloadAuditLogsCsv,
+  downloadAuditLogsPdf
 } from '../../services/adminAuditService';
 
 // SVG Icons
@@ -76,13 +78,6 @@ const IconDownload = ({ size = 14, color = 'currentColor' }) => (
   </svg>
 );
 
-const IconPrinter = ({ size = 14, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6 9 6 2 18 2 18 9" />
-    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-    <rect x="6" y="14" width="12" height="8" />
-  </svg>
-);
 
 const CANONICAL_ACTIONS = [
   'USER_BLOCKED',
@@ -168,6 +163,7 @@ function renderDetailValue(val) {
 }
 
 export default function AdminAuditLogsPage() {
+  const { user } = useAuth();
   const [logs, setLogs] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -190,6 +186,7 @@ export default function AdminAuditLogsPage() {
   // Selected Log for Modal
   const [selectedLog, setSelectedLog] = useState(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   // Load distinct actions on mount
   useEffect(() => {
@@ -298,8 +295,40 @@ export default function AdminAuditLogsPage() {
     }
   };
 
-  const handlePrintPdf = () => {
-    window.print();
+  const handleDownloadPdf = async () => {
+    setIsGeneratingPdf(true);
+    try {
+      const response = await getAuditLogs({
+        fromDate: dateRange.from ? `${dateRange.from}T00:00:00Z` : undefined,
+        toDate: dateRange.to ? `${dateRange.to}T23:59:59Z` : undefined,
+        actionType: actionTypeFilter || undefined,
+        search: searchKeyword.trim() || undefined,
+        page: 1,
+        pageSize: 500
+      });
+      const records = response.items && response.items.length > 0 ? response.items : logs;
+      downloadAuditLogsPdf(
+        records,
+        {
+          dateRange,
+          actionType: actionTypeFilter,
+          searchKeyword: searchKeyword.trim()
+        },
+        user?.email || 'admin@cinnamonbistro.com'
+      );
+    } catch {
+      downloadAuditLogsPdf(
+        logs,
+        {
+          dateRange,
+          actionType: actionTypeFilter,
+          searchKeyword: searchKeyword.trim()
+        },
+        user?.email || 'admin@cinnamonbistro.com'
+      );
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   // Close modal on Escape
@@ -649,12 +678,12 @@ export default function AdminAuditLogsPage() {
               <span>{isExporting ? 'Exporting...' : 'Export to Excel (CSV)'}</span>
             </button>
 
-            {/* Print / Save as PDF Button */}
+            {/* Download PDF Report Button */}
             <button
               type="button"
-              onClick={handlePrintPdf}
-              disabled={totalCount === 0}
-              title="Print or Save Audit Report as PDF"
+              onClick={handleDownloadPdf}
+              disabled={isGeneratingPdf || totalCount === 0}
+              title="Download structured audit report as a branded PDF document"
               style={{
                 backgroundColor: '#fff',
                 border: '1px solid #dcd3c1',
@@ -663,7 +692,7 @@ export default function AdminAuditLogsPage() {
                 fontSize: '0.8rem',
                 fontWeight: 600,
                 color: 'var(--bistro-dark, #201a15)',
-                cursor: totalCount === 0 ? 'not-allowed' : 'pointer',
+                cursor: isGeneratingPdf || totalCount === 0 ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
@@ -671,9 +700,9 @@ export default function AdminAuditLogsPage() {
                 transition: 'all 0.15s ease'
               }}
               onMouseEnter={(e) => {
-                if (totalCount > 0) {
+                if (totalCount > 0 && !isGeneratingPdf) {
                   e.currentTarget.style.backgroundColor = '#fdfbf7';
-                  e.currentTarget.style.borderColor = 'var(--bistro-gold)';
+                  e.currentTarget.style.borderColor = '#b91c1c';
                 }
               }}
               onMouseLeave={(e) => {
@@ -681,8 +710,8 @@ export default function AdminAuditLogsPage() {
                 e.currentTarget.style.borderColor = '#dcd3c1';
               }}
             >
-              <IconPrinter size={14} color="#1e40af" />
-              <span>Print / PDF</span>
+              <IconFileText size={14} color="#b91c1c" />
+              <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF Report'}</span>
             </button>
 
             <span style={{ fontSize: '0.82rem', color: 'var(--bistro-muted)', marginLeft: '0.25rem' }}>
