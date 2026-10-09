@@ -55,7 +55,7 @@ public sealed class AdminOrderRepository : IAdminOrderRepository
                 COALESCE(t.TableNumber, '') AS TableNumber,
                 orders.ReservationId,
                 orders.CustomerId,
-                COALESCE(CONCAT(u.FirstName, ' ', u.LastName), '') AS CustomerName,
+                COALESCE(u.FullName, '') AS CustomerName,
                 COALESCE(u.Email, '') AS CustomerEmail,
                 COALESCE(u.PhoneNumber, '') AS CustomerPhone,
                 orders.Status,
@@ -109,7 +109,7 @@ public sealed class AdminOrderRepository : IAdminOrderRepository
                 COALESCE(t.TableNumber, '') AS TableNumber,
                 orders.ReservationId,
                 orders.CustomerId,
-                COALESCE(CONCAT(u.FirstName, ' ', u.LastName), '') AS CustomerName,
+                COALESCE(u.FullName, '') AS CustomerName,
                 COALESCE(u.Email, '') AS CustomerEmail,
                 COALESCE(u.PhoneNumber, '') AS CustomerPhone,
                 orders.Status,
@@ -220,7 +220,7 @@ public sealed class AdminOrderRepository : IAdminOrderRepository
 
         if (!string.IsNullOrWhiteSpace(query.Customer))
         {
-            clauses.Add("(u.FirstName LIKE @Customer OR u.LastName LIKE @Customer OR CONCAT(u.FirstName, ' ', u.LastName) LIKE @Customer OR u.Email LIKE @Customer OR CAST(orders.CustomerId AS CHAR) = @CustomerExact)");
+            clauses.Add("(u.FullName LIKE @Customer OR u.Email LIKE @Customer OR CAST(orders.CustomerId AS CHAR) = @CustomerExact)");
             parameters["@Customer"] = $"%{query.Customer.Trim()}%";
             parameters["@CustomerExact"] = query.Customer.Trim();
         }
@@ -260,3 +260,4 @@ public sealed class AdminOrderRepository : IAdminOrderRepository
         };
     }
 }
+

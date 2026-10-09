@@ -50,3 +50,4 @@ public sealed class AdminOrderResponseDto
     public int TotalCount { get; init; }
     public int TotalPages { get; init; }
 }
+

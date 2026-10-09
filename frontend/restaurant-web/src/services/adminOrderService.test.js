@@ -6,3 +6,4 @@ test('adminOrderService module exports expected API functions', async () => {
   assert.equal(typeof service.getAdminOrders, 'function');
   assert.equal(typeof service.exportAdminOrders, 'function');
 });
+

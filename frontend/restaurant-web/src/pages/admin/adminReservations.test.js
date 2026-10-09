@@ -69,3 +69,4 @@ test('filterReservations: filters accurately by customer name and contact', () =
   assert.equal(matchedById.length, 1);
   assert.equal(matchedById[0].customerName, 'Charlie Dias');
 });
+

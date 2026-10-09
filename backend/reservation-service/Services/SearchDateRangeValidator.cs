@@ -26,3 +26,4 @@ public static class SearchDateRangeValidator
         return (true, null);
     }
 }
+

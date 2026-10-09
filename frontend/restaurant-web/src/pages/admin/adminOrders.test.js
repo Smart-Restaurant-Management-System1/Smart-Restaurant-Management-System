@@ -77,3 +77,4 @@ test('filterOrders: correctly filters by order type and status', () => {
   assert.equal(receivedOnly.length, 1);
   assert.equal(receivedOnly[0].orderReference, 'DIN-000001');
 });
+

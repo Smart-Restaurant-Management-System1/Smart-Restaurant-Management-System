@@ -45,7 +45,7 @@ public sealed class ReservationRepository(
         await using var count = new MySqlCommand($"SELECT COUNT(*) FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId LEFT JOIN `{idDb}`.`Users` AS u ON u.UserId = r.CustomerId {where};", connection);
         AddParameters(count, parameters);
         var total = Convert.ToInt32(await count.ExecuteScalarAsync(cancellationToken));
-        var columns = $"r.Id, r.CustomerId, COALESCE(CONCAT(u.FirstName, ' ', u.LastName), '') AS CustomerName, COALESCE(u.Email, '') AS CustomerEmail, COALESCE(u.PhoneNumber, '') AS CustomerPhone, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
+        var columns = $"r.Id, r.CustomerId, COALESCE(u.FullName, '') AS CustomerName, COALESCE(u.Email, '') AS CustomerEmail, COALESCE(u.PhoneNumber, '') AS CustomerPhone, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
         await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId LEFT JOIN `{idDb}`.`Users` AS u ON u.UserId = r.CustomerId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT @PageSize OFFSET @Offset;", connection);
         AddParameters(command, parameters);
         command.Parameters.AddWithValue("@PageSize", query.PageSize);
@@ -61,7 +61,7 @@ public sealed class ReservationRepository(
         await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
         var idDb = string.IsNullOrWhiteSpace(_identityDatabaseName) ? "restaurant_identity_db" : _identityDatabaseName;
         var (where, parameters) = BuildAdminFilters(query);
-        var columns = $"r.Id, r.CustomerId, COALESCE(CONCAT(u.FirstName, ' ', u.LastName), '') AS CustomerName, COALESCE(u.Email, '') AS CustomerEmail, COALESCE(u.PhoneNumber, '') AS CustomerPhone, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
+        var columns = $"r.Id, r.CustomerId, COALESCE(u.FullName, '') AS CustomerName, COALESCE(u.Email, '') AS CustomerEmail, COALESCE(u.PhoneNumber, '') AS CustomerPhone, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
         await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId LEFT JOIN `{idDb}`.`Users` AS u ON u.UserId = r.CustomerId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT 10000;", connection);
         AddParameters(command, parameters);
         var items = new List<Reservation>();
@@ -588,7 +588,7 @@ FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Cu
         if (!string.IsNullOrWhiteSpace(query.BookingReference)) { clauses.Add("r.BookingReference LIKE @BookingReference"); parameters["@BookingReference"] = $"%{query.BookingReference}%"; }
         if (!string.IsNullOrWhiteSpace(query.Customer))
         {
-            clauses.Add("(u.FirstName LIKE @Customer OR u.LastName LIKE @Customer OR CONCAT(u.FirstName, ' ', u.LastName) LIKE @Customer OR u.Email LIKE @Customer OR CAST(r.CustomerId AS CHAR) = @CustomerExact)");
+            clauses.Add("(u.FullName LIKE @Customer OR u.Email LIKE @Customer OR CAST(r.CustomerId AS CHAR) = @CustomerExact)");
             parameters["@Customer"] = $"%{query.Customer.Trim()}%";
             parameters["@CustomerExact"] = query.Customer.Trim();
         }

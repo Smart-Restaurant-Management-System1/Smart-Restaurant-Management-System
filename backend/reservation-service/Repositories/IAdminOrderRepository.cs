@@ -10,3 +10,4 @@ public interface IAdminOrderRepository
     Task<AdminOrderResponseDto> SearchOrdersAsync(AdminOrderQueryDto query, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<AdminOrderItemDto>> GetOrdersForExportAsync(AdminOrderQueryDto query, CancellationToken cancellationToken = default);
 }
+

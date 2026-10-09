@@ -78,3 +78,4 @@ public sealed class SearchDateRangeValidatorTests
         Assert.Null(errorMessage);
     }
 }
+
