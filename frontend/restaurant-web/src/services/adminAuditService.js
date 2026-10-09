@@ -123,3 +123,78 @@ export const formatActionType = (actionType) => {
   }
 };
 
+/**
+ * Generates an Excel-compatible CSV string from audit logs with formula injection protection (SR-223 / SR-253).
+ * @param {Array} logs - Array of audit log objects
+ * @returns {string} Safe CSV string with UTF-8 BOM
+ */
+export const generateAuditLogsCsv = (logs = []) => {
+  if (!logs || logs.length === 0) return '';
+
+  const sanitizeCell = (val) => {
+    if (val === null || val === undefined) return '""';
+    let str = String(val).replace(/"/g, '""');
+    // Formula injection mitigation (prepend ' if starts with =, +, -, @, \t, \r)
+    if (/^[=+\-@\t\r]/.test(str)) {
+      str = `'${str}`;
+    }
+    return `"${str}"`;
+  };
+
+  const headers = [
+    'Audit Log ID',
+    'Timestamp (UTC)',
+    'Action Type',
+    'Action Label',
+    'Administrator Email',
+    'Admin ID',
+    'Admin Role',
+    'Target Resource',
+    'Target ID',
+    'Result',
+    'Originating Service',
+    'IP Address',
+    'Operational Change Details'
+  ];
+
+  const rows = logs.map((log) => [
+    sanitizeCell(log.auditLogId),
+    sanitizeCell(log.timestampUtc),
+    sanitizeCell(log.actionType),
+    sanitizeCell(formatActionType(log.actionType).label),
+    sanitizeCell(log.adminEmail),
+    sanitizeCell(log.adminId),
+    sanitizeCell(log.adminRole),
+    sanitizeCell(log.targetType),
+    sanitizeCell(log.targetId || 'N/A'),
+    sanitizeCell(log.result),
+    sanitizeCell(log.sourceService),
+    sanitizeCell(log.ipAddress || 'N/A'),
+    sanitizeCell(log.detailsJson || '')
+  ]);
+
+  return '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
+};
+
+/**
+ * Triggers a browser file download of the CSV data.
+ * @param {Array} logs
+ * @param {{ from?: string, to?: string }} dateRange
+ */
+export const downloadAuditLogsCsv = (logs = [], dateRange = {}) => {
+  const csvContent = generateAuditLogsCsv(logs);
+  if (!csvContent) return false;
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const filename = `cinnamon_bistro_audit_trail_${dateRange.from || 'all'}_to_${dateRange.to || 'all'}.csv`;
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  return true;
+};
+

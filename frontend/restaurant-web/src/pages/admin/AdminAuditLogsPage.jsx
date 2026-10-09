@@ -5,7 +5,8 @@ import {
   getAuditActionTypes,
   validateAuditDateRange,
   getAuditDatePreset,
-  formatActionType
+  formatActionType,
+  downloadAuditLogsCsv
 } from '../../services/adminAuditService';
 
 // SVG Icons
@@ -64,6 +65,22 @@ const IconFileText = ({ size = 15, color = 'currentColor' }) => (
     <line x1="16" y1="13" x2="8" y2="13" />
     <line x1="16" y1="17" x2="8" y2="17" />
     <polyline points="10 9 9 9 8 9" />
+  </svg>
+);
+
+const IconDownload = ({ size = 14, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="7 10 12 15 17 10" />
+    <line x1="12" y1="15" x2="12" y2="3" />
+  </svg>
+);
+
+const IconPrinter = ({ size = 14, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="6 9 6 2 18 2 18 9" />
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+    <rect x="6" y="14" width="12" height="8" />
   </svg>
 );
 
@@ -172,7 +189,7 @@ export default function AdminAuditLogsPage() {
 
   // Selected Log for Modal
   const [selectedLog, setSelectedLog] = useState(null);
-  const [showRawJson, setShowRawJson] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Load distinct actions on mount
   useEffect(() => {
@@ -261,12 +278,35 @@ export default function AdminAuditLogsPage() {
     setCurrentPage(1);
   };
 
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const response = await getAuditLogs({
+        fromDate: dateRange.from ? `${dateRange.from}T00:00:00Z` : undefined,
+        toDate: dateRange.to ? `${dateRange.to}T23:59:59Z` : undefined,
+        actionType: actionTypeFilter || undefined,
+        search: searchKeyword.trim() || undefined,
+        page: 1,
+        pageSize: 1000
+      });
+      const records = response.items && response.items.length > 0 ? response.items : logs;
+      downloadAuditLogsCsv(records, dateRange);
+    } catch {
+      downloadAuditLogsCsv(logs, dateRange);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handlePrintPdf = () => {
+    window.print();
+  };
+
   // Close modal on Escape
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setSelectedLog(null);
-        setShowRawJson(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -572,8 +612,82 @@ export default function AdminAuditLogsPage() {
             </span>
           </div>
 
-          <div style={{ fontSize: '0.82rem', color: 'var(--bistro-muted)' }}>
-            Page {currentPage} of {totalPages}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            {/* Export CSV Button */}
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={isExporting || totalCount === 0}
+              title="Download audit logs as an Excel-compatible CSV file"
+              style={{
+                backgroundColor: '#fff',
+                border: '1px solid #dcd3c1',
+                borderRadius: '6px',
+                padding: '0.35rem 0.75rem',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: 'var(--bistro-dark, #201a15)',
+                cursor: isExporting || totalCount === 0 ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                opacity: totalCount === 0 ? 0.6 : 1,
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (totalCount > 0) {
+                  e.currentTarget.style.backgroundColor = '#fdfbf7';
+                  e.currentTarget.style.borderColor = 'var(--bistro-gold)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#fff';
+                e.currentTarget.style.borderColor = '#dcd3c1';
+              }}
+            >
+              <IconDownload size={14} color="#047857" />
+              <span>{isExporting ? 'Exporting...' : 'Export to Excel (CSV)'}</span>
+            </button>
+
+            {/* Print / Save as PDF Button */}
+            <button
+              type="button"
+              onClick={handlePrintPdf}
+              disabled={totalCount === 0}
+              title="Print or Save Audit Report as PDF"
+              style={{
+                backgroundColor: '#fff',
+                border: '1px solid #dcd3c1',
+                borderRadius: '6px',
+                padding: '0.35rem 0.75rem',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: 'var(--bistro-dark, #201a15)',
+                cursor: totalCount === 0 ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                opacity: totalCount === 0 ? 0.6 : 1,
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (totalCount > 0) {
+                  e.currentTarget.style.backgroundColor = '#fdfbf7';
+                  e.currentTarget.style.borderColor = 'var(--bistro-gold)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#fff';
+                e.currentTarget.style.borderColor = '#dcd3c1';
+              }}
+            >
+              <IconPrinter size={14} color="#1e40af" />
+              <span>Print / PDF</span>
+            </button>
+
+            <span style={{ fontSize: '0.82rem', color: 'var(--bistro-muted)', marginLeft: '0.25rem' }}>
+              Page {currentPage} of {totalPages}
+            </span>
           </div>
         </div>
 
@@ -871,10 +985,7 @@ export default function AdminAuditLogsPage() {
             padding: '1.5rem'
           }}
           onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setSelectedLog(null);
-              setShowRawJson(false);
-            }
+            if (e.target === e.currentTarget) setSelectedLog(null);
           }}
         >
           <div
@@ -903,10 +1014,7 @@ export default function AdminAuditLogsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedLog(null);
-                  setShowRawJson(false);
-                }}
+                onClick={() => setSelectedLog(null)}
                 aria-label="Close details"
                 style={{
                   background: 'none',
@@ -998,63 +1106,17 @@ export default function AdminAuditLogsPage() {
                 );
               })()}
 
-              {/* Developer / Technical JSON Toggle */}
-              <div style={{ marginTop: '0.65rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setShowRawJson((prev) => !prev)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--bistro-gold, #c5a059)',
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    textDecoration: 'underline',
-                    cursor: 'pointer',
-                    padding: 0
-                  }}
-                >
-                  {showRawJson ? '▲ Hide Technical JSON' : '▼ Show Technical JSON (Developer View)'}
-                </button>
-                <div style={{ fontSize: '0.74rem', color: 'var(--bistro-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                  <span>🔒</span>
-                  <span>Protected append-only audit record. Zero credentials stored.</span>
-                </div>
+              <div style={{ marginTop: '0.85rem', fontSize: '0.75rem', color: 'var(--bistro-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <span>🔒</span>
+                <span>Protected append-only audit record. Zero passwords, tokens, or credentials stored.</span>
               </div>
-
-              {showRawJson && (
-                <pre
-                  style={{
-                    marginTop: '0.65rem',
-                    backgroundColor: '#1e293b',
-                    color: '#e2e8f0',
-                    padding: '0.85rem 1rem',
-                    borderRadius: '8px',
-                    fontSize: '0.8rem',
-                    overflowX: 'auto',
-                    maxHeight: '220px',
-                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
-                  }}
-                >
-                  {(() => {
-                    try {
-                      return JSON.stringify(JSON.parse(selectedLog.detailsJson || '{}'), null, 2);
-                    } catch {
-                      return selectedLog.detailsJson || '{}';
-                    }
-                  })()}
-                </pre>
-              )}
             </div>
 
             {/* Modal Footer */}
             <div style={{ marginTop: '1.5rem', textAlign: 'right' }}>
               <button
                 type="button"
-                onClick={() => {
-                  setSelectedLog(null);
-                  setShowRawJson(false);
-                }}
+                onClick={() => setSelectedLog(null)}
                 style={{
                   backgroundColor: 'var(--bistro-navy, #1e293b)',
                   color: '#fff',
