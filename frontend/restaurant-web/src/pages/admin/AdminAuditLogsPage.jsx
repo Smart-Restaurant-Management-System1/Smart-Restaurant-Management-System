@@ -276,7 +276,7 @@ export default function AdminAuditLogsPage() {
     setCurrentPage(1);
   };
 
-  const handleExportCsv = async () => {
+  const handleExportExcel = async () => {
     setIsExporting(true);
     try {
       const response = await getAuditLogs({
@@ -662,9 +662,9 @@ export default function AdminAuditLogsPage() {
             {/* Export Excel Button */}
             <button
               type="button"
-              onClick={handleExportCsv}
+              onClick={handleExportExcel}
               disabled={isExporting || totalCount === 0}
-              title="Download styled audit report as an Excel (.xlsx) workbook"
+              title="Download styled audit report as an Excel spreadsheet"
               style={{
                 backgroundColor: '#fff',
                 border: '1px solid #dcd3c1',
@@ -692,7 +692,7 @@ export default function AdminAuditLogsPage() {
               }}
             >
               <IconDownload size={14} color="#047857" />
-              <span>{isExporting ? 'Exporting...' : 'Export to Excel (.xlsx)'}</span>
+              <span>{isExporting ? 'Exporting...' : 'Export to Excel'}</span>
             </button>
 
             {/* Download PDF Report Button */}
