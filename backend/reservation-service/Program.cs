@@ -397,6 +397,16 @@ builder.Services.AddScoped<
     ReservationService.Services.AdminReservationService
 >();
 
+// Admin operational dashboard repository and service (SR-221 / SR-243 / SR-244 / SR-245)
+builder.Services.AddScoped<
+    ReservationService.Repositories.IAdminDashboardRepository,
+    ReservationService.Repositories.AdminDashboardRepository
+>();
+builder.Services.AddScoped<
+    ReservationService.Services.IAdminDashboardService,
+    ReservationService.Services.AdminDashboardService
+>();
+
 // Order cart service
 // Handles cart validation and customer cart operations
 builder.Services.AddScoped<

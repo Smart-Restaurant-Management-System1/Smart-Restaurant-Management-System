@@ -51,6 +51,15 @@ export default function Sidebar({
       path === '/admin' &&
       (
         location.pathname === '/admin' ||
+        location.pathname === '/admin/dashboard'
+      )
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/admin/tables' &&
+      (
         location.pathname === '/admin/tables' ||
         (isAdmin && location.pathname === '/tables')
       )
@@ -492,8 +501,8 @@ export default function Sidebar({
       title: 'Operations',
       items: [
         {
-          to: '/portal',
-          label: 'Admin Dashboard',
+          to: '/admin',
+          label: 'Operational Dashboard',
           icon: dashboardIcon,
         },
         {
@@ -502,7 +511,7 @@ export default function Sidebar({
           icon: usersGroupIcon,
         },
         {
-          to: '/admin',
+          to: '/admin/tables',
           label: 'Table Management',
           icon: tableIcon,
         },

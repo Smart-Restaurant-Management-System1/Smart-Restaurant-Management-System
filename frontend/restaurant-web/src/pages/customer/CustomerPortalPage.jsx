@@ -12,9 +12,25 @@ export default function CustomerPortalPage() {
   const adminCards = [
     {
       number: '01',
+      title: 'Operational Dashboard',
+      description: 'Review real-time restaurant performance, active reservations, kitchen order pipeline, and daily volume trends.',
+      link: '/admin',
+      buttonLabel: 'View Dashboard',
+      buttonClass: 'bistro-button-gold',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+        </svg>
+      ),
+    },
+    {
+      number: '02',
       title: 'Table Management',
       description: 'Configure restaurant floor layouts, seating capacities, table numbers, and toggle real-time availability.',
-      link: '/admin',
+      link: '/admin/tables',
       buttonLabel: 'Manage Tables',
       buttonClass: 'bistro-button-gold',
       icon: (
@@ -27,7 +43,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '02',
+      number: '03',
       title: 'Menu & Dishes',
       description: 'Curate culinary dishes, set prices, update dietary classifications, and toggle real-time menu availability.',
       link: '/admin/menu',
@@ -45,7 +61,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '03',
+      number: '04',
       title: 'User Management',
       description: 'Oversee registered customer accounts and staff personnel, manage role privileges, toggle status, and inspect profiles.',
       link: '/admin/users',
@@ -61,7 +77,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '04',
+      number: '05',
       title: 'Manage Bookings',
       description: 'Review guest dining reservations, verify check-ins, manage seating schedules, and track booking statuses.',
       link: '/admin/reservations',
@@ -77,7 +93,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '05',
+      number: '06',
       title: 'Reports & Analytics',
       description: 'Analyze reservation trends, peak dining hours, cancellation distributions, and export official CSV/Excel reports.',
       link: '/admin/reports/reservations',
@@ -92,7 +108,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '06',
+      number: '07',
       title: 'Kitchen Queue',
       description: 'Monitor live kitchen orders, track dish preparation stages, and review ticket fulfillment queues in real-time.',
       link: '/kitchen',
@@ -106,7 +122,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '07',
+      number: '08',
       title: 'Customer Reviews',
       description: 'Review guest dining satisfaction, inspect ratings distribution, and track customer service quality metrics.',
       link: '/admin/feedback',
@@ -119,7 +135,7 @@ export default function CustomerPortalPage() {
       ),
     },
     {
-      number: '08',
+      number: '09',
       title: 'Payment Verifications',
       description: 'Review guest bank transfer slips, audit cash settlements, and verify live PayHere transactions.',
       link: '/admin/payments',
