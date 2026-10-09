@@ -82,6 +82,74 @@ const CANONICAL_ACTIONS = [
   'TABLE_DELETED'
 ];
 
+const KEY_LABEL_MAP = {
+  targetUserId: 'Target User ID',
+  email: 'User Email',
+  role: 'User Role',
+  newStatus: 'New Status',
+  previousStatus: 'Previous Status',
+  reason: 'Reason / Notes',
+  isAvailable: 'Dish Availability',
+  menuItemId: 'Dish ID',
+  name: 'Dish / Item Name',
+  price: 'Price (LKR)',
+  category: 'Item Category',
+  reservationId: 'Reservation ID',
+  customerName: 'Customer Name',
+  tableNumber: 'Table Number',
+  capacity: 'Seating Capacity',
+  location: 'Dining Location',
+  updatedBy: 'Initiated By'
+};
+
+function formatDetailKey(key) {
+  if (KEY_LABEL_MAP[key]) return KEY_LABEL_MAP[key];
+  return key
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, (str) => str.toUpperCase())
+    .trim();
+}
+
+function renderDetailValue(val) {
+  if (val === null || val === undefined) {
+    return <span style={{ color: '#9ca3af', fontStyle: 'italic' }}>None</span>;
+  }
+  if (typeof val === 'boolean') {
+    return (
+      <span
+        style={{
+          display: 'inline-block',
+          padding: '0.15rem 0.55rem',
+          borderRadius: '9999px',
+          fontSize: '0.74rem',
+          fontWeight: 600,
+          backgroundColor: val ? '#ecfdf5' : '#fef2f2',
+          color: val ? '#065f46' : '#991b1b',
+          border: `1px solid ${val ? '#a7f3d0' : '#fecaca'}`
+        }}
+      >
+        {val ? 'Available / Active' : 'Unavailable / Inactive'}
+      </span>
+    );
+  }
+  const str = String(val);
+  if (str === 'Active' || str === 'Confirmed') {
+    return (
+      <span style={{ color: '#065f46', fontWeight: 600, backgroundColor: '#ecfdf5', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid #a7f3d0', fontSize: '0.76rem' }}>
+        {str}
+      </span>
+    );
+  }
+  if (str === 'Blocked' || str === 'Cancelled' || str === 'Inactive') {
+    return (
+      <span style={{ color: '#991b1b', fontWeight: 600, backgroundColor: '#fef2f2', padding: '0.15rem 0.5rem', borderRadius: '4px', border: '1px solid #fecaca', fontSize: '0.76rem' }}>
+        {str}
+      </span>
+    );
+  }
+  return <strong style={{ color: 'var(--bistro-dark)', fontWeight: 600 }}>{str}</strong>;
+}
+
 export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -104,6 +172,7 @@ export default function AdminAuditLogsPage() {
 
   // Selected Log for Modal
   const [selectedLog, setSelectedLog] = useState(null);
+  const [showRawJson, setShowRawJson] = useState(false);
 
   // Load distinct actions on mount
   useEffect(() => {
@@ -197,6 +266,7 @@ export default function AdminAuditLogsPage() {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setSelectedLog(null);
+        setShowRawJson(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -801,7 +871,10 @@ export default function AdminAuditLogsPage() {
             padding: '1.5rem'
           }}
           onClick={(e) => {
-            if (e.target === e.currentTarget) setSelectedLog(null);
+            if (e.target === e.currentTarget) {
+              setSelectedLog(null);
+              setShowRawJson(false);
+            }
           }}
         >
           <div
@@ -830,7 +903,10 @@ export default function AdminAuditLogsPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedLog(null)}
+                onClick={() => {
+                  setSelectedLog(null);
+                  setShowRawJson(false);
+                }}
                 aria-label="Close details"
                 style={{
                   background: 'none',
@@ -873,42 +949,112 @@ export default function AdminAuditLogsPage() {
               </div>
             </div>
 
-            {/* Sanitized JSON Details */}
+            {/* Sanitized Operational Details */}
             <div>
-              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--bistro-dark)', display: 'block', marginBottom: '0.4rem' }}>
-                Sanitized Operational Details:
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--bistro-dark)', display: 'block', marginBottom: '0.45rem' }}>
+                Operational Change Summary:
               </span>
-              <pre
-                style={{
-                  backgroundColor: '#1e293b',
-                  color: '#e2e8f0',
-                  padding: '1rem',
-                  borderRadius: '8px',
-                  fontSize: '0.82rem',
-                  overflowX: 'auto',
-                  maxHeight: '260px',
-                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
-                }}
-              >
-                {(() => {
-                  try {
-                    return JSON.stringify(JSON.parse(selectedLog.detailsJson || '{}'), null, 2);
-                  } catch {
-                    return selectedLog.detailsJson || 'No additional metadata recorded.';
-                  }
-                })()}
-              </pre>
-              <div style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: 'var(--bistro-muted)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                <span>🔒</span>
-                <span>Protected append-only audit record. Zero passwords, tokens, or credentials stored.</span>
+              {(() => {
+                let parsed = null;
+                try {
+                  parsed = JSON.parse(selectedLog.detailsJson || '{}');
+                } catch {
+                  parsed = null;
+                }
+
+                const entries = parsed && typeof parsed === 'object' ? Object.entries(parsed) : [];
+
+                if (entries.length === 0) {
+                  return (
+                    <div style={{ backgroundColor: '#fcfaf6', padding: '0.85rem 1rem', borderRadius: '8px', border: '1px solid #ebdcc5', fontSize: '0.84rem', color: 'var(--bistro-muted)' }}>
+                      {selectedLog.detailsJson || 'No additional change attributes recorded.'}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ backgroundColor: '#fcfaf6', borderRadius: '8px', border: '1px solid #ebdcc5', overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
+                      <tbody>
+                        {entries.map(([k, v], idx) => (
+                          <tr
+                            key={k}
+                            style={{
+                              borderBottom: idx < entries.length - 1 ? '1px solid #f0eae1' : 'none',
+                              backgroundColor: idx % 2 === 0 ? '#fff' : '#fcfaf6'
+                            }}
+                          >
+                            <td style={{ padding: '0.55rem 0.85rem', width: '38%', color: '#6b7280', fontWeight: 600 }}>
+                              {formatDetailKey(k)}
+                            </td>
+                            <td style={{ padding: '0.55rem 0.85rem' }}>
+                              {renderDetailValue(v)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+
+              {/* Developer / Technical JSON Toggle */}
+              <div style={{ marginTop: '0.65rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowRawJson((prev) => !prev)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--bistro-gold, #c5a059)',
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                >
+                  {showRawJson ? '▲ Hide Technical JSON' : '▼ Show Technical JSON (Developer View)'}
+                </button>
+                <div style={{ fontSize: '0.74rem', color: 'var(--bistro-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <span>🔒</span>
+                  <span>Protected append-only audit record. Zero credentials stored.</span>
+                </div>
               </div>
+
+              {showRawJson && (
+                <pre
+                  style={{
+                    marginTop: '0.65rem',
+                    backgroundColor: '#1e293b',
+                    color: '#e2e8f0',
+                    padding: '0.85rem 1rem',
+                    borderRadius: '8px',
+                    fontSize: '0.8rem',
+                    overflowX: 'auto',
+                    maxHeight: '220px',
+                    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
+                  }}
+                >
+                  {(() => {
+                    try {
+                      return JSON.stringify(JSON.parse(selectedLog.detailsJson || '{}'), null, 2);
+                    } catch {
+                      return selectedLog.detailsJson || '{}';
+                    }
+                  })()}
+                </pre>
+              )}
             </div>
 
             {/* Modal Footer */}
             <div style={{ marginTop: '1.5rem', textAlign: 'right' }}>
               <button
                 type="button"
-                onClick={() => setSelectedLog(null)}
+                onClick={() => {
+                  setSelectedLog(null);
+                  setShowRawJson(false);
+                }}
                 style={{
                   backgroundColor: 'var(--bistro-navy, #1e293b)',
                   color: '#fff',
