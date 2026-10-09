@@ -328,13 +328,71 @@ public sealed class ReservationsController : ControllerBase
         if (request.Page < 1) errors["page"] = ["Page must be at least 1."];
         if (request.PageSize is < 1 or > 100) errors["pageSize"] = ["Page size must be between 1 and 100."];
         if (request.VisitFrom is not null && request.VisitTo is not null && request.VisitFrom > request.VisitTo) errors["visitTo"] = ["Visit end date must not be before visit start date."];
+        if (request.VisitFrom is not null && request.VisitTo is not null && (request.VisitTo.Value.DayNumber - request.VisitFrom.Value.DayNumber) > SearchDateRangeValidator.MaxRangeDays) errors["visitTo"] = [$"Date range cannot exceed {SearchDateRangeValidator.MaxRangeDays} days."];
         if (!string.IsNullOrWhiteSpace(request.Status) && !ReservationStatus.IsKnown(request.Status)) errors["status"] = ["Status must be Pending, Confirmed, Cancelled, or Completed."];
         if (request.TableNumber?.Length > 32) errors["tableNumber"] = ["Table number must not exceed 32 characters."];
         if (request.BookingReference?.Length > 32) errors["bookingReference"] = ["Booking reference must not exceed 32 characters."];
         if (errors.Count > 0) return BadRequest(new ValidationProblemDetails(errors) { Status = StatusCodes.Status400BadRequest });
         if (_adminService is null) return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation management is unavailable." });
-        var page = await _adminService.SearchAsync(new AdminReservationQuery(request.VisitFrom, request.VisitTo, request.Status, request.TableNumber, request.BookingReference, request.Page, request.PageSize), cancellationToken);
+        var page = await _adminService.SearchAsync(new AdminReservationQuery(request.VisitFrom, request.VisitTo, request.Status, request.TableNumber, request.BookingReference, request.Page, request.PageSize, request.Customer), cancellationToken);
         return Ok(ToAdminResponse(page));
+    }
+
+    [Authorize(Roles = AppRoles.Admin)]
+    [HttpGet("export")]
+    [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ExportAdminReservations(
+        [FromQuery] AdminReservationQueryDto request,
+        [FromQuery] string format = "csv",
+        CancellationToken cancellationToken = default)
+    {
+        var errors = new Dictionary<string, string[]>();
+        if (request.VisitFrom is not null && request.VisitTo is not null && request.VisitFrom > request.VisitTo)
+            errors["visitTo"] = ["Visit end date must not be before visit start date."];
+        if (request.VisitFrom is not null && request.VisitTo is not null && (request.VisitTo.Value.DayNumber - request.VisitFrom.Value.DayNumber) > SearchDateRangeValidator.MaxRangeDays)
+            errors["visitTo"] = [$"Date range cannot exceed {SearchDateRangeValidator.MaxRangeDays} days."];
+        if (!string.IsNullOrWhiteSpace(request.Status) && !ReservationStatus.IsKnown(request.Status))
+            errors["status"] = ["Status must be Pending, Confirmed, Cancelled, or Completed."];
+
+        var normalizedFormat = format?.Trim().ToLowerInvariant() ?? "csv";
+        if (normalizedFormat is not ("csv" or "xlsx"))
+            errors["format"] = ["Format must be csv or xlsx."];
+
+        if (errors.Count > 0)
+            return BadRequest(new ValidationProblemDetails(errors) { Status = StatusCodes.Status400BadRequest });
+
+        if (_adminService is null)
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Reservation management is unavailable." });
+
+        var query = new AdminReservationQuery(
+            request.VisitFrom,
+            request.VisitTo,
+            request.Status,
+            request.TableNumber,
+            request.BookingReference,
+            1,
+            10000,
+            request.Customer);
+
+        var reservations = await _adminService.GetForExportAsync(query, cancellationToken);
+        var adminEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "admin@cinnamonbistro.com";
+
+        if (normalizedFormat == "xlsx")
+        {
+            var xlsxBytes = SpreadsheetExportHelper.BuildReservationsXlsx(reservations, query, adminEmail);
+            var filename = $"cinnamon-bistro-reservations-{DateTime.UtcNow:yyyyMMdd-HHmmss}.xlsx";
+            return File(xlsxBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename);
+        }
+        else
+        {
+            var csvBytes = SpreadsheetExportHelper.BuildReservationsCsvWithMetadata(reservations, query, adminEmail);
+            var filename = $"cinnamon-bistro-reservations-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+            return File(csvBytes, "text/csv; charset=utf-8", filename);
+        }
     }
 
     [Authorize(Roles = AppRoles.Admin)]
@@ -402,9 +460,20 @@ public sealed class ReservationsController : ControllerBase
 
     private static AdminReservationItemDto ToAdminItem(Reservation reservation) => new()
     {
-        ReservationId = reservation.Id, CustomerId = reservation.CustomerId, BookingReference = reservation.BookingReference, TableId = reservation.TableId,
-        TableNumber = reservation.TableNumber, StartDateTime = reservation.StartDateTime, EndDateTime = reservation.EndDateTime, GuestCount = reservation.GuestCount,
-        Status = reservation.Status, CreatedAt = reservation.CreatedAt, UpdatedAt = reservation.UpdatedAt
+        ReservationId = reservation.Id,
+        CustomerId = reservation.CustomerId,
+        CustomerName = reservation.CustomerName,
+        CustomerEmail = reservation.CustomerEmail,
+        CustomerPhone = reservation.CustomerPhone,
+        BookingReference = reservation.BookingReference,
+        TableId = reservation.TableId,
+        TableNumber = reservation.TableNumber,
+        StartDateTime = reservation.StartDateTime,
+        EndDateTime = reservation.EndDateTime,
+        GuestCount = reservation.GuestCount,
+        Status = reservation.Status,
+        CreatedAt = reservation.CreatedAt,
+        UpdatedAt = reservation.UpdatedAt
     };
 
     private static AdminReservationResponseDto ToAdminResponse(ReservationHistoryPage page) => new()

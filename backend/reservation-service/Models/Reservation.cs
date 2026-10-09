@@ -4,6 +4,9 @@ public sealed record Reservation
 {
     public int Id { get; init; }
     public int CustomerId { get; init; }
+    public string CustomerName { get; init; } = string.Empty;
+    public string CustomerEmail { get; init; } = string.Empty;
+    public string CustomerPhone { get; init; } = string.Empty;
     public int TableId { get; init; }
     public string TableNumber { get; init; } = string.Empty;
     public string BookingReference { get; init; } = string.Empty;

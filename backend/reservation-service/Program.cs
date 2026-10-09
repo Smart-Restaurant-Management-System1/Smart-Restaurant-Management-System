@@ -417,6 +417,16 @@ builder.Services.AddScoped<
     ReservationService.Services.AuditLogWriter
 >();
 
+// Admin order search, filtering, and export (SR-222 / SR-247 / SR-248)
+builder.Services.AddScoped<
+    ReservationService.Repositories.IAdminOrderRepository,
+    ReservationService.Repositories.AdminOrderRepository
+>();
+builder.Services.AddScoped<
+    ReservationService.Services.IAdminOrderService,
+    ReservationService.Services.AdminOrderService
+>();
+
 // Order cart service
 // Handles cart validation and customer cart operations
 builder.Services.AddScoped<
