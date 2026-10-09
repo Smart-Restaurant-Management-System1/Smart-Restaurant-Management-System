@@ -2393,11 +2393,15 @@ body {
    ======================================================== */
 .profile-master-container {
   max-width: 1240px;
-  margin: 0 auto;
+  margin: -0.75rem auto 0;
 }
 
 .profile-master-container .page-header {
-  margin-bottom: 1.15rem !important;
+  margin-bottom: 0.85rem !important;
+}
+
+.app-main-content:has(.profile-master-container) {
+  padding: 1.25rem 2rem 1.5rem !important;
 }
 
 .profile-master-card {
@@ -2434,7 +2438,7 @@ body {
 }
 
 .profile-column-panel {
-  padding: 1.25rem 1.6rem;
+  padding: 1.15rem 1.6rem;
   display: flex;
   flex-direction: column;
 }
@@ -2442,6 +2446,12 @@ body {
 .profile-column-panel.right-panel {
   border-left: 1px solid #eedfc9;
   background: #fdfcf9;
+}
+
+.profile-form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
 .profile-form-grid {

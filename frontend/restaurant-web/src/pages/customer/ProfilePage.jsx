@@ -410,11 +410,12 @@ export default function ProfilePage() {
                   </h2>
                   <div
                     style={{
-                      fontSize: '0.78rem',
+                      fontSize: '0.8rem',
                       color: '#78716c',
                       marginTop: '0.15rem',
                       wordBreak: 'break-all',
                     }}
+                    title={formData.email || user?.email}
                   >
                     {formData.email || user?.email || 'No email registered'}
                   </div>
@@ -582,7 +583,7 @@ export default function ProfilePage() {
             )}
 
             <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-              <div className="profile-form-grid">
+              <div className="profile-form-stack">
                 {/* Full Name */}
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label htmlFor="profileFullName" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
@@ -652,7 +653,7 @@ export default function ProfilePage() {
                         cursor: 'not-allowed',
                         borderColor: '#e5dacf',
                       }}
-                      title="Account email address is permanent and cannot be modified."
+                      title={formData.email || 'Account email address is permanent and cannot be modified.'}
                     />
                   </div>
                 </div>
@@ -688,37 +689,6 @@ export default function ProfilePage() {
                     />
                   </div>
                   {fieldErrors.phoneNumber && <div className="error-text" style={{ color: '#ef4444', fontSize: '0.72rem', marginTop: '0.2rem' }}>{fieldErrors.phoneNumber}</div>}
-                </div>
-
-                {/* System Authorization */}
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
-                    System Authorization
-                  </label>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.45rem 0.8rem',
-                      background: '#faf7f2',
-                      border: '1px solid #eedfc9',
-                      borderRadius: '8px',
-                      fontSize: '0.8rem',
-                      color: '#282115',
-                      fontWeight: 500,
-                      minHeight: '36px',
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8c6736" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {roleDisplay.authorization}
-                    </span>
-                  </div>
                 </div>
               </div>
 
@@ -843,9 +813,9 @@ export default function ProfilePage() {
             )}
 
             <form onSubmit={handlePasswordSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
-              <div className="profile-form-grid">
+              <div className="profile-form-stack">
                 {/* Current Password - Full Width */}
-                <div className="form-group" style={{ gridColumn: 'span 2', marginBottom: 0 }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
                   <label htmlFor="currentPassword" style={{ display: 'block', color: '#374151', fontWeight: 600, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
                     Current Password <span style={{ color: '#c5a059' }}>*</span>
                   </label>
