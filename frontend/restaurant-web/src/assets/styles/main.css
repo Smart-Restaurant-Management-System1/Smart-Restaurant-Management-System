@@ -315,10 +315,12 @@ body {
 .form-row {
   display: flex;
   gap: 1.2rem;
+  flex-wrap: wrap;
 }
 
 .form-row .form-group {
-  flex: 1;
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 .form-group {
@@ -644,7 +646,8 @@ body {
    ======================================================== */
 
 .fullscreen-auth-container {
-  width: 100vw;
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: row;
@@ -1034,10 +1037,14 @@ body {
   }
 
   .fullscreen-options-row {
+    display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-top: 0.25rem;
     margin-bottom: 1.4rem;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .fullscreen-tabs {

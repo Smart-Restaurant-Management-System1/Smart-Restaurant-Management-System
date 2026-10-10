@@ -496,7 +496,7 @@ export default function AdminOperationalDashboardPage() {
             aria-label="Core operational metrics"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
               gap: '1.2rem',
               marginBottom: '2rem'
             }}
@@ -894,8 +894,8 @@ export default function AdminOperationalDashboardPage() {
 
             {/* Category Breakdown Table */}
             {categories && categories.length > 0 && (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
+              <div className="bistro-table-responsive" style={{ border: 'none', borderRadius: 0, marginBottom: 0 }}>
+                <table style={{ width: '100%', minWidth: '520px', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid #ebdcc5', textAlign: 'left', color: 'var(--bistro-ink)' }}>
                       <th style={{ padding: '0.6rem 0.8rem', fontWeight: 600 }}>Category</th>
@@ -1068,9 +1068,9 @@ export default function AdminOperationalDashboardPage() {
             )}
 
             {hasActivity && viewMode === 'table' && (
-              <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
+              <div className="bistro-table-responsive" style={{ border: 'none', borderRadius: 0, marginBottom: 0, marginTop: '1rem' }}>
                 <table
-                  style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}
+                  style={{ width: '100%', minWidth: '450px', borderCollapse: 'collapse', fontSize: '0.84rem' }}
                   aria-label="Daily volume trends data table"
                 >
                   <caption style={{ textAlign: 'left', paddingBottom: '0.5rem', color: 'var(--bistro-muted)', fontSize: '0.8rem' }}>

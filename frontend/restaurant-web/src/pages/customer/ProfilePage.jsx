@@ -697,6 +697,7 @@ export default function ProfilePage() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  flexWrap: 'wrap',
                   gap: '0.65rem',
                   marginTop: '1rem',
                   paddingTop: '0.75rem',
@@ -951,6 +952,7 @@ export default function ProfilePage() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
+                  flexWrap: 'wrap',
                   gap: '0.65rem',
                   marginTop: '1rem',
                   paddingTop: '0.75rem',

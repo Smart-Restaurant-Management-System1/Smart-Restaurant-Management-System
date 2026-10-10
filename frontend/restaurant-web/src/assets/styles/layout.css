@@ -970,49 +970,195 @@ tbody tr:hover {
   background: #fbf6ec !important;
 }
 
-/* Semantic Status Tags */
+/* Standardized Responsive Table Container with Slim Gold Scrollbar */
+.bistro-table-container,
+.bistro-table-responsive {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+  border: 1px solid var(--bistro-border);
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(40, 37, 31, 0.03);
+  scrollbar-width: thin;
+  scrollbar-color: #cca967 #f7f3eb;
+  margin-bottom: 1.5rem;
+}
+
+.bistro-table-container::-webkit-scrollbar,
+.bistro-table-responsive::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.bistro-table-container::-webkit-scrollbar-track,
+.bistro-table-responsive::-webkit-scrollbar-track {
+  background: #f7f3eb;
+  border-radius: 4px;
+}
+
+.bistro-table-container::-webkit-scrollbar-thumb,
+.bistro-table-responsive::-webkit-scrollbar-thumb {
+  background: #cca967;
+  border-radius: 4px;
+}
+
+.bistro-table-container::-webkit-scrollbar-thumb:hover,
+.bistro-table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #8c6736;
+}
+
+.bistro-table-container table,
+.bistro-table-responsive table {
+  margin-bottom: 0;
+  border: none;
+  border-radius: 0;
+  min-width: 650px;
+}
+
+/* Generalized & Semantic Status Tags */
+.bistro-badge,
+.reservation-status-confirmed,
+.status-badge-available,
+.reservation-status-pending,
+.status-badge-reserved,
+.reservation-status-cancelled,
+.status-badge-occupied,
+.status-badge-inactive,
+.reservation-status-completed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem !important;
+  border-radius: 9999px !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.bistro-badge-success,
+.bistro-badge-available,
+.bistro-badge-confirmed,
+.bistro-badge-completed,
+.bistro-badge-paid,
 .reservation-status-confirmed,
 .status-badge-available {
   background: #eef7ed !important;
   color: #276732 !important;
   border: 1px solid #c3e2c5 !important;
-  border-radius: 9999px !important;
-  padding: 0.3rem 0.75rem !important;
-  font-size: 0.76rem !important;
-  font-weight: 600 !important;
 }
 
+.bistro-badge-warning,
+.bistro-badge-pending,
+.bistro-badge-reserved,
+.bistro-badge-unpaid,
 .reservation-status-pending,
 .status-badge-reserved {
   background: #fdf5e6 !important;
   color: #8c6736 !important;
   border: 1px solid #edd5a4 !important;
-  border-radius: 9999px !important;
-  padding: 0.3rem 0.75rem !important;
-  font-size: 0.76rem !important;
-  font-weight: 600 !important;
 }
 
+.bistro-badge-danger,
+.bistro-badge-cancelled,
+.bistro-badge-occupied,
+.bistro-badge-inactive,
+.bistro-badge-failed,
 .reservation-status-cancelled,
 .status-badge-occupied,
 .status-badge-inactive {
   background: #fdf2f2 !important;
   color: #991b1b !important;
   border: 1px solid #fecaca !important;
-  border-radius: 9999px !important;
-  padding: 0.3rem 0.75rem !important;
-  font-size: 0.76rem !important;
-  font-weight: 600 !important;
 }
 
+.bistro-badge-info,
+.bistro-badge-preparing,
+.bistro-badge-processing {
+  background: #f0f7ff !important;
+  color: #1e40af !important;
+  border: 1px solid #bfdbfe !important;
+}
+
+.bistro-badge-neutral,
 .reservation-status-completed {
   background: #f0ede6 !important;
   color: #554e44 !important;
   border: 1px solid #ded6c8 !important;
-  border-radius: 9999px !important;
-  padding: 0.3rem 0.75rem !important;
-  font-size: 0.76rem !important;
-  font-weight: 600 !important;
+}
+
+/* Fluid Responsive Grid Utilities */
+.bistro-card-grid-fluid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Responsive Filter & Action Bars */
+.bistro-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.bistro-filter-bar input,
+.bistro-filter-bar select {
+  min-width: 140px;
+  flex: 1 1 180px;
+}
+
+/* Standardized Empty & Loading States */
+.bistro-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  background: #ffffff;
+  border: 1px dashed var(--bistro-border);
+  border-radius: 12px;
+  color: var(--bistro-muted);
+  width: 100%;
+}
+
+.bistro-empty-state-icon {
+  font-size: 2.25rem;
+  color: var(--bistro-gold);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bistro-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 1.5rem;
+  color: var(--bistro-muted);
+  gap: 0.85rem;
+  width: 100%;
+}
+
+.bistro-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #eee8dc;
+  border-top-color: var(--bistro-gold);
+  border-radius: 50%;
+  animation: bistroSpin 0.8s linear infinite;
+}
+
+@keyframes bistroSpin {
+  to { transform: rotate(360deg); }
 }
 
 /* Mobile Sidebar Drawer Backdrop */
