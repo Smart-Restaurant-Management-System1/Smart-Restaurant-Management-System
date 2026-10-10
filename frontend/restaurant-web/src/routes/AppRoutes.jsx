@@ -11,13 +11,17 @@ import CustomerCartPage from '../pages/customer/CustomerCartPage';
 import ProfilePage from '../pages/customer/ProfilePage';
 
 import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import AdminOperationalDashboardPage from '../pages/admin/AdminOperationalDashboardPage';
 import AdminReservationsPage from '../pages/admin/AdminReservationsPage';
+import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
 import ReservationReportsPage from '../pages/admin/ReservationReportsPage';
 import MenuManagementPage from '../pages/admin/MenuManagementPage';
 import AdminUserManagementPage from '../pages/admin/AdminUserManagementPage';
 import AdminFeedbackPage from '../pages/admin/AdminFeedbackPage';
 import AdminPaymentsPage from '../pages/admin/AdminPaymentsPage';
+import AdminAuditLogsPage from '../pages/admin/AdminAuditLogsPage';
 import CustomerFeedbackPage from '../pages/customer/CustomerFeedbackPage';
+import NotificationsPage from '../pages/customer/NotificationsPage';
 
 import KitchenQueuePage from '../pages/kitchen/KitchenQueuePage';
 import ActiveTablesPage from '../pages/tables/ActiveTablesPage';
@@ -216,6 +220,12 @@ export default function AppRoutes() {
           path="/feedback"
           element={<CustomerFeedbackPage />}
         />
+
+        {/* Customer Notification Center - SR-220 / SR-237 */}
+        <Route
+          path="/notifications"
+          element={<NotificationsPage />}
+        />
       </Route>
 
       {/* Tables Route */}
@@ -236,7 +246,7 @@ export default function AppRoutes() {
           path="/tables"
           element={
             user?.roles?.includes(ROLES.ADMIN) ? (
-              <Navigate to="/admin" replace />
+              <Navigate to="/admin/tables" replace />
             ) : (
               <ActiveTablesPage />
             )
@@ -295,10 +305,14 @@ export default function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        {/* Admin Dashboard */}
+        {/* Admin Operational Dashboard - SR-221 */}
         <Route
           path="/admin"
-          element={<AdminDashboardPage />}
+          element={<AdminOperationalDashboardPage />}
+        />
+        <Route
+          path="/admin/dashboard"
+          element={<AdminOperationalDashboardPage />}
         />
 
         {/* Menu Management - SR-130 */}
@@ -313,10 +327,16 @@ export default function AppRoutes() {
           element={<AdminUserManagementPage />}
         />
 
-        {/* Existing Admin Routes */}
+        {/* Table Management - SR-01 */}
         <Route
           path="/admin/tables"
-          element={<Navigate to="/admin" replace />}
+          element={<AdminDashboardPage />}
+        />
+
+        {/* Order Management & Search - SR-222 / SR-247 */}
+        <Route
+          path="/admin/orders"
+          element={<AdminOrdersPage />}
         />
 
         <Route
@@ -339,6 +359,12 @@ export default function AppRoutes() {
         <Route
           path="/admin/payments"
           element={<AdminPaymentsPage />}
+        />
+
+        {/* Admin Audit Trail - SR-223 / SR-253 */}
+        <Route
+          path="/admin/audit-logs"
+          element={<AdminAuditLogsPage />}
         />
       </Route>
 

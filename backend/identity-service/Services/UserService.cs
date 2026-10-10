@@ -9,11 +9,19 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly ILogger<UserService> _logger;
+    private readonly IIdentityAuditWriter? _auditWriter;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public UserService(IUserRepository userRepository, ILogger<UserService> logger)
+    public UserService(
+        IUserRepository userRepository, 
+        ILogger<UserService> logger, 
+        IIdentityAuditWriter? auditWriter = null,
+        IPasswordHasher? passwordHasher = null)
     {
         _userRepository = userRepository;
         _logger = logger;
+        _auditWriter = auditWriter;
+        _passwordHasher = passwordHasher ?? new BcryptPasswordHasher();
     }
 
     public async Task<UserResponseDto?> GetProfileAsync(int userId)
@@ -65,6 +73,61 @@ public class UserService : IUserService
         return MapToDto(freshUser);
     }
 
+    public async Task<bool> ChangePasswordAsync(int userId, ChangePasswordRequestDto request)
+    {
+        if (request == null) throw new ArgumentNullException(nameof(request));
+
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new KeyNotFoundException("User not found");
+        }
+
+        // Verify current password against stored BCrypt hash
+        if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+        {
+            _logger.LogWarning("Change password rejected for userId {UserId}: Invalid current password", userId);
+            throw new InvalidOperationException("Current password is incorrect.");
+        }
+
+        // New password cannot be the same as current password
+        if (_passwordHasher.VerifyPassword(request.NewPassword, user.PasswordHash))
+        {
+            _logger.LogWarning("Change password rejected for userId {UserId}: New password cannot be the same as current password", userId);
+            throw new InvalidOperationException("New password cannot be the same as the current password.");
+        }
+
+        var newPasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+        var updated = await _userRepository.UpdatePasswordHashAsync(userId, newPasswordHash);
+        if (!updated)
+        {
+            throw new InvalidOperationException("Failed to update password. Please try again.");
+        }
+
+        _logger.LogInformation("Password successfully updated for userId {UserId}", userId);
+
+        if (_auditWriter != null)
+        {
+            try
+            {
+                await _auditWriter.LogActionAsync(
+                    "PASSWORD_CHANGE",
+                    userId,
+                    user.Email,
+                    "User",
+                    userId.ToString(),
+                    "Success",
+                    new { Message = "User successfully changed account password" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to record audit log for password change on userId {UserId}", userId);
+            }
+        }
+
+        return true;
+    }
+
     public async Task<AdminUserListResponseDto> GetAdminUsersAsync(AdminUserQueryDto query)
     {
         query ??= new AdminUserQueryDto();
@@ -109,6 +172,10 @@ public class UserService : IUserService
 
         if (targetUserId == currentAdminUserId)
         {
+            if (_auditWriter != null)
+            {
+                await _auditWriter.LogActionAsync("USER_STATUS_CHANGE_DENIED", currentAdminUserId, "admin@cinnamonbistro.com", "User", targetUserId.ToString(), "Denied", new { Reason = "Attempted to alter status of own administrative account" });
+            }
             throw new InvalidOperationException("You cannot alter the status of your own administrative account.");
         }
 
@@ -124,6 +191,10 @@ public class UserService : IUserService
             var activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
             if (activeAdminCount <= 1)
             {
+                if (_auditWriter != null)
+                {
+                    await _auditWriter.LogActionAsync("USER_STATUS_CHANGE_DENIED", currentAdminUserId, "admin@cinnamonbistro.com", "User", targetUserId.ToString(), "Denied", new { Reason = "Cannot deactivate or block the only remaining active Administrator" });
+                }
                 throw new InvalidOperationException("Cannot deactivate or block the only remaining active Administrator.");
             }
         }
@@ -138,6 +209,20 @@ public class UserService : IUserService
         _logger.LogInformation("Admin {AdminId} changed status of user {UserId} ({Email}) to {Status}. Reason: {Reason}",
             currentAdminUserId, targetUserId, targetUser.Email, normalizedStatus, reason ?? "N/A");
 
+        if (_auditWriter != null)
+        {
+            var adminUser = await _userRepository.GetByIdAsync(currentAdminUserId);
+            var adminEmail = adminUser?.Email ?? "admin@cinnamonbistro.com";
+            var actionType = normalizedStatus == "Blocked" ? "USER_BLOCKED" : (normalizedStatus == "Active" ? "USER_UNBLOCKED" : "USER_STATUS_CHANGED");
+            await _auditWriter.LogActionAsync(actionType, currentAdminUserId, adminEmail, "User", targetUserId.ToString(), "Success", new
+            {
+                TargetEmail = targetUser.Email,
+                TargetRoles = string.Join(",", targetUser.Roles),
+                NewStatus = normalizedStatus,
+                Reason = reason ?? "N/A"
+            });
+        }
+
         var freshUser = await _userRepository.GetByIdAsync(targetUserId);
         return MapToDto(freshUser!);
     }
@@ -146,6 +231,10 @@ public class UserService : IUserService
     {
         if (targetUserId == currentAdminUserId)
         {
+            if (_auditWriter != null)
+            {
+                await _auditWriter.LogActionAsync("USER_DELETE_DENIED", currentAdminUserId, "admin@cinnamonbistro.com", "User", targetUserId.ToString(), "Denied", new { Reason = "Attempted to delete own administrative account" });
+            }
             throw new InvalidOperationException("You cannot delete your own administrative account.");
         }
 
@@ -161,6 +250,10 @@ public class UserService : IUserService
             var activeAdminCount = await _userRepository.GetActiveAdminCountAsync();
             if (activeAdminCount <= 1)
             {
+                if (_auditWriter != null)
+                {
+                    await _auditWriter.LogActionAsync("USER_DELETE_DENIED", currentAdminUserId, "admin@cinnamonbistro.com", "User", targetUserId.ToString(), "Denied", new { Reason = "Cannot delete the only remaining active Administrator" });
+                }
                 throw new InvalidOperationException("Cannot delete the only remaining active Administrator.");
             }
         }
@@ -170,6 +263,17 @@ public class UserService : IUserService
         if (deleted)
         {
             _logger.LogInformation("Admin {AdminId} safely soft-deleted user {UserId} ({Email}).", currentAdminUserId, targetUserId, targetUser.Email);
+
+            if (_auditWriter != null)
+            {
+                var adminUser = await _userRepository.GetByIdAsync(currentAdminUserId);
+                var adminEmail = adminUser?.Email ?? "admin@cinnamonbistro.com";
+                await _auditWriter.LogActionAsync("USER_DELETED", currentAdminUserId, adminEmail, "User", targetUserId.ToString(), "Success", new
+                {
+                    TargetEmail = targetUser.Email,
+                    TargetRoles = string.Join(",", targetUser.Roles)
+                });
+            }
         }
 
         return deleted;

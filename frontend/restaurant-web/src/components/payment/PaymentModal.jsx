@@ -4,6 +4,7 @@ import {
   launchPayHereHostedCheckout,
   requestCashPayment,
   submitBankTransferSlip,
+  simulatePayHereSandboxPayment,
 } from '../../services/paymentService';
 import './paymentModal.css';
 
@@ -45,6 +46,35 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
       setError(
         err.response?.data?.message ||
           'Failed to initiate PayHere payment. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInstantSandboxPayment = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      setSuccessMessage('Processing instant sandbox payment confirmation...');
+
+      const result = await simulatePayHereSandboxPayment({
+        orderType: order.orderType,
+        orderId: order.orderId,
+      });
+
+      setSuccessMessage('Payment Succeeded! Order settlement confirmed.');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('notifications:updated'));
+      }
+      setTimeout(() => {
+        if (onPaymentInitiated) onPaymentInitiated(result);
+        onClose();
+      }, 1200);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          'Failed to simulate sandbox payment. Please try again.'
       );
     } finally {
       setLoading(false);
@@ -216,7 +246,7 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
                 <span>256-Bit SSL Encrypted & Central Bank of Sri Lanka Approved Payment Partner</span>
               </div>
 
-              <div className="payment-actions" style={{ marginTop: '0.4rem' }}>
+              <div className="payment-actions" style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <button
                   type="button"
                   className="payment-primary-btn"
@@ -225,6 +255,27 @@ export default function PaymentModal({ isOpen, onClose, order, onPaymentInitiate
                   style={{ width: '100%' }}
                 >
                   {loading ? 'Connecting to PayHere…' : `Pay ${formattedAmount} via PayHere`}
+                </button>
+                <button
+                  type="button"
+                  className="payment-secondary-btn"
+                  onClick={handleInstantSandboxPayment}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(135deg, #f7e096 0%, #ddbb78 100%)',
+                    color: '#282115',
+                    border: '1px solid #c5a059',
+                    fontWeight: 700,
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 2px 5px rgba(197, 160, 89, 0.25)',
+                    fontSize: '0.86rem',
+                  }}
+                  title="Direct sandbox simulation without external redirect (useful for local development)"
+                >
+                  ⚡ Instant Sandbox Payment (Direct Localhost)
                 </button>
               </div>
             </>

@@ -51,6 +51,15 @@ export default function Sidebar({
       path === '/admin' &&
       (
         location.pathname === '/admin' ||
+        location.pathname === '/admin/dashboard'
+      )
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/admin/tables' &&
+      (
         location.pathname === '/admin/tables' ||
         (isAdmin && location.pathname === '/tables')
       )
@@ -68,6 +77,13 @@ export default function Sidebar({
     if (
       path === '/admin/users' &&
       location.pathname.startsWith('/admin/users')
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/admin/audit-logs' &&
+      location.pathname.startsWith('/admin/audit-logs')
     ) {
       return true;
     }
@@ -110,6 +126,13 @@ export default function Sidebar({
     if (
       path === '/admin/reservations' &&
       location.pathname === '/admin/reservations'
+    ) {
+      return true;
+    }
+
+    if (
+      path === '/admin/orders' &&
+      location.pathname.startsWith('/admin/orders')
     ) {
       return true;
     }
@@ -330,6 +353,22 @@ export default function Sidebar({
     </svg>
   );
 
+  const auditShieldIcon = (
+    <svg
+      width="19"
+      height="19"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  );
+
   const documentIcon = (
     <svg
       width="19"
@@ -492,8 +531,8 @@ export default function Sidebar({
       title: 'Operations',
       items: [
         {
-          to: '/portal',
-          label: 'Admin Dashboard',
+          to: '/admin',
+          label: 'Operational Dashboard',
           icon: dashboardIcon,
         },
         {
@@ -502,7 +541,7 @@ export default function Sidebar({
           icon: usersGroupIcon,
         },
         {
-          to: '/admin',
+          to: '/admin/tables',
           label: 'Table Management',
           icon: tableIcon,
         },
@@ -516,6 +555,11 @@ export default function Sidebar({
           label: 'Kitchen Management',
           icon: kitchenIcon,
         },
+        {
+          to: '/admin/audit-logs',
+          label: 'Audit Trail',
+          icon: auditShieldIcon,
+        },
       ],
     },
     {
@@ -525,6 +569,11 @@ export default function Sidebar({
           to: '/admin/reservations',
           label: 'Manage Bookings',
           icon: documentIcon,
+        },
+        {
+          to: '/admin/orders',
+          label: 'Manage Orders',
+          icon: ordersIcon,
         },
         {
           to: '/admin/payments',
@@ -645,6 +694,12 @@ export default function Sidebar({
                 <span className="sidebar-nav-label">
                   {item.label}
                 </span>
+
+                {item.badge && (
+                  <span className="sidebar-nav-badge">
+                    {item.badge}
+                  </span>
+                )}
               </Link>
             ))}
           </div>

@@ -21,14 +21,18 @@ public sealed class OrdersController : ControllerBase
 
 
     private readonly IOutboxRepository _outboxRepository;
+    private readonly INotificationRepository? _notificationRepository;
+
     public OrdersController(
         DatabaseHelper databaseHelper,
         ILogger<OrdersController> logger,
-        IOutboxRepository outboxRepository)
+        IOutboxRepository outboxRepository,
+        INotificationRepository? notificationRepository = null)
     {
         _databaseHelper = databaseHelper;
         _logger = logger;
         _outboxRepository = outboxRepository;
+        _notificationRepository = notificationRepository;
     }
 
     [HttpPost("dine-in")]
@@ -106,6 +110,28 @@ public sealed class OrdersController : ControllerBase
                 null,
                 idempotencyKey,
                 cancellationToken);
+
+            if (_notificationRepository is not null)
+            {
+                try
+                {
+                    await _notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = customerId,
+                        EventType = NotificationEventTypes.OrderCreated,
+                        Title = "Order Placed",
+                        Message = $"Your dine-in order #DIN-{orderId:D6} (Table {request.TableId}) has been placed successfully.",
+                        ReferenceType = "Order",
+                        ReferenceId = orderId,
+                        ReferenceCode = $"DIN-{orderId:D6}",
+                        IdempotencyKey = $"notif:order:created:DIN-{orderId:D6}"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must never break order creation
+                }
+            }
 
             var response = new DineInOrderResponse(orderId, $"DIN-{orderId:D6}", "Received", total);
             await transaction.CommitAsync(cancellationToken);

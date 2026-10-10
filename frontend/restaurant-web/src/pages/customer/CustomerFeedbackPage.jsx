@@ -323,7 +323,7 @@ export default function CustomerFeedbackPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
           gap: '2rem',
           alignItems: 'start',
         }}
@@ -590,7 +590,7 @@ export default function CustomerFeedbackPage() {
               )}
 
               {linkType === 'order' && (
-                <div style={{ backgroundColor: '#faf6ef', border: '1px solid #eedfc9', borderRadius: '10px', padding: '1rem', marginTop: '0.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem' }}>
+                <div style={{ backgroundColor: '#faf6ef', border: '1px solid #eedfc9', borderRadius: '10px', padding: '1rem', marginTop: '0.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '0.85rem' }}>
                   <div>
                     <label htmlFor="orderIdInput" style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#8c6736', marginBottom: '0.35rem' }}>
                       Order ID

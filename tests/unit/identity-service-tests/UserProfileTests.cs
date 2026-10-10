@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using System.Security.Claims;
 using IdentityService.Controllers;
 using IdentityService.DTOs;
@@ -19,6 +19,7 @@ public class UserProfileTests
     private readonly Mock<IUserRepository> _userRepoMock;
     private readonly Mock<ILogger<UserService>> _userServiceLoggerMock;
     private readonly Mock<ILogger<UsersController>> _controllerLoggerMock;
+    private readonly Mock<IPasswordHasher> _passwordHasherMock;
     private readonly UserService _userService;
     private readonly UsersController _controller;
 
@@ -27,8 +28,9 @@ public class UserProfileTests
         _userRepoMock = new Mock<IUserRepository>();
         _userServiceLoggerMock = new Mock<ILogger<UserService>>();
         _controllerLoggerMock = new Mock<ILogger<UsersController>>();
+        _passwordHasherMock = new Mock<IPasswordHasher>();
 
-        _userService = new UserService(_userRepoMock.Object, _userServiceLoggerMock.Object);
+        _userService = new UserService(_userRepoMock.Object, _userServiceLoggerMock.Object, null, _passwordHasherMock.Object);
         _controller = new UsersController(_userService, _controllerLoggerMock.Object);
     }
 
@@ -287,15 +289,181 @@ public class UserProfileTests
 
         var getMethod = controllerType.GetMethod(nameof(UsersController.GetProfile));
         var putMethod = controllerType.GetMethod(nameof(UsersController.UpdateProfile));
+        var changePasswordMethod = controllerType.GetMethod(nameof(UsersController.ChangePassword));
 
         Assert.NotNull(getMethod);
         Assert.NotNull(putMethod);
+        Assert.NotNull(changePasswordMethod);
 
         var hasGetAuthorize = hasClassAuthorize || getMethod.GetCustomAttributes(typeof(AuthorizeAttribute), true).Any();
         var hasPutAuthorize = hasClassAuthorize || putMethod.GetCustomAttributes(typeof(AuthorizeAttribute), true).Any();
+        var hasChangePasswordAuthorize = hasClassAuthorize || changePasswordMethod.GetCustomAttributes(typeof(AuthorizeAttribute), true).Any();
 
         Assert.True(hasGetAuthorize, "GET /api/users/profile must require Authorize attribute");
         Assert.True(hasPutAuthorize, "PUT /api/users/profile must require Authorize attribute");
+        Assert.True(hasChangePasswordAuthorize, "POST /api/users/change-password must require Authorize attribute");
+    }
+
+    #endregion
+
+    #region Change Password Tests (SR-224 / SR-255 / SR-256)
+
+    [Fact]
+    public async Task ChangePassword_ValidCredentials_SuccessfullyUpdatesPassword()
+    {
+        // Arrange
+        const int userId = 10;
+        SetUserContext(userId);
+
+        var existingUser = new User
+        {
+            UserId = userId,
+            Email = "customer@bistro.com",
+            PasswordHash = "old_hashed_password"
+        };
+
+        var request = new ChangePasswordRequestDto
+        {
+            CurrentPassword = "CurrentPassword123!",
+            NewPassword = "NewSecurePassword456!",
+            ConfirmPassword = "NewSecurePassword456!"
+        };
+
+        _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(existingUser);
+        _passwordHasherMock.Setup(h => h.VerifyPassword("CurrentPassword123!", "old_hashed_password")).Returns(true);
+        _passwordHasherMock.Setup(h => h.VerifyPassword("NewSecurePassword456!", "old_hashed_password")).Returns(false);
+        _passwordHasherMock.Setup(h => h.HashPassword("NewSecurePassword456!")).Returns("new_hashed_password");
+        _userRepoMock.Setup(r => r.UpdatePasswordHashAsync(userId, "new_hashed_password")).ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.ChangePassword(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
+        _userRepoMock.Verify(r => r.UpdatePasswordHashAsync(userId, "new_hashed_password"), Times.Once);
+    }
+
+    [Fact]
+    public async Task ChangePassword_IncorrectCurrentPassword_ReturnsBadRequest()
+    {
+        // Arrange
+        const int userId = 10;
+        SetUserContext(userId);
+
+        var existingUser = new User
+        {
+            UserId = userId,
+            Email = "customer@bistro.com",
+            PasswordHash = "old_hashed_password"
+        };
+
+        var request = new ChangePasswordRequestDto
+        {
+            CurrentPassword = "WrongPassword!",
+            NewPassword = "NewPassword123!",
+            ConfirmPassword = "NewPassword123!"
+        };
+
+        _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(existingUser);
+        _passwordHasherMock.Setup(h => h.VerifyPassword("WrongPassword!", "old_hashed_password")).Returns(false);
+
+        // Act
+        var result = await _controller.ChangePassword(request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.NotNull(badRequest.Value);
+        _userRepoMock.Verify(r => r.UpdatePasswordHashAsync(It.IsAny<int>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangePassword_SameNewPasswordAsCurrent_ReturnsBadRequest()
+    {
+        // Arrange
+        const int userId = 10;
+        SetUserContext(userId);
+
+        var existingUser = new User
+        {
+            UserId = userId,
+            Email = "customer@bistro.com",
+            PasswordHash = "old_hashed_password"
+        };
+
+        var request = new ChangePasswordRequestDto
+        {
+            CurrentPassword = "SamePassword123!",
+            NewPassword = "SamePassword123!",
+            ConfirmPassword = "SamePassword123!"
+        };
+
+        _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(existingUser);
+        _passwordHasherMock.Setup(h => h.VerifyPassword("SamePassword123!", "old_hashed_password")).Returns(true);
+
+        // Act
+        var result = await _controller.ChangePassword(request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.NotNull(badRequest.Value);
+        _userRepoMock.Verify(r => r.UpdatePasswordHashAsync(It.IsAny<int>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ChangePassword_UserNotFound_ReturnsNotFound()
+    {
+        // Arrange
+        const int userId = 999;
+        SetUserContext(userId);
+
+        var request = new ChangePasswordRequestDto
+        {
+            CurrentPassword = "CurrentPass123!",
+            NewPassword = "NewPass123!",
+            ConfirmPassword = "NewPass123!"
+        };
+
+        _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync((User?)null);
+
+        // Act
+        var result = await _controller.ChangePassword(request);
+
+        // Assert
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task ChangePassword_MissingIdentity_ReturnsUnauthorized()
+    {
+        // Arrange: unauthenticated user
+        SetUserContext(null);
+
+        var request = new ChangePasswordRequestDto
+        {
+            CurrentPassword = "CurrentPass123!",
+            NewPassword = "NewPass123!",
+            ConfirmPassword = "NewPass123!"
+        };
+
+        // Act
+        var result = await _controller.ChangePassword(request);
+
+        // Assert
+        Assert.IsType<UnauthorizedObjectResult>(result);
+    }
+
+    [Fact]
+    public void ChangePasswordRequestDto_RequiresAnnotations()
+    {
+        var properties = typeof(ChangePasswordRequestDto).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Select(p => p.Name)
+            .ToList();
+
+        Assert.Equal(3, properties.Count);
+        Assert.Contains("CurrentPassword", properties);
+        Assert.Contains("NewPassword", properties);
+        Assert.Contains("ConfirmPassword", properties);
     }
 
     #endregion

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { registerUser } from '../../services/authService';
 import registrationIllustration from '../../assets/images/registrationbg.png';
+import { isDisposableEmail, validateRegisterEmail } from './registerValidation';
 
 export default function Register({ onNavigateToLogin }) {
   const [accountType, setAccountType] = useState('Customer'); // 'Customer' or 'Staff'
@@ -66,10 +67,13 @@ export default function Register({ onNavigateToLogin }) {
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!formData.email.trim()) {
+    const cleanEmail = formData.email.trim();
+    if (!cleanEmail) {
       errors.email = 'Email address is required';
-    } else if (!emailRegex.test(formData.email.trim())) {
+    } else if (!emailRegex.test(cleanEmail)) {
       errors.email = 'Please enter a valid email address';
+    } else if (isDisposableEmail(cleanEmail)) {
+      errors.email = 'Temporary or disposable email addresses are prohibited. Please use a permanent email.';
     }
 
     if (formData.phoneNumber && !/^[+0-9\s-]{7,15}$/.test(formData.phoneNumber.trim())) {
@@ -124,9 +128,11 @@ export default function Register({ onNavigateToLogin }) {
     setIsSubmitted(true);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const cleanEmail = formData.email.trim();
     const isBasicValid =
       formData.fullName.trim().length >= 2 &&
-      emailRegex.test(formData.email.trim()) &&
+      emailRegex.test(cleanEmail) &&
+      !isDisposableEmail(cleanEmail) &&
       formData.password.length >= 6 &&
       formData.password === formData.confirmPassword;
 
@@ -217,7 +223,7 @@ export default function Register({ onNavigateToLogin }) {
 
           {error && (
             <div className="alert alert-danger" role="alert">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '10px', flexShrink: 0 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '10px', flexShrink: 0 }}>
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="12" y1="8" x2="12" y2="12"></line>
                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -228,7 +234,7 @@ export default function Register({ onNavigateToLogin }) {
 
           {successData && (
             <div className="alert alert-success" role="alert">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '10px', flexShrink: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '10px', flexShrink: 0 }}>
                 <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>

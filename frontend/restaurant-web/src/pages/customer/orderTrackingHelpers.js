@@ -26,7 +26,14 @@ export const formatOrderCurrency = (amount) => {
 
 export const formatOrderDateTime = (dateValue) => {
   if (!dateValue) return 'N/A';
-  const date = new Date(dateValue);
+  const isoStr =
+    typeof dateValue === 'string' &&
+    !dateValue.endsWith('Z') &&
+    !dateValue.includes('+') &&
+    !dateValue.includes(' -')
+      ? `${dateValue}Z`
+      : dateValue;
+  const date = new Date(isoStr);
   if (Number.isNaN(date.getTime())) return 'N/A';
   return date.toLocaleString('en-US', {
     month: 'short',

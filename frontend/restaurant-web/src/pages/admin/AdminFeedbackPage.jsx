@@ -375,7 +375,7 @@ export default function AdminFeedbackPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
           gap: '1.25rem',
           marginBottom: '1.75rem',
         }}
@@ -934,8 +934,8 @@ export default function AdminFeedbackPage() {
         </div>
 
         {/* Responsive Table */}
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.86rem' }}>
+        <div className="bistro-table-responsive" style={{ border: 'none', borderRadius: 0, marginBottom: 0 }}>
+          <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.86rem' }}>
             <thead>
               <tr
                 style={{

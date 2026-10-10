@@ -25,7 +25,7 @@ export default function UnauthorizedPage() {
       justifyContent: 'center',
       background: '#0b0d12',
       color: '#f3f4f6',
-      padding: '2rem'
+      padding: 'clamp(1rem, 4vw, 2rem)',
     }}>
       <div style={{
         maxWidth: '520px',
@@ -33,9 +33,9 @@ export default function UnauthorizedPage() {
         background: '#ffffff',
         color: '#111827',
         borderRadius: '16px',
-        padding: '3rem 2.5rem',
+        padding: 'clamp(1.75rem, 5vw, 3rem) clamp(1.25rem, 4vw, 2.5rem)',
         textAlign: 'center',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
+        boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
       }}>
         <div style={{
           width: '64px',
@@ -54,10 +54,10 @@ export default function UnauthorizedPage() {
           </svg>
         </div>
 
-        <h1 style={{ fontSize: '1.85rem', fontWeight: '700', marginBottom: '0.75rem', color: '#111827' }}>
+        <h1 style={{ fontSize: 'clamp(1.4rem, 5vw, 1.85rem)', fontWeight: '700', marginBottom: '0.75rem', color: '#111827' }}>
           403 - Access Denied
         </h1>
-        <p style={{ color: '#6b7280', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '2rem' }}>
+        <p style={{ color: '#6b7280', fontSize: '0.92rem', lineHeight: '1.5', marginBottom: '2rem' }}>
           Your current account role does not have authorization to view this restricted page. If you believe this is an error, please contact restaurant management.
         </p>
 
@@ -68,6 +68,7 @@ export default function UnauthorizedPage() {
             onClick={handleReturn}
             style={{
               padding: '0.75rem 1.5rem',
+              width: 'min(100%, 280px)',
               background: 'var(--gold-gradient)',
               color: '#11141a',
               border: 'none',

@@ -44,7 +44,7 @@ export default function ReservationConfirmationPage() {
           background: '#ffffff',
           border: '1px solid #eedfc9',
           borderRadius: '12px',
-          padding: '2.25rem',
+          padding: 'clamp(1.25rem, 4vw, 2.25rem)',
           boxShadow: '0 4px 18px rgba(40, 33, 21, 0.05)',
           overflow: 'hidden',
         }}
@@ -67,6 +67,7 @@ export default function ReservationConfirmationPage() {
             display: 'flex',
             alignItems: 'center',
             gap: '1rem',
+            flexWrap: 'wrap',
             marginBottom: '1.75rem',
             background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)',
             border: '1px solid #bbf7d0',
@@ -127,7 +128,7 @@ export default function ReservationConfirmationPage() {
         <dl
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
             gap: '1rem',
             margin: '0 0 2rem 0',
           }}
@@ -185,13 +186,13 @@ export default function ReservationConfirmationPage() {
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap' }}>
-          <Link className="bistro-button-gold" to="/portal" style={{ flex: 1, minWidth: '180px', justifyContent: 'center' }}>
+          <Link className="bistro-button-gold" to="/portal" style={{ flex: 1, minWidth: 'min(100%, 160px)', justifyContent: 'center' }}>
             Dining Dashboard <span aria-hidden="true">→</span>
           </Link>
-          <Link className="bistro-button-outline" to="/reservations/history" style={{ flex: 1, minWidth: '180px', justifyContent: 'center' }}>
+          <Link className="bistro-button-outline" to="/reservations/history" style={{ flex: 1, minWidth: 'min(100%, 160px)', justifyContent: 'center' }}>
             View My Reservations
           </Link>
-          <Link className="bistro-button-outline" to="/menu" style={{ flex: 1, minWidth: '180px', justifyContent: 'center' }}>
+          <Link className="bistro-button-outline" to="/menu" style={{ flex: 1, minWidth: 'min(100%, 160px)', justifyContent: 'center' }}>
             Browse Menu
           </Link>
         </div>

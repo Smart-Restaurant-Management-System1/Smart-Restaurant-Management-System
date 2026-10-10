@@ -14,6 +14,7 @@ public class AuthServiceTests
     private readonly Mock<IUserRepository> _userRepoMock;
     private readonly Mock<IPasswordHasher> _passwordHasherMock;
     private readonly Mock<IJwtTokenGenerator> _jwtTokenGeneratorMock;
+    private readonly Mock<IEmailValidatorService> _emailValidatorMock;
     private readonly Mock<IConfiguration> _configMock;
     private readonly Mock<ILogger<AuthService>> _loggerMock;
     private readonly AuthService _authService;
@@ -23,6 +24,7 @@ public class AuthServiceTests
         _userRepoMock = new Mock<IUserRepository>();
         _passwordHasherMock = new Mock<IPasswordHasher>();
         _jwtTokenGeneratorMock = new Mock<IJwtTokenGenerator>();
+        _emailValidatorMock = new Mock<IEmailValidatorService>();
         _configMock = new Mock<IConfiguration>();
         _configMock.Setup(c => c["Staff:AuthorizationCode"]).Returns("BISTRO2026");
         _loggerMock = new Mock<ILogger<AuthService>>();
@@ -31,6 +33,7 @@ public class AuthServiceTests
             _userRepoMock.Object,
             _passwordHasherMock.Object,
             _jwtTokenGeneratorMock.Object,
+            _emailValidatorMock.Object,
             _configMock.Object,
             _loggerMock.Object);
     }
@@ -54,6 +57,46 @@ public class AuthServiceTests
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _authService.RegisterAsync(request));
         Assert.Contains("already exists", exception.Message);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_DisposableEmail_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var request = new RegisterRequestDto
+        {
+            FullName = "Spam User",
+            Email = "fake@tempmail.com",
+            Password = "Password123"
+        };
+
+        _emailValidatorMock.Setup(v => v.ValidateEmailDeliverabilityAsync(request.Email))
+            .ThrowsAsync(new InvalidOperationException("Registration with temporary or disposable email addresses is prohibited. Please use a permanent email address."));
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _authService.RegisterAsync(request));
+        Assert.Contains("disposable email", exception.Message, StringComparison.OrdinalIgnoreCase);
+        _userRepoMock.Verify(r => r.CreateUserWithRoleAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_NonExistentDomain_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var request = new RegisterRequestDto
+        {
+            FullName = "Fake Domain User",
+            Email = "user@fakeinvalid999test.com",
+            Password = "Password123"
+        };
+
+        _emailValidatorMock.Setup(v => v.ValidateEmailDeliverabilityAsync(request.Email))
+            .ThrowsAsync(new InvalidOperationException("The email domain 'fakeinvalid999test.com' does not exist or cannot receive mail. Please verify your email address."));
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _authService.RegisterAsync(request));
+        Assert.Contains("does not exist", exception.Message, StringComparison.OrdinalIgnoreCase);
+        _userRepoMock.Verify(r => r.CreateUserWithRoleAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
@@ -279,14 +322,14 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
-        Assert.Equal("Invalid email or password.", exception.Message);
+        var exception = await Assert.ThrowsAsync<AccountDeactivatedException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Your account has been deactivated. Please contact restaurant management.", exception.Message);
     }
 
     [Fact]
-    public async Task LoginAsync_BlockedUser_ThrowsUnauthorizedAccessException_WithGenericSafeMessage()
+    public async Task LoginAsync_BlockedUser_ThrowsUnauthorizedAccessException_WithExplicitStatusMessage()
     {
-        // Arrange - SR-257: Blocked users must be rejected with safe, non-revealing error message
+        // Arrange - Blocked users must receive an explicit message explaining their account status
         var request = new LoginRequestDto
         {
             Email = "blocked@bistro.com",
@@ -308,14 +351,14 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
-        Assert.Equal("Invalid email or password.", exception.Message);
+        var exception = await Assert.ThrowsAsync<AccountDeactivatedException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Your account has been blocked by administration. Please contact restaurant management.", exception.Message);
     }
 
     [Fact]
-    public async Task LoginAsync_SoftDeletedUser_ThrowsUnauthorizedAccessException_WithGenericSafeMessage()
+    public async Task LoginAsync_SoftDeletedUser_ThrowsUnauthorizedAccessException_WithExplicitStatusMessage()
     {
-        // Arrange - SR-257: Soft-deleted/deactivated accounts must be rejected with safe error message
+        // Arrange - Soft-deleted/deactivated accounts must receive an explicit status message
         var request = new LoginRequestDto
         {
             Email = "deleted@bistro.com",
@@ -338,8 +381,8 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
-        Assert.Equal("Invalid email or password.", exception.Message);
+        var exception = await Assert.ThrowsAsync<AccountDeactivatedException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Your account has been deactivated. Please contact restaurant management.", exception.Message);
     }
 
     #endregion

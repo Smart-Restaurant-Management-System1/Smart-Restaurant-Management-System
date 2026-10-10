@@ -860,8 +860,8 @@ export default function MenuManagementPage() {
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <div className="bistro-table-responsive" style={{ border: 'none', borderRadius: 0, marginBottom: 0 }}>
+            <table style={{ width: '100%', minWidth: '850px', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: '#f5efe6', borderBottom: '1px solid #dfd8cb' }}>
                   <th style={{ padding: '0.9rem 1.25rem', fontSize: '0.76rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#534532' }}>
@@ -1217,7 +1217,7 @@ export default function MenuManagementPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
                   gap: '1.5rem',
                   marginBottom: '1.25rem',
                 }}

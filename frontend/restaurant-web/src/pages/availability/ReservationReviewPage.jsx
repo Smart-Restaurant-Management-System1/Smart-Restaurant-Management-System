@@ -89,7 +89,7 @@ export default function ReservationReviewPage() {
           background: '#ffffff',
           border: '1px solid #eedfc9',
           borderRadius: '12px',
-          padding: '2rem',
+          padding: 'clamp(1.15rem, 4vw, 2rem)',
           boxShadow: '0 4px 16px rgba(40, 33, 21, 0.05)',
           overflow: 'hidden',
         }}
@@ -112,6 +112,8 @@ export default function ReservationReviewPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.85rem',
             background: '#fcf9f5',
             border: '1px solid #eedfc9',
             borderRadius: '10px',
@@ -172,7 +174,7 @@ export default function ReservationReviewPage() {
         <dl
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
             gap: '1rem',
             margin: '0 0 1.5rem 0',
           }}

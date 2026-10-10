@@ -65,6 +65,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (updatedData) => {
+    setUser((prev) => {
+      const merged = { ...prev, ...updatedData };
+      try {
+        localStorage.setItem('user', JSON.stringify(merged));
+      } catch (err) {
+        console.error('Failed to update user in localStorage:', err);
+      }
+      return merged;
+    });
+  };
+
   const value = {
     user,
     token,
@@ -72,6 +84,7 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     login,
     logout,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

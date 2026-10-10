@@ -219,6 +219,27 @@
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cca967 #f7f3eb;
+}
+
+.admin-payments-table-responsive::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.admin-payments-table-responsive::-webkit-scrollbar-track {
+  background: #f7f3eb;
+  border-radius: 4px;
+}
+
+.admin-payments-table-responsive::-webkit-scrollbar-thumb {
+  background: #cca967;
+  border-radius: 4px;
+}
+
+.admin-payments-table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #8c6736;
 }
 
 .admin-payments-table {

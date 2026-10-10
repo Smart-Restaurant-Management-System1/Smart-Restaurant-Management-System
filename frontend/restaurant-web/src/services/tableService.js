@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { handleAuthResponseError } from './api';
+import { handleAuthResponseError } from './api.js';
 
 const RESERVATION_API_BASE =
-  import.meta.env.VITE_RESERVATION_API_URL || 'http://localhost:5000/api';
+  import.meta.env?.VITE_RESERVATION_API_URL || 'http://localhost:5000/api';
 
 export const reservationApi = axios.create({
   baseURL: RESERVATION_API_BASE,
@@ -91,6 +91,13 @@ export const getMyReservationDetail = async (reservationId) => (await reservatio
 export const rescheduleReservation = async (reservationId, request) => (await reservationApi.put(`/reservations/${reservationId}`, request)).data;
 
 export const getAdminReservations = async (filters) => (await reservationApi.get('/reservations', { params: filters })).data;
+export const exportAdminReservations = async (filters, format = 'xlsx') => {
+  const response = await reservationApi.get('/reservations/export', {
+    params: { ...filters, format },
+    responseType: 'blob',
+  });
+  return response.data;
+};
 export const updateAdminReservationStatus = async (reservationId, status) => (await reservationApi.patch(`/reservations/${reservationId}/status`, { status })).data;
 
 /**

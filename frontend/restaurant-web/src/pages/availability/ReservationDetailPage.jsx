@@ -19,7 +19,7 @@ export function ReservationDetails({ reservation }) {
         background: '#ffffff',
         border: '1px solid #eedfc9',
         borderRadius: '12px',
-        padding: '1.75rem',
+        padding: 'clamp(1rem, 3vw, 1.75rem)',
         boxShadow: '0 3px 14px rgba(40, 33, 21, 0.04)',
         overflow: 'hidden',
       }}
@@ -87,7 +87,7 @@ export function ReservationDetails({ reservation }) {
       <dl
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
           gap: '0.85rem',
           margin: 0,
         }}
@@ -311,7 +311,7 @@ export default function ReservationDetailPage() {
             background: '#ffffff',
             border: '1px solid #eedfc9',
             borderRadius: '12px',
-            padding: '1.75rem',
+            padding: 'clamp(1rem, 3vw, 1.75rem)',
             marginTop: '1.5rem',
             boxShadow: '0 3px 12px rgba(40, 33, 21, 0.04)',
             overflow: 'hidden',
@@ -338,7 +338,7 @@ export default function ReservationDetailPage() {
 
           <fieldset disabled={busy} style={{ border: 'none', padding: 0, margin: 0 }}>
             <legend style={{ display: 'none' }}>Booking details</legend>
-            <div className="availability-fields">
+            <div className="availability-fields" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: '1rem', marginBottom: '1rem' }}>
               <label style={{ fontSize: '0.76rem', color: '#574e3f', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 Table Choice
                 <select
@@ -403,8 +403,8 @@ export default function ReservationDetailPage() {
         style={{
           border: '1px solid #eedfc9',
           borderRadius: '14px',
-          padding: '2rem',
-          maxWidth: '440px',
+          padding: 'clamp(1.25rem, 5vw, 2rem)',
+          maxWidth: 'min(440px, 92vw)',
           boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
         }}
       >
@@ -434,7 +434,7 @@ export default function ReservationDetailPage() {
         <p style={{ textAlign: 'center', color: '#78716c', marginBottom: '1.75rem', fontSize: '0.9rem', lineHeight: 1.5 }}>
           Your booking reference is <strong style={{ color: '#282115', letterSpacing: '0.04em' }}>{reservation.bookingReference}</strong>. This will release your reserved table back into open availability.
         </p>
-        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
             type="button"
             autoFocus

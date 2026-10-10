@@ -1,6 +1,8 @@
 using System.Data;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Configuration;
 using MySqlConnector;
 using ReservationService.Data;
 using ReservationService.Events;
@@ -19,8 +21,14 @@ public sealed class ReservationRepository(
     DatabaseHelper databaseHelper,
     IBookingReferenceGenerator referenceGenerator,
     ReservationMaintenancePolicy maintenancePolicy,
-    IOutboxRepository outboxRepository) : IReservationRepository
+    IOutboxRepository outboxRepository,
+    INotificationRepository? notificationRepository = null,
+    IConfiguration? configuration = null) : IReservationRepository
 {
+    private readonly string _identityDatabaseName = Regex.Replace(
+        configuration?["IdentityDb:DatabaseName"] ?? configuration?["IDENTITY_DB_NAME"] ?? "restaurant_identity_db",
+        @"[^\w]", "");
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -32,12 +40,13 @@ public sealed class ReservationRepository(
     public async Task<ReservationHistoryPage> GetForAdminAsync(AdminReservationQuery query, CancellationToken cancellationToken = default)
     {
         await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        var idDb = string.IsNullOrWhiteSpace(_identityDatabaseName) ? "restaurant_identity_db" : _identityDatabaseName;
         var (where, parameters) = BuildAdminFilters(query);
-        await using var count = new MySqlCommand($"SELECT COUNT(*) FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId {where};", connection);
+        await using var count = new MySqlCommand($"SELECT COUNT(*) FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId LEFT JOIN `{idDb}`.`Users` AS u ON u.UserId = r.CustomerId {where};", connection);
         AddParameters(count, parameters);
         var total = Convert.ToInt32(await count.ExecuteScalarAsync(cancellationToken));
-        const string columns = "r.Id, r.CustomerId, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
-        await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT @PageSize OFFSET @Offset;", connection);
+        var columns = $"r.Id, r.CustomerId, COALESCE(u.FullName, '') AS CustomerName, COALESCE(u.Email, '') AS CustomerEmail, COALESCE(u.PhoneNumber, '') AS CustomerPhone, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
+        await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId LEFT JOIN `{idDb}`.`Users` AS u ON u.UserId = r.CustomerId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT @PageSize OFFSET @Offset;", connection);
         AddParameters(command, parameters);
         command.Parameters.AddWithValue("@PageSize", query.PageSize);
         command.Parameters.AddWithValue("@Offset", (query.Page - 1) * query.PageSize);
@@ -45,6 +54,20 @@ public sealed class ReservationRepository(
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken)) items.Add(MapReservation(reader));
         return new ReservationHistoryPage(items, query.Page, query.PageSize, total);
+    }
+
+    public async Task<IReadOnlyList<Reservation>> GetForAdminExportAsync(AdminReservationQuery query, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await databaseHelper.CreateConnectionAsync(cancellationToken);
+        var idDb = string.IsNullOrWhiteSpace(_identityDatabaseName) ? "restaurant_identity_db" : _identityDatabaseName;
+        var (where, parameters) = BuildAdminFilters(query);
+        var columns = $"r.Id, r.CustomerId, COALESCE(u.FullName, '') AS CustomerName, COALESCE(u.Email, '') AS CustomerEmail, COALESCE(u.PhoneNumber, '') AS CustomerPhone, r.TableId, COALESCE(t.TableNumber, '') AS TableNumber, r.BookingReference, r.StartDateTime, r.EndDateTime, r.GuestCount, r.Status, r.CreatedAt, r.UpdatedAt";
+        await using var command = new MySqlCommand($"SELECT {columns} FROM Reservations AS r LEFT JOIN RestaurantTables AS t ON t.Id = r.TableId LEFT JOIN `{idDb}`.`Users` AS u ON u.UserId = r.CustomerId {where} ORDER BY r.StartDateTime DESC, r.Id DESC LIMIT 10000;", connection);
+        AddParameters(command, parameters);
+        var items = new List<Reservation>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken)) items.Add(MapReservation(reader));
+        return items;
     }
 
     public async Task<Reservation?> GetByIdAsync(int reservationId, CancellationToken cancellationToken = default)
@@ -155,6 +178,45 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
                 ? ReservationEventFactory.Cancelled(updated, occurredAt)
                 : ReservationEventFactory.StatusChanged(updated, currentStatus, occurredAt);
             await InsertOutboxAsync(connection, transaction, envelope, reservationId, cancellationToken);
+
+            if (notificationRepository is not null)
+            {
+                try
+                {
+                    var title = targetStatus switch
+                    {
+                        ReservationStatus.Cancelled => "Reservation Cancelled",
+                        ReservationStatus.Confirmed => "Reservation Confirmed",
+                        ReservationStatus.Completed => "Reservation Completed",
+                        _ => $"Reservation {targetStatus}"
+                    };
+
+                    var message = targetStatus switch
+                    {
+                        ReservationStatus.Cancelled => $"Your table reservation #{updated.BookingReference} for {updated.StartDateTime:MMM dd, yyyy HH:mm} has been cancelled.",
+                        ReservationStatus.Confirmed => $"Your table reservation #{updated.BookingReference} for {updated.StartDateTime:MMM dd, yyyy HH:mm} has been confirmed.",
+                        ReservationStatus.Completed => $"Your dining reservation #{updated.BookingReference} has concluded. Thank you for dining with us at Cinnamon Bistro!",
+                        _ => $"Your reservation #{updated.BookingReference} status is now {targetStatus}."
+                    };
+
+                    await notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = updated.CustomerId,
+                        EventType = targetStatus == ReservationStatus.Cancelled ? NotificationEventTypes.ReservationCancelled : NotificationEventTypes.ReservationUpdated,
+                        Title = title,
+                        Message = message,
+                        ReferenceType = "Reservation",
+                        ReferenceId = updated.Id,
+                        ReferenceCode = updated.BookingReference,
+                        IdempotencyKey = $"notif:res:status:{updated.Id}:{targetStatus}"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must never break reservation operation
+                }
+            }
+
             await transaction.CommitAsync(cancellationToken);
             return true;
         }
@@ -203,6 +265,29 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
                     // SR-115: insert outbox row inside the same transaction — both commit together.
                     var envelope = ReservationEventFactory.Created(reservation, DateTimeOffset.UtcNow);
                     await InsertOutboxAsync(connection, transaction, envelope, reservation.Id, cancellationToken);
+
+                    if (notificationRepository is not null)
+                    {
+                        try
+                        {
+                            await notificationRepository.CreateNotificationAsync(new CustomerNotification
+                            {
+                                CustomerId = reservation.CustomerId,
+                                EventType = NotificationEventTypes.ReservationCreated,
+                                Title = "Reservation Confirmed",
+                                Message = $"Your table reservation #{reservation.BookingReference} for {reservation.StartDateTime:MMM dd, yyyy HH:mm} (Table {table.Value.TableNumber}) has been confirmed.",
+                                ReferenceType = "Reservation",
+                                ReferenceId = reservation.Id,
+                                ReferenceCode = reservation.BookingReference,
+                                IdempotencyKey = $"notif:res:created:{reservation.Id}"
+                            }, connection, transaction, cancellationToken);
+                        }
+                        catch
+                        {
+                            // Notification failure must never break reservation operation
+                        }
+                    }
+
                     await transaction.CommitAsync(cancellationToken);
                     return new(ReservationCreateOutcome.Created, reservation);
                 }
@@ -246,6 +331,29 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
             var updated = await UpdateScheduleAsync(connection, transaction, existing, command, table.Value.TableNumber, cancellationToken);
             var envelope = ReservationEventFactory.Updated(updated, DateTimeOffset.UtcNow);
             await InsertOutboxAsync(connection, transaction, envelope, updated.Id, cancellationToken);
+
+            if (notificationRepository is not null)
+            {
+                try
+                {
+                    await notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = updated.CustomerId,
+                        EventType = NotificationEventTypes.ReservationUpdated,
+                        Title = "Reservation Rescheduled",
+                        Message = $"Your reservation #{updated.BookingReference} has been rescheduled to {updated.StartDateTime:MMM dd, yyyy HH:mm} (Table {table.Value.TableNumber}).",
+                        ReferenceType = "Reservation",
+                        ReferenceId = updated.Id,
+                        ReferenceCode = updated.BookingReference,
+                        IdempotencyKey = $"notif:res:updated:{updated.Id}:{updated.StartDateTime:yyyyMMddHHmm}:{updated.TableId}"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must never break reservation operation
+                }
+            }
+
             await transaction.CommitAsync(cancellationToken);
             return new(ReservationRescheduleOutcome.Updated, updated);
         }
@@ -291,6 +399,28 @@ WHERE Id = @Id AND Status = @CurrentStatus AND (@CustomerId IS NULL OR CustomerI
             // SR-115: only insert outbox on actual state transition (not on idempotent replay).
             var envelope = ReservationEventFactory.Cancelled(existing, new DateTimeOffset(now, TimeSpan.Zero));
             await InsertOutboxAsync(connection, transaction, envelope, reservationId, cancellationToken);
+
+            if (notificationRepository is not null)
+            {
+                try
+                {
+                    await notificationRepository.CreateNotificationAsync(new CustomerNotification
+                    {
+                        CustomerId = existing.CustomerId,
+                        EventType = NotificationEventTypes.ReservationCancelled,
+                        Title = "Reservation Cancelled",
+                        Message = $"Your table reservation #{existing.BookingReference} for {existing.StartDateTime:MMM dd, yyyy HH:mm} has been cancelled.",
+                        ReferenceType = "Reservation",
+                        ReferenceId = existing.Id,
+                        ReferenceCode = existing.BookingReference,
+                        IdempotencyKey = $"notif:res:cancelled:{existing.Id}"
+                    }, connection, transaction, cancellationToken);
+                }
+                catch
+                {
+                    // Notification failure must never break reservation operation
+                }
+            }
         }
         // Idempotent replay: already Cancelled — commit no-op, produce no duplicate event.
         await transaction.CommitAsync(cancellationToken);
@@ -420,6 +550,9 @@ FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Cu
     {
         Id = reader.GetInt32("Id"),
         CustomerId = reader.GetInt32("CustomerId"),
+        CustomerName = SafeGetString(reader, "CustomerName"),
+        CustomerEmail = SafeGetString(reader, "CustomerEmail"),
+        CustomerPhone = SafeGetString(reader, "CustomerPhone"),
         TableId = reader.GetInt32("TableId"),
         TableNumber = reader.GetString("TableNumber"),
         BookingReference = reader.GetString("BookingReference"),
@@ -431,6 +564,19 @@ FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Cu
         UpdatedAt = reader.GetDateTime("UpdatedAt"),
     };
 
+    private static string SafeGetString(MySqlDataReader reader, string column)
+    {
+        try
+        {
+            var ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? string.Empty : reader.GetString(ordinal);
+        }
+        catch
+        {
+            return string.Empty;
+        }
+    }
+
     private static (string Where, Dictionary<string, object> Parameters) BuildAdminFilters(AdminReservationQuery query)
     {
         var clauses = new List<string>();
@@ -440,6 +586,12 @@ FROM Reservations r INNER JOIN RestaurantTables t ON t.Id = r.TableId WHERE r.Cu
         if (!string.IsNullOrWhiteSpace(query.Status)) { clauses.Add("r.Status = @Status"); parameters["@Status"] = query.Status; }
         if (!string.IsNullOrWhiteSpace(query.TableNumber)) { clauses.Add("t.TableNumber LIKE @TableNumber"); parameters["@TableNumber"] = $"%{query.TableNumber}%"; }
         if (!string.IsNullOrWhiteSpace(query.BookingReference)) { clauses.Add("r.BookingReference LIKE @BookingReference"); parameters["@BookingReference"] = $"%{query.BookingReference}%"; }
+        if (!string.IsNullOrWhiteSpace(query.Customer))
+        {
+            clauses.Add("(u.FullName LIKE @Customer OR u.Email LIKE @Customer OR CAST(r.CustomerId AS CHAR) = @CustomerExact)");
+            parameters["@Customer"] = $"%{query.Customer.Trim()}%";
+            parameters["@CustomerExact"] = query.Customer.Trim();
+        }
         return (clauses.Count == 0 ? string.Empty : "WHERE " + string.Join(" AND ", clauses), parameters);
     }
 

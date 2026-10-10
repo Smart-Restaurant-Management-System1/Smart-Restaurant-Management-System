@@ -8,7 +8,12 @@ using ReservationService.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter());
+    });
 
 // Configure JWT Authentication matching Identity Service contract
 var jwtKey = builder.Configuration["Jwt:Key"];
@@ -284,6 +289,16 @@ builder.Services.AddScoped<
     ReservationService.Services.PaymentService
 >();
 
+// Customer notification repository and service (SR-220 / SR-238 / SR-241)
+builder.Services.AddScoped<
+    ReservationService.Repositories.INotificationRepository,
+    ReservationService.Repositories.NotificationRepository
+>();
+builder.Services.AddScoped<
+    ReservationService.Services.INotificationService,
+    ReservationService.Services.NotificationService
+>();
+
 // Order expiry configuration and service
 builder.Services.Configure<
     ReservationService.Models.OrderExpiryOptions
@@ -380,6 +395,36 @@ builder.Services.AddScoped<
 builder.Services.AddScoped<
     ReservationService.Services.IAdminReservationService,
     ReservationService.Services.AdminReservationService
+>();
+
+// Admin operational dashboard repository and service (SR-221 / SR-243 / SR-244 / SR-245)
+builder.Services.AddScoped<
+    ReservationService.Repositories.IAdminDashboardRepository,
+    ReservationService.Repositories.AdminDashboardRepository
+>();
+builder.Services.AddScoped<
+    ReservationService.Services.IAdminDashboardService,
+    ReservationService.Services.AdminDashboardService
+>();
+
+// Admin audit log repository and writer (SR-223 / SR-250)
+builder.Services.AddScoped<
+    ReservationService.Repositories.IAuditLogRepository,
+    ReservationService.Repositories.AdminAuditLogRepository
+>();
+builder.Services.AddScoped<
+    ReservationService.Services.IAuditLogWriter,
+    ReservationService.Services.AuditLogWriter
+>();
+
+// Admin order search, filtering, and export (SR-222 / SR-247 / SR-248)
+builder.Services.AddScoped<
+    ReservationService.Repositories.IAdminOrderRepository,
+    ReservationService.Repositories.AdminOrderRepository
+>();
+builder.Services.AddScoped<
+    ReservationService.Services.IAdminOrderService,
+    ReservationService.Services.AdminOrderService
 >();
 
 // Order cart service
@@ -522,3 +567,36 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public sealed class UtcDateTimeJsonConverter : System.Text.Json.Serialization.JsonConverter<DateTime>
+{
+    public override DateTime Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert, System.Text.Json.JsonSerializerOptions options) =>
+        DateTime.SpecifyKind(reader.GetDateTime(), DateTimeKind.Utc);
+
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, DateTime value, System.Text.Json.JsonSerializerOptions options)
+    {
+        var utc = value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(value, DateTimeKind.Utc)
+            : value.ToUniversalTime();
+        writer.WriteStringValue(utc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture));
+    }
+}
+
+public sealed class NullableUtcDateTimeJsonConverter : System.Text.Json.Serialization.JsonConverter<DateTime?>
+{
+    public override DateTime? Read(ref System.Text.Json.Utf8JsonReader reader, Type typeToConvert, System.Text.Json.JsonSerializerOptions options) =>
+        reader.TokenType == System.Text.Json.JsonTokenType.Null ? null : DateTime.SpecifyKind(reader.GetDateTime(), DateTimeKind.Utc);
+
+    public override void Write(System.Text.Json.Utf8JsonWriter writer, DateTime? value, System.Text.Json.JsonSerializerOptions options)
+    {
+        if (value is null)
+        {
+            writer.WriteNullValue();
+            return;
+        }
+        var utc = value.Value.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
+            : value.Value.ToUniversalTime();
+        writer.WriteStringValue(utc.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture));
+    }
+}

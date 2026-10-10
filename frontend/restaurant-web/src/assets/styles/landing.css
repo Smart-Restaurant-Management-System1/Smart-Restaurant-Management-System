@@ -122,13 +122,17 @@
   .bistro-landing h1 { font-size: clamp(2.8rem, 10.5vw, 4rem); }
   .bistro-eyebrow { font-size: .6rem; letter-spacing: .14em; }
   .bistro-actions { gap: 17px; align-items: flex-start; flex-direction: column; }
+  .bistro-actions .bistro-button { width: 100%; max-width: 320px; justify-content: center; }
+  .bistro-nav-actions { flex-wrap: wrap; gap: 12px; }
+  .bistro-nav-actions .bistro-button,
+  .bistro-nav-actions .bistro-login-button { flex: 1 1 120px; text-align: center; justify-content: center; }
   .bistro-hero-description { font-size: .85rem; }
   .bistro-hero-bottom { left: 6%; right: 6%; font-size: .58rem; }
   .bistro-hero-bottom > span { display: none; }
   .bistro-values { gap: 12px; font-size: .52rem; letter-spacing: .04em; padding: 23px 12px; }
   .bistro-about { grid-template-columns: 1fr; gap: 42px; }
   .bistro-about-photo img { height: 390px; }
-  .bistro-photo-note { right: 0; }
+  .bistro-photo-note { right: 0; max-width: 90%; font-size: clamp(1.05rem, 4vw, 1.3rem); padding: 14px 18px; }
   .bistro-feature-grid { grid-template-columns: 1fr; }
   .bistro-feature-top { margin-bottom: 18px; }
   .bistro-step-grid { gap: 25px 20px; }
@@ -139,5 +143,9 @@
   .bistro-footer-main { grid-template-columns: 1fr 1fr; gap: 35px 22px; }
   .bistro-footer-main > div:first-child { grid-column: 1 / -1; }
   .bistro-footer-bottom { flex-direction: column; gap: 12px; }
+}
+@media (max-width: 480px) {
+  .bistro-step-grid { grid-template-columns: 1fr; }
+  .bistro-footer-main { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .bistro-landing *, .bistro-landing *::before, .bistro-landing *::after { animation: none !important; transition: none !important; } }

@@ -47,8 +47,8 @@ function ReservationTable({ reservations }) {
         }}
       />
 
-      <div style={{ overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+      <div className="bistro-table-responsive" style={{ border: 'none', borderRadius: 0, marginBottom: 0 }}>
+        <table style={{ width: '100%', minWidth: '780px', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ background: '#f5efe6', borderBottom: '1px solid #dfd8cb' }}>
               <th style={{ padding: '0.75rem 0.85rem', fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d', whiteSpace: 'nowrap' }}>
@@ -665,7 +665,7 @@ export default function ReservationHistoryPage() {
                   className="reservation-history-grid"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
                     gap: '1.25rem',
                   }}
                 >
@@ -709,7 +709,7 @@ export default function ReservationHistoryPage() {
                   className="reservation-history-grid"
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
                     gap: '1.25rem',
                   }}
                 >

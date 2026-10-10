@@ -10,6 +10,7 @@ public class AuthService : IAuthService
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IEmailValidatorService _emailValidatorService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AuthService> _logger;
 
@@ -17,12 +18,14 @@ public class AuthService : IAuthService
         IUserRepository userRepository,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
+        IEmailValidatorService emailValidatorService,
         IConfiguration configuration,
         ILogger<AuthService> logger)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
+        _emailValidatorService = emailValidatorService;
         _configuration = configuration;
         _logger = logger;
     }
@@ -45,7 +48,10 @@ public class AuthService : IAuthService
             }
         }
 
-        // 2. Check if email already registered
+        // 2. Validate email deliverability and reject disposable / fake domains (SR-296)
+        await _emailValidatorService.ValidateEmailDeliverabilityAsync(request.Email);
+
+        // 3. Check if email already registered
         var existingUser = await _userRepository.GetByEmailAsync(request.Email);
         if (existingUser != null)
         {
@@ -53,7 +59,7 @@ public class AuthService : IAuthService
             throw new InvalidOperationException($"User with email '{request.Email}' already exists.");
         }
 
-        // 3. Hash password securely using BCrypt
+        // 4. Hash password securely using BCrypt
         var passwordHash = _passwordHasher.HashPassword(request.Password);
 
         // 4. Prepare User entity
@@ -104,13 +110,13 @@ public class AuthService : IAuthService
         if (user.Status.Equals("Blocked", StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Login blocked: User {Email} is blocked by administration.", request.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            throw new AccountDeactivatedException("Your account has been blocked by administration. Please contact restaurant management.", "Blocked");
         }
 
         if (!user.IsActive || user.DeletedAt != null || user.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Login failed: User {Email} is inactive or deleted.", request.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            throw new AccountDeactivatedException("Your account has been deactivated. Please contact restaurant management.", "Inactive");
         }
 
         // 2. Verify password with BCrypt

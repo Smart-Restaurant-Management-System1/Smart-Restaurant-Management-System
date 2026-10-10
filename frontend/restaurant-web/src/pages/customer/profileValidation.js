@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Validates customer profile form fields according to project validation rules.
  */
 export function validateProfileForm(formData) {
@@ -64,5 +64,40 @@ export function formatProfileForForm(apiProfile) {
     fullName: apiProfile.fullName || '',
     email: apiProfile.email || '',
     phoneNumber: apiProfile.phoneNumber || '',
+  };
+}
+
+/**
+ * Validates password change form fields (SR-224 / SR-256)
+ */
+export function validatePasswordChangeForm(passwordData) {
+  const errors = {};
+  const currentPassword = passwordData?.currentPassword || '';
+  const newPassword = passwordData?.newPassword || '';
+  const confirmPassword = passwordData?.confirmPassword || '';
+
+  if (!currentPassword) {
+    errors.currentPassword = 'Current password is required';
+  }
+
+  if (!newPassword) {
+    errors.newPassword = 'New password is required';
+  } else if (newPassword.length < 6) {
+    errors.newPassword = 'New password must be at least 6 characters long';
+  } else if (newPassword.length > 100) {
+    errors.newPassword = 'New password cannot exceed 100 characters';
+  } else if (currentPassword && newPassword === currentPassword) {
+    errors.newPassword = 'New password cannot be the same as the current password';
+  }
+
+  if (!confirmPassword) {
+    errors.confirmPassword = 'Confirmation password is required';
+  } else if (newPassword && confirmPassword !== newPassword) {
+    errors.confirmPassword = 'Passwords do not match';
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
   };
 }

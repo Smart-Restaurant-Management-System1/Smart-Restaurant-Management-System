@@ -339,6 +339,23 @@ public class UserRepository : IUserRepository
         return result != null && result != DBNull.Value;
     }
 
+    public async Task<bool> UpdatePasswordHashAsync(int userId, string passwordHash)
+    {
+        using var connection = await _dbHelper.CreateConnectionAsync();
+        const string query = @"UPDATE Users 
+                               SET PasswordHash = @PasswordHash, 
+                                   UpdatedAt = @UpdatedAt 
+                               WHERE UserId = @UserId;";
+
+        using var cmd = new MySqlCommand(query, connection);
+        cmd.Parameters.AddWithValue("@UserId", userId);
+        cmd.Parameters.AddWithValue("@PasswordHash", passwordHash);
+        cmd.Parameters.AddWithValue("@UpdatedAt", DateTime.UtcNow);
+
+        var rowsAffected = await cmd.ExecuteNonQueryAsync();
+        return rowsAffected > 0;
+    }
+
     private static User MapUser(MySqlDataReader reader)
     {
         var user = new User
