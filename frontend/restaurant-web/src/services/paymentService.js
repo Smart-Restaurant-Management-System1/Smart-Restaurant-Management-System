@@ -130,7 +130,7 @@ export const launchPayHereHostedCheckout = (checkoutData) => {
   const form = document.createElement('form');
   form.method = 'POST';
   form.action = checkoutData.checkoutUrl;
-  form.target = '_blank';
+  form.target = '_self';
   form.style.display = 'none';
 
   const fields = {
