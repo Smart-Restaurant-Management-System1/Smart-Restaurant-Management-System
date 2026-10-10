@@ -2,10 +2,12 @@ import axios from 'axios';
 import { handleAuthResponseError } from './api.js';
 
 const rawBase =
-  import.meta.env?.VITE_RESERVATION_API_URL || 'http://localhost:5000';
-const NOTIFICATION_API_BASE = rawBase.endsWith('/api')
-  ? rawBase
-  : `${rawBase}/api`;
+  import.meta.env?.VITE_RESERVATION_API_URL || 'http://localhost:5000/api';
+const NOTIFICATION_API_BASE =
+  rawBase.startsWith('http') && !rawBase.endsWith('/api')
+    ? `${rawBase}/api`
+    : rawBase;
+
 
 export const notificationApi = axios.create({
   baseURL: NOTIFICATION_API_BASE,
