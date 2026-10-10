@@ -322,14 +322,14 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
-        Assert.Equal("Invalid email or password.", exception.Message);
+        var exception = await Assert.ThrowsAsync<AccountDeactivatedException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Your account has been deactivated. Please contact restaurant management.", exception.Message);
     }
 
     [Fact]
-    public async Task LoginAsync_BlockedUser_ThrowsUnauthorizedAccessException_WithGenericSafeMessage()
+    public async Task LoginAsync_BlockedUser_ThrowsUnauthorizedAccessException_WithExplicitStatusMessage()
     {
-        // Arrange - SR-257: Blocked users must be rejected with safe, non-revealing error message
+        // Arrange - Blocked users must receive an explicit message explaining their account status
         var request = new LoginRequestDto
         {
             Email = "blocked@bistro.com",
@@ -351,14 +351,14 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
-        Assert.Equal("Invalid email or password.", exception.Message);
+        var exception = await Assert.ThrowsAsync<AccountDeactivatedException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Your account has been blocked by administration. Please contact restaurant management.", exception.Message);
     }
 
     [Fact]
-    public async Task LoginAsync_SoftDeletedUser_ThrowsUnauthorizedAccessException_WithGenericSafeMessage()
+    public async Task LoginAsync_SoftDeletedUser_ThrowsUnauthorizedAccessException_WithExplicitStatusMessage()
     {
-        // Arrange - SR-257: Soft-deleted/deactivated accounts must be rejected with safe error message
+        // Arrange - Soft-deleted/deactivated accounts must receive an explicit status message
         var request = new LoginRequestDto
         {
             Email = "deleted@bistro.com",
@@ -381,8 +381,8 @@ public class AuthServiceTests
             .ReturnsAsync(user);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(request));
-        Assert.Equal("Invalid email or password.", exception.Message);
+        var exception = await Assert.ThrowsAsync<AccountDeactivatedException>(() => _authService.LoginAsync(request));
+        Assert.Equal("Your account has been deactivated. Please contact restaurant management.", exception.Message);
     }
 
     #endregion
