@@ -9,7 +9,9 @@ public sealed class PayHereOptions
     public const string SectionName = "PayHere";
 
     public string MerchantId { get; set; } = "1238640";
-    public string MerchantSecret { get; set; } = "OTg3MzY4NjE2MjQ1NDMzMjEzOTQxNzY0NDQwOTMxNTM4Mzg5OTY5";
+    public string LocalMerchantSecret { get; set; } = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==";
+    public string AzureMerchantSecret { get; set; } = "OTg3MzY4NjE2MjQ1NDMzMjEzOTQxNzY0NDQwOTMxNTM4Mzg5OTY5";
+    public string MerchantSecret { get; set; } = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==";
     public bool IsSandbox { get; set; } = true;
     public string SandboxCheckoutUrl { get; set; } = "https://sandbox.payhere.lk/pay/checkout";
     public string LiveCheckoutUrl { get; set; } = "https://www.payhere.lk/pay/checkout";
@@ -54,5 +56,22 @@ public sealed class PayHereOptions
                 ? (string.IsNullOrWhiteSpace(AzureNotifyUrl) ? NotifyUrl : AzureNotifyUrl)
                 : LocalNotifyUrl
         );
+    }
+
+    /// <summary>
+    /// Intelligently resolves the appropriate Merchant Secret based on client origin / environment.
+    /// </summary>
+    public string ResolveMerchantSecret(string? requestOrigin)
+    {
+        bool isAzure = !string.IsNullOrWhiteSpace(requestOrigin) &&
+                       (requestOrigin.Contains("azurecontainerapps.io", StringComparison.OrdinalIgnoreCase) ||
+                        requestOrigin.Contains("cinnamonbistro", StringComparison.OrdinalIgnoreCase));
+
+        if (isAzure)
+        {
+            return string.IsNullOrWhiteSpace(AzureMerchantSecret) ? MerchantSecret : AzureMerchantSecret;
+        }
+
+        return string.IsNullOrWhiteSpace(LocalMerchantSecret) ? MerchantSecret : LocalMerchantSecret;
     }
 }

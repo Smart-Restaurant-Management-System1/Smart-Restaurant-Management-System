@@ -279,4 +279,32 @@ public sealed class PaymentTests
             Assert.Equal(options.AzureNotifyUrl, notifyUrl);
         }
     }
+
+    [Theory]
+    [InlineData("https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io", true)]
+    [InlineData("https://cinnamonbistro.com", true)]
+    [InlineData("http://localhost:5173", false)]
+    [InlineData("http://localhost", false)]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    public void PayHereOptions_ResolveMerchantSecret_ResolvesCorrectSecret(string? origin, bool expectAzure)
+    {
+        var options = new PayHereOptions
+        {
+            LocalMerchantSecret = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==",
+            AzureMerchantSecret = "OTg3MzY4NjE2MjQ1NDMzMjEzOTQxNzY0NDQwOTMxNTM4Mzg5OTY5",
+            MerchantSecret = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ=="
+        };
+
+        var secret = options.ResolveMerchantSecret(origin);
+
+        if (expectAzure)
+        {
+            Assert.Equal(options.AzureMerchantSecret, secret);
+        }
+        else
+        {
+            Assert.Equal(options.LocalMerchantSecret, secret);
+        }
+    }
 }

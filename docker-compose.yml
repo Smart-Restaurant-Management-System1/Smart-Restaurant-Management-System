@@ -123,7 +123,9 @@ services:
       - Kafka__PublisherEnabled=true
       # SR-280: PayHere Sandbox payments
       - PayHere__MerchantId=${PAYHERE_MERCHANT_ID:-1238640}
-      - PayHere__MerchantSecret=${PAYHERE_MERCHANT_SECRET:-OTg3MzY4NjE2MjQ1NDMzMjEzOTQxNzY0NDQwOTMxNTM4Mzg5OTY5}
+      - PayHere__LocalMerchantSecret=${PAYHERE_LOCAL_MERCHANT_SECRET:-NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==}
+      - PayHere__AzureMerchantSecret=${PAYHERE_AZURE_MERCHANT_SECRET:-OTg3MzY4NjE2MjQ1NDMzMjEzOTQxNzY0NDQwOTMxNTM4Mzg5OTY5}
+      - PayHere__MerchantSecret=${PAYHERE_MERCHANT_SECRET:-NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==}
       - PayHere__LocalReturnUrl=${PAYHERE_LOCAL_RETURN_URL:-http://localhost/orders/track?payment=returned}
       - PayHere__LocalCancelUrl=${PAYHERE_LOCAL_CANCEL_URL:-http://localhost/orders/track?payment=cancelled}
       - PayHere__LocalNotifyUrl=${PAYHERE_LOCAL_NOTIFY_URL:-http://localhost:5000/api/payments/payhere/notify}

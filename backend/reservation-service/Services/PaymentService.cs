@@ -121,13 +121,6 @@ public sealed class PaymentService : IPaymentService
             totalAmount,
             _payHereOptions.Currency);
 
-        var hash = PayHereSecurityHelper.GenerateCheckoutHash(
-            _payHereOptions.MerchantId,
-            merchantRef,
-            totalAmount,
-            _payHereOptions.Currency,
-            _payHereOptions.MerchantSecret);
-
         var requestOrigin = _httpContextAccessor?.HttpContext?.Request.Headers["Origin"].ToString();
         if (string.IsNullOrWhiteSpace(requestOrigin))
         {
@@ -135,6 +128,14 @@ public sealed class PaymentService : IPaymentService
         }
 
         var (resolvedReturnUrl, resolvedCancelUrl, resolvedNotifyUrl) = _payHereOptions.ResolveUrls(requestOrigin);
+        var resolvedSecret = _payHereOptions.ResolveMerchantSecret(requestOrigin);
+
+        var hash = PayHereSecurityHelper.GenerateCheckoutHash(
+            _payHereOptions.MerchantId,
+            merchantRef,
+            totalAmount,
+            _payHereOptions.Currency,
+            resolvedSecret);
 
         return new PayHereCheckoutResponse
         {
@@ -358,14 +359,32 @@ public sealed class PaymentService : IPaymentService
             return false;
         }
 
-        var isSigValid = PayHereSecurityHelper.VerifyNotificationSignature(
-            form.merchant_id,
-            form.order_id,
-            form.payhere_amount,
-            form.payhere_currency,
-            form.status_code,
-            _payHereOptions.MerchantSecret,
-            form.md5sig);
+        var isSigValid = (!string.IsNullOrWhiteSpace(_payHereOptions.LocalMerchantSecret) &&
+                          PayHereSecurityHelper.VerifyNotificationSignature(
+                              form.merchant_id,
+                              form.order_id,
+                              form.payhere_amount,
+                              form.payhere_currency,
+                              form.status_code,
+                              _payHereOptions.LocalMerchantSecret,
+                              form.md5sig)) ||
+                         (!string.IsNullOrWhiteSpace(_payHereOptions.AzureMerchantSecret) &&
+                          PayHereSecurityHelper.VerifyNotificationSignature(
+                              form.merchant_id,
+                              form.order_id,
+                              form.payhere_amount,
+                              form.payhere_currency,
+                              form.status_code,
+                              _payHereOptions.AzureMerchantSecret,
+                              form.md5sig)) ||
+                         PayHereSecurityHelper.VerifyNotificationSignature(
+                             form.merchant_id,
+                             form.order_id,
+                             form.payhere_amount,
+                             form.payhere_currency,
+                             form.status_code,
+                             _payHereOptions.MerchantSecret,
+                             form.md5sig);
 
         if (!isSigValid)
         {
