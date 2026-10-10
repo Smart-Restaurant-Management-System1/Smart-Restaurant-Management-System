@@ -15,6 +15,28 @@ Cinnamon Bistro is an enterprise-grade smart restaurant management platform engi
 
 ---
 
+## Project Sprint Matrix & Team Roles
+
+### Team Members & Role Rotation (All 4 Sprints)
+
+| Team Member | Student ID | Sprint 1 Role | Sprint 2 Role | Sprint 3 Role | Sprint 4 Role |
+| --- | --- | --- | --- | --- | --- |
+| **Wijesinghe K.** | IT24102587 | DevOps | QA Engineer | Business Analytics | Developer |
+| **D.M.N. Pesanjith** | IT24101505 | Business Analytics / Project Management | DevOps | Developer | QA Engineer |
+| **H. L. P. S. Perera** | IT24101848 | QA Engineer | Developer | DevOps | Business Analytics |
+| **H.R.M.A.A. Bandara** | IT24100315 | Developer | Business Analytics | QA Engineer | DevOps |
+
+### Sprint Deliverables & Technologies Summary
+
+| Sprint | Focus & Scope (What Was Done) | Core Technologies & Libraries Used | Lead Developer |
+| --- | --- | --- | --- |
+| **Sprint 1** | **Foundation, Identity & Tables:** User registration, BCrypt password hashing, JWT stateless authentication, role-based authorization (Customer, Staff, Admin), user profile view, restaurant dining table capacity configuration (CRUD), monorepo setup, multi-stage Dockerfiles, and GitHub Actions CI pipeline. | ASP.NET Core Web API (.NET 10), React 19, Vite, MySQL 8.0, ADO.NET (`MySqlConnector`), JWT Bearer, BCrypt.Net, Docker, GitHub Actions, Nginx | H.R.M.A.A. Bandara |
+| **Sprint 2** | **Reservations, Concurrency & Events:** End-to-end table availability search under Sri Lanka time (`Asia/Colombo`), pessimistic row-level locking (`SELECT ... FOR UPDATE`) preventing double-booking, customer self-service reservation modification, admin reservation management, CSV/XLSX reporting, public landing page, and Transactional Outbox Kafka event streaming (`reservations.v1`). | ASP.NET Core, React, MySQL 8.0 (InnoDB Row Locks), Apache Kafka 3.9 (KRaft mode), `Confluent.Kafka`, ClosedXML, Transactional Outbox Worker, Lucide React | H. L. P. S. Perera |
+| **Sprint 3** | **Menu, Ordering & Kitchen KDS:** Administrative menu management, hybrid image asset storage (Azure Blob + local fallback), dietary & category filtering, persistent authenticated order cart, table-side dine-in ordering, reservation-linked pre-ordering, real-time customer order tracking, kitchen queue display (KDS), serialized order status locking, and Kafka order lifecycle event publishing (`order-lifecycle-events`). | ASP.NET Core, React, MySQL 8.0, Apache Kafka, Azure Blob Storage, FluentValidation, Playfair Display Luxury CSS Theme, Docker Compose | D.M.N. Pesanjith |
+| **Sprint 4** | **Payments, Operations, Security & UI:** PayHere sandbox payment gateway (pre-pay dining model, MD5 hash verification, IPN webhooks, 30-min unpaid order auto-expiry, printable PDF tax invoice modal), centralized staff & user management dashboard, customer dining notifications, customer feedback & rating moderation, operational analytics dashboard, advanced multi-criteria search, ClosedXML-styled Excel (.xlsx) & injection-neutralized CSV export, administrative security audit logging, locked email & BCrypt password security, disposable email DNS defense, and unified luxury UI consistency & mobile responsiveness. | ASP.NET Core (.NET 10), React 19, `ClosedXML` 0.105.0, `ExcelJS` 4.4.0, `jsPDF` 4.2.1, `jsPDF-AutoTable` 5.0.8, Isolated Iframe Print Engine, PayHere Sandbox API, Recharts, DNS MX Validator | Wijesinghe K. |
+
+---
+
 ## Sprint 4 — Payments, Administration & System Operations
 
 ### Sprint 4 Overview
