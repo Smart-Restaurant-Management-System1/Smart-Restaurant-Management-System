@@ -2,7 +2,8 @@
 
 **Smart Restaurant Table Reservation & Order Management System**
 
-SE3022 Case Study Project — Year 3 Semester 1
+SE3022 Case Study Project — Year 3 Semester 1  
+**Group Leader:** Kunchana Wijesinghe (IT24102587)
 
 ## Overview
 
@@ -21,7 +22,7 @@ Cinnamon Bistro is an enterprise-grade smart restaurant management platform engi
 
 | Team Member | Student ID | Sprint 1 Role | Sprint 2 Role | Sprint 3 Role | Sprint 4 Role |
 | --- | --- | --- | --- | --- | --- |
-| **Wijesinghe K.** | IT24102587 | DevOps | QA Engineer | Business Analytics | Developer |
+| **Wijesinghe K. (Group Leader)** | IT24102587 | DevOps | QA Engineer | Business Analytics | Developer |
 | **D.M.N. Pesanjith** | IT24101505 | Business Analytics / Project Management | DevOps | Developer | QA Engineer |
 | **H. L. P. S. Perera** | IT24101848 | QA Engineer | Developer | DevOps | Business Analytics |
 | **H.R.M.A.A. Bandara** | IT24100315 | Developer | Business Analytics | QA Engineer | DevOps |
@@ -44,7 +45,9 @@ Cinnamon Bistro is an enterprise-grade smart restaurant management platform engi
 Sprint 4 delivers the core developer implementation for Cinnamon Bistro's operational and financial capabilities. It encompasses payment gateway integration, centralized staff and user administration, customer communication and feedback loops, advanced multi-criteria querying, executive Excel and PDF reporting, authentication hardening, and end-to-end visual and responsive harmonization.
 
 **End-to-End Administrative & Payment Lifecycle:**
-$$\text{Customer Portal} \longrightarrow \text{Pre-Pay Dining Model} \longrightarrow \text{PayHere Checkout \& Webhook} \longrightarrow \text{Kitchen KDS Release} \longrightarrow \text{Customer Feedback / Alerts} \longrightarrow \text{Admin Audit \& Executive Reporting}$$
+```text
+Customer Portal ──> Pre-Pay Dining Model ──> PayHere Checkout & Webhook ──> Kitchen KDS Release ──> Customer Feedback & Alerts ──> Admin Audit & Executive Reporting
+```
 
 1. **Digital Payments & Invoicing:** Integration with PayHere payment gateway sandbox, implementing cryptographic hash validation, instant payment notifications (IPN), automated 30-minute order expiry, printable tax invoices, and pre-pay dining gates.
 2. **Staff & User Governance:** Centralized administration of customer and staff accounts, instant account status toggling (`Active`, `Blocked`, `Deactivated`), role elevation protection, and soft deletion.
@@ -59,7 +62,7 @@ $$\text{Customer Portal} \longrightarrow \text{Pre-Pay Dining Model} \longrighta
 
 | Team member | Student ID | Sprint 4 role |
 | --- | --- | --- |
-| Wijesinghe K. | IT24102587 | Developer |
+| **Wijesinghe K. (Group Leader)** | IT24102587 | Developer |
 | D.M.N. Pesanjith | IT24101505 | QA Engineer |
 | H. L. P. S. Perera | IT24101848 | Business Analytics |
 | H.R.M.A.A. Bandara | IT24100315 | DevOps |
@@ -86,7 +89,9 @@ $$\text{Customer Portal} \longrightarrow \text{Pre-Pay Dining Model} \longrighta
 - **Pre-Pay Dining Architecture:** Enforces payment verification prior to kitchen queue acceptance. When an order is placed, it enters `PendingPayment` status until settled, eliminating uncollectable dining debt.
 - **PayHere Sandbox Integration:**
   - `POST /api/payments/checkout`: Generates payment parameter payload including merchant ID, currency (`LKR`), formatted amount, customer contact details, and cryptographic hash:
-    $$\text{hash} = \text{MD5}\Big(\text{merchant\_id} + \text{order\_id} + \text{amount\_formatted} + \text{currency} + \text{UPPERCASE}(\text{MD5}(\text{merchant\_secret}))\Big)$$
+    ```text
+    hash = UPPERCASE(MD5(merchant_id + order_id + amount_formatted + currency + UPPERCASE(MD5(merchant_secret))))
+    ```
   - `POST /api/payments/payhere-notify`: Asynchronous Instant Payment Notification (IPN) webhook verifying PayHere signatures, transitioning payment to `Paid`, and releasing order to kitchen queue (`Pending`).
   - `GET /api/payments/verify/{orderId}`: Polling fallback endpoint allowing frontend order tracking to verify payment completion upon redirect return.
   - `POST /api/payments/admin/verify`: Administrative manual verification for cash or direct bank transfer settlements.
@@ -238,7 +243,9 @@ Sprint 4 database enhancements are versioned via SQL migration scripts in `datab
 Sprint 3 delivers the complete digital dining and culinary fulfillment engine for Cinnamon Bistro. It bridges customer-facing menu discovery, persistent cart management, table-side and reservation-linked ordering, and real-time order tracking with back-of-house kitchen display and queue management. All mutations are safeguarded by strict row-level concurrency control, server-authoritative price validation, and transactional outbox event publishing to Apache Kafka (`order-lifecycle-events`).
 
 **End-to-End Business Workflow:**
-$$\text{Menu Catalog} \longrightarrow \text{Order Cart} \longrightarrow \text{Dine-in / Pre-Order Placement} \longrightarrow \text{Customer Tracking} \longrightarrow \text{Kitchen Queue (KDS)} \longrightarrow \text{Kafka Lifecycle Events}$$
+```text
+Menu Catalog ──> Order Cart ──> Dine-in / Pre-Order Placement ──> Customer Tracking ──> Kitchen Queue (KDS) ──> Kafka Lifecycle Events
+```
 
 1. **Menu Discovery:** Guests browse active culinary offerings, filtering dynamically by course categories and dietary preferences (vegetarian, vegan, gluten-free).
 2. **Cart Staging:** Items are staged into a persistent, authenticated cart with server-validated unit prices and quantity management.
@@ -251,10 +258,10 @@ $$\text{Menu Catalog} \longrightarrow \text{Order Cart} \longrightarrow \text{Di
 
 | Team member | Student ID | Sprint 3 role |
 | --- | --- | --- |
+| **Wijesinghe K. (Group Leader)** | IT24102587 | Business Analytics |
 | D.M.N. Pesanjith | IT24101505 | Developer |
 | H. L. P. S. Perera | IT24101848 | DevOps |
 | H.R.M.A.A. Bandara | IT24100315 | QA Engineer |
-| Wijesinghe K. | IT24102587 | Business Analytics |
 
 ### Sprint 3 Developer Scope
 
@@ -328,7 +335,9 @@ The menu management subsystem enables administrators to govern the restaurant's 
 
 - **Unified Querying (`GET /api/orders/my-orders`):** Executes a unified `UNION ALL` query merging `DineInOrders` and `ReservationPreOrders` for the authenticated customer ID, sorted newest first (`CreatedAt DESC`).
 - **Normalized Lifecycle Progression:** Normalizes states across both ordering channels into a standardized progression:
-  $$\text{Pending (Order Placed)} \longrightarrow \text{Preparing (In Kitchen)} \longrightarrow \text{Ready (Ready for Service)} \longrightarrow \text{Served (Delivered)}$$
+  ```text
+  Pending (Order Placed) ──> Preparing (In Kitchen) ──> Ready (Ready for Service) ──> Served (Delivered)
+  ```
 - **Frontend Tracking Experience:** `OrderTrackingPage.jsx` and `orderTrackingHelpers.js` provide:
   - An interactive visual progress stepper highlighting current preparation stages and elapsed times.
   - Automatic 15-second background polling ensuring live updates without manual page refreshes.
@@ -499,10 +508,10 @@ Deliver a resilient, production-ready table reservation workflow encompassing re
 
 | Team member | Student ID | Sprint 2 role |
 | --- | --- | --- |
+| **Wijesinghe K. (Group Leader)** | IT24102587 | QA Engineer |
 | D.M.N. Pesanjith | IT24101505 | DevOps |
 | H. L. P. S. Perera | IT24101848 | Developer |
 | H.R.M.A.A. Bandara | IT24100315 | Business Analytics |
-| Wijesinghe K. | IT24102587 | QA Engineer |
 
 ### Completed Features (Sprint 2)
 
@@ -528,7 +537,9 @@ The system strictly distinguishes between physical inventory cataloging and temp
   - Guest party bounds: 1 to 20 guests.
   - Temporal horizon: bookings cannot be placed in the past, and advance bookings are limited to 90 days.
   - **Half-Open Interval Overlap Rule:** A candidate table is available if and only if no conflicting reservation exists satisfying:
-    $$\text{ExistingStart} < \text{RequestedEnd} \quad \land \quad \text{ExistingEnd} > \text{RequestedStart}$$
+    ```text
+    ExistingStart < RequestedEnd  AND  ExistingEnd > RequestedStart
+    ```
   - **Status Filtering:** Only reservations with status `Pending` or `Confirmed` block candidate tables. `Cancelled` reservations are explicitly non-blocking. `Completed` reservations represent concluded visits and do not block future intervals.
   - **Advisory Semantics:** Availability search does not acquire locks; row-level locks are strictly deferred to booking creation (SR-58/SR-62) to prevent denial-of-service starvation.
 
@@ -659,10 +670,10 @@ Deliver secure registration/login, role-based access control, customer profile m
 
 | Team member | Student ID | Sprint 1 role |
 | --- | --- | --- |
+| **Wijesinghe K. (Group Leader)** | IT24102587 | DevOps |
 | D.M.N. Pesanjith | IT24101505 | Business Analytics / Project Management |
 | H. L. P. S. Perera | IT24101848 | QA Engineer |
 | H.R.M.A.A. Bandara | IT24100315 | Developer |
-| Wijesinghe K. | IT24102587 | DevOps |
 
 ### Completed Features (Sprint 1)
 
@@ -1050,10 +1061,10 @@ With all four development sprints successfully completed, Cinnamon Bistro has ac
 
 | Team member | Student ID | Sprint 1 role | Sprint 2 role | Sprint 3 role | Sprint 4 role |
 | --- | --- | --- | --- | --- | --- |
+| **Wijesinghe K. (Group Leader)** | IT24102587 | DevOps | QA Engineer | Business Analytics | Developer |
 | D.M.N. Pesanjith | IT24101505 | Business Analytics / Project Management | DevOps | Developer | QA Engineer |
 | H. L. P. S. Perera | IT24101848 | QA Engineer | Developer | DevOps | Business Analytics |
 | H.R.M.A.A. Bandara | IT24100315 | Developer | Business Analytics | QA Engineer | DevOps |
-| Wijesinghe K. | IT24102587 | DevOps | QA Engineer | Business Analytics | Developer |
 
 ---
 
