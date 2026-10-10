@@ -124,6 +124,12 @@ services:
       # SR-280: PayHere Sandbox payments
       - PayHere__MerchantId=${PAYHERE_MERCHANT_ID:-1238640}
       - PayHere__MerchantSecret=${PAYHERE_MERCHANT_SECRET:-OTg3MzY4NjE2MjQ1NDMzMjEzOTQxNzY0NDQwOTMxNTM4Mzg5OTY5}
+      - PayHere__LocalReturnUrl=${PAYHERE_LOCAL_RETURN_URL:-http://localhost/orders/track?payment=returned}
+      - PayHere__LocalCancelUrl=${PAYHERE_LOCAL_CANCEL_URL:-http://localhost/orders/track?payment=cancelled}
+      - PayHere__LocalNotifyUrl=${PAYHERE_LOCAL_NOTIFY_URL:-http://localhost:5000/api/payments/payhere/notify}
+      - PayHere__AzureReturnUrl=${PAYHERE_AZURE_RETURN_URL:-https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/orders/track?payment=returned}
+      - PayHere__AzureCancelUrl=${PAYHERE_AZURE_CANCEL_URL:-https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/orders/track?payment=cancelled}
+      - PayHere__AzureNotifyUrl=${PAYHERE_AZURE_NOTIFY_URL:-https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify}
       - PayHere__NotifyUrl=${PAYHERE_NOTIFY_URL:-https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify}
       - PayHere__ReturnUrl=${PAYHERE_RETURN_URL:-http://localhost/orders/track?payment=returned}
       - PayHere__CancelUrl=${PAYHERE_CANCEL_URL:-http://localhost/orders/track?payment=cancelled}

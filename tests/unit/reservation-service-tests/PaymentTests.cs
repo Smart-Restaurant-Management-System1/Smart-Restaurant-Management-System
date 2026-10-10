@@ -243,4 +243,40 @@ public sealed class PaymentTests
         Assert.Equal(expectedOwned, isOwned);
         Assert.Equal(expectedErrorMessage, errorMessage);
     }
+
+    [Theory]
+    [InlineData("https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io", true)]
+    [InlineData("https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/orders/review", true)]
+    [InlineData("http://localhost:5173", false)]
+    [InlineData("http://localhost", false)]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    public void PayHereOptions_ResolveUrls_ResolvesCorrectEnvironmentUrls(string? origin, bool expectAzure)
+    {
+        var options = new PayHereOptions
+        {
+            LocalReturnUrl = "http://localhost/orders/track?payment=returned",
+            LocalCancelUrl = "http://localhost/orders/track?payment=cancelled",
+            LocalNotifyUrl = "http://localhost:5000/api/payments/payhere/notify",
+            AzureReturnUrl = "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/orders/track?payment=returned",
+            AzureCancelUrl = "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/orders/track?payment=cancelled",
+            AzureNotifyUrl = "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify"
+        };
+
+        var (returnUrl, cancelUrl, notifyUrl) = options.ResolveUrls(origin);
+
+        if (expectAzure)
+        {
+            Assert.Equal(options.AzureReturnUrl, returnUrl);
+            Assert.Equal(options.AzureCancelUrl, cancelUrl);
+            Assert.Equal(options.AzureNotifyUrl, notifyUrl);
+        }
+        else
+        {
+            Assert.Equal(options.LocalReturnUrl, returnUrl);
+            Assert.Equal(options.LocalCancelUrl, cancelUrl);
+            // Local notify falls back to public reachable Azure notify for sandbox webhook delivery
+            Assert.Equal(options.AzureNotifyUrl, notifyUrl);
+        }
+    }
 }

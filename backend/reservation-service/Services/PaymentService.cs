@@ -21,6 +21,7 @@ public sealed class PaymentService : IPaymentService
     private readonly PayHereOptions _payHereOptions;
     private readonly ILogger<PaymentService> _logger;
     private readonly INotificationRepository? _notificationRepository;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
 
     public PaymentService(
         DatabaseHelper databaseHelper,
@@ -29,7 +30,8 @@ public sealed class PaymentService : IPaymentService
         IImageStorageService imageStorageService,
         IOptions<PayHereOptions> payHereOptions,
         ILogger<PaymentService> logger,
-        INotificationRepository? notificationRepository = null)
+        INotificationRepository? notificationRepository = null,
+        IHttpContextAccessor? httpContextAccessor = null)
     {
         _databaseHelper = databaseHelper;
         _paymentRepository = paymentRepository;
@@ -38,6 +40,7 @@ public sealed class PaymentService : IPaymentService
         _payHereOptions = payHereOptions.Value;
         _logger = logger;
         _notificationRepository = notificationRepository;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<PayHereCheckoutResponse> CreatePayHereCheckoutAsync(
@@ -125,6 +128,14 @@ public sealed class PaymentService : IPaymentService
             _payHereOptions.Currency,
             _payHereOptions.MerchantSecret);
 
+        var requestOrigin = _httpContextAccessor?.HttpContext?.Request.Headers["Origin"].ToString();
+        if (string.IsNullOrWhiteSpace(requestOrigin))
+        {
+            requestOrigin = _httpContextAccessor?.HttpContext?.Request.Headers["Referer"].ToString();
+        }
+
+        var (resolvedReturnUrl, resolvedCancelUrl, resolvedNotifyUrl) = _payHereOptions.ResolveUrls(requestOrigin);
+
         return new PayHereCheckoutResponse
         {
             PaymentId = payment.PaymentId,
@@ -134,9 +145,9 @@ public sealed class PaymentService : IPaymentService
             Currency = _payHereOptions.Currency,
             Hash = hash,
             CheckoutUrl = _payHereOptions.CheckoutUrl,
-            NotifyUrl = _payHereOptions.NotifyUrl,
-            ReturnUrl = _payHereOptions.ReturnUrl,
-            CancelUrl = _payHereOptions.CancelUrl,
+            NotifyUrl = resolvedNotifyUrl,
+            ReturnUrl = resolvedReturnUrl,
+            CancelUrl = resolvedCancelUrl,
             OrderType = request.OrderType,
             OrderId = request.OrderId
         };
