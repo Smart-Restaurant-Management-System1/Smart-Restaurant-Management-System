@@ -39,7 +39,7 @@ export default function LandingNav({ actions, isLoading }) {
                 {actions.secondary.label}
               </Link>
             )}
-            <Link className="bistro-button bistro-button-dark" to={actions.primary.to}>{actions.primary.label} <span aria-hidden="true">↗</span></Link>
+            <Link className="bistro-button bistro-button-dark" to={actions.primary.to} onClick={() => setIsOpen(false)}>{actions.primary.label} <span aria-hidden="true">↗</span></Link>
           </>}
         </div>
       </nav>

@@ -122,6 +122,10 @@
   .bistro-landing h1 { font-size: clamp(2.8rem, 10.5vw, 4rem); }
   .bistro-eyebrow { font-size: .6rem; letter-spacing: .14em; }
   .bistro-actions { gap: 17px; align-items: flex-start; flex-direction: column; }
+  .bistro-actions .bistro-button { width: 100%; max-width: 320px; justify-content: center; }
+  .bistro-nav-actions { flex-wrap: wrap; gap: 12px; }
+  .bistro-nav-actions .bistro-button,
+  .bistro-nav-actions .bistro-login-button { flex: 1 1 120px; text-align: center; justify-content: center; }
   .bistro-hero-description { font-size: .85rem; }
   .bistro-hero-bottom { left: 6%; right: 6%; font-size: .58rem; }
   .bistro-hero-bottom > span { display: none; }
