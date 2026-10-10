@@ -138,6 +138,18 @@ function OrderReviewPage() {
             if (savedTableId) {
               setSelectedTableId(String(savedTableId));
             }
+
+            const resolvedSavedId =
+              savedOrder.orderId ??
+              savedOrder.OrderId ??
+              (savedOrderReference ? parseInt(savedOrderReference.replace(/\D/g, ''), 10) : null);
+
+            setCreatedOrderForPayment({
+              orderId: resolvedSavedId,
+              orderReference: savedOrderReference,
+              orderType: 'DineIn',
+              totalAmount: savedOrder.totalAmount ?? savedOrder.TotalAmount ?? 0,
+            });
           } else {
             sessionStorage.removeItem('lastDineInOrderReference');
           }
@@ -738,8 +750,13 @@ function OrderReviewPage() {
             <button
               type="button"
               onClick={() => {
+                const resolvedOrderId =
+                  success.orderId ??
+                  success.OrderId ??
+                  (orderReference ? parseInt(orderReference.replace(/\D/g, ''), 10) : null);
+
                 setCreatedOrderForPayment({
-                  orderId: success.orderId ?? success.OrderId,
+                  orderId: resolvedOrderId,
                   orderReference: orderReference,
                   orderType: 'DineIn',
                   totalAmount: orderTotal,
@@ -813,6 +830,16 @@ function OrderReviewPage() {
             </Link>
           </div>
         </section>
+
+        {/* Global Payment Gateway Modal */}
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          order={createdOrderForPayment}
+          onPaymentInitiated={() => {
+            navigate('/orders');
+          }}
+        />
       </div>
     );
   }

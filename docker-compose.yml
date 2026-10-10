@@ -121,6 +121,12 @@ services:
       - Kafka__OrderLifecycleTopic=order-lifecycle-events
       - Kafka__SecurityProtocol=plaintext
       - Kafka__PublisherEnabled=true
+      # SR-280: PayHere Sandbox payments
+      - PayHere__MerchantId=${PAYHERE_MERCHANT_ID:-1238640}
+      - PayHere__MerchantSecret=${PAYHERE_MERCHANT_SECRET:-OTg3MzY4NjE2MjQ1NDMzMjEzOTQxNzY0NDQwOTMxNTM4Mzg5OTY5}
+      - PayHere__NotifyUrl=${PAYHERE_NOTIFY_URL:-https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify}
+      - PayHere__ReturnUrl=${PAYHERE_RETURN_URL:-http://localhost/orders/track?payment=returned}
+      - PayHere__CancelUrl=${PAYHERE_CANCEL_URL:-http://localhost/orders/track?payment=cancelled}
     volumes:
       - reservation_uploads:/app/wwwroot/uploads
     depends_on:
