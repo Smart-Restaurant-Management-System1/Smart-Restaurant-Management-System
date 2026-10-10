@@ -11,7 +11,193 @@ Cinnamon Bistro is an enterprise-grade smart restaurant management platform engi
 - **Sprint 1 (Completed):** Established Identity & Access Management (JWT authentication, BCrypt hashing, role-based authorization for Customer, Admin, and KitchenStaff), customer profile management, core restaurant dining table configuration, multi-container Docker deployment, and CI/CD pipelines.
 - **Sprint 2 (Completed):** Delivered complete end-to-end table reservation management, real-time availability search with local restaurant operating rules (`Asia/Colombo`), pessimistic row-level concurrency control (`SELECT ... FOR UPDATE`) preventing double-booking, customer reservation maintenance (rescheduling with self-exclusion and soft cancellation), administrative reservation management with controlled status transitions, analytics and reporting (with CSV/XLSX exports and spreadsheet formula injection defense), public landing experience, and asynchronous event publishing via the Transactional Outbox pattern and Apache Kafka (KRaft mode).
 - **Sprint 3 (Completed):** Delivered administrative menu catalog management, hybrid image asset storage (Azure Blob + local fallback), customer menu browsing with dietary preferences, persistent order cart operations, atomic table-side dine-in ordering, reservation-linked pre-ordering, real-time customer order tracking, kitchen queue display system (KDS), serialized kitchen status transitions under pessimistic locks, order lifecycle event streaming to Apache Kafka (`order-lifecycle-events`) via the Transactional Outbox pattern, and luxury boutique UI harmonization.
-- **Sprint 4 (Planned Milestone):** Billing, payment processing, final end-to-end integration, performance hardening, and production cloud cutover.
+- **Sprint 4 (Completed):** Delivered payment gateway integration (PayHere sandbox, MD5 signature hashing, IPN/webhook processing, printable tax invoices, pre-pay dining model), centralized staff and customer user management dashboard (SR-218), customer dining and order notification center (SR-220), customer feedback and star ratings moderation (SR-219), administrative security audit logging with compliance reporting (SR-223), advanced reservation and order search with executive ClosedXML Excel and CSV export (SR-222/SR-248), customer self-service profile and password security (SR-224), disposable email registration prevention and auth hardening (SR-225/SR-296), end-to-end UI consistency and cross-viewport responsiveness (SR-294), and comprehensive QA automation covering Postman, Selenium, JMeter, and SonarQube (SR-279).
+
+---
+
+## Sprint 4 — Quality Assurance, Administration & Final Release
+
+### Sprint 4 Overview
+
+Sprint 4 delivers the final milestone of the Cinnamon Bistro system, focusing on financial settlements, enterprise administration, customer communications, operational reporting, security hardening, cross-viewport UI responsiveness, and end-to-end quality assurance. It transitions the platform from a functional dining application into a hardened, production-ready enterprise solution.
+
+**End-to-End Administrative & Payment Lifecycle:**
+$$\text{Customer Portal} \longrightarrow \text{Pre-Pay Dining Model} \longrightarrow \text{PayHere Checkout \& Webhook} \longrightarrow \text{Kitchen KDS Release} \longrightarrow \text{Customer Feedback / Alerts} \longrightarrow \text{Admin Audit \& Executive Reporting}$$
+
+1. **Digital Payments & Invoicing:** Integration with PayHere payment gateway sandbox, implementing cryptographic hash validation, instant payment notifications (IPN), automated 30-minute order expiry, printable tax invoices, and pre-pay dining gates.
+2. **Staff & User Governance:** Centralized administration of customer and staff accounts, instant account status toggling (`Active`, `Blocked`, `Deactivated`), role elevation protection, and soft deletion.
+3. **Customer Feedback & Moderation:** End-to-end customer ratings and reviews, owner-exclusive modification/deletion rights, administrative moderation, and official restaurant reply threads.
+4. **Customer Dining Notifications:** Unified notification center delivering real-time and persisted alerts for booking confirmations, schedule changes, and kitchen order milestones.
+5. **Operational Analytics & Audit Trail:** Executive KPI dashboard tracking daily revenue, guest volumes, and table loads; paired with immutable administrative audit logging supporting Excel, CSV, and branded PDF exports.
+6. **Advanced Operations Search & Executive Export:** High-performance multi-criteria search for reservations and orders, accompanied by ClosedXML-styled executive Excel workbooks and CSV exports with spreadsheet formula injection defense.
+7. **Security Hardening & Account Governance:** Disposable email domain blacklisting, DNS MX record validation, locked email identifiers, self-service password updates, and explicit feedback for blocked accounts.
+8. **UI Consistency & Responsive Design:** Comprehensive visual harmonization across 25+ views, custom 6px gold scrollbars, table responsive overflow wrappers, WCAG AA alert contrast, and mobile navigation auto-dismissal.
+9. **Quality Assurance Automation:** Full-spectrum automated verification combining Postman API collections, Selenium WebDriver end-to-end journeys, Apache JMeter concurrency stress tests, SonarQube zero-vulnerability code gates, and 770+ automated unit tests.
+
+### Sprint 4 Team Members
+
+| Team member | Student ID | Sprint 4 role |
+| --- | --- | --- |
+| Wijesinghe K. | IT24102587 | Developer |
+| D.M.N. Pesanjith | IT24101505 | QA Engineer |
+| H. L. P. S. Perera | IT24101848 | Business Analytics |
+| H.R.M.A.A. Bandara | IT24100315 | DevOps |
+
+### Sprint 4 Developer Scope
+
+| Jira ID | Feature | Result |
+| --- | --- | --- |
+| **SR-280** | PayHere Payment Gateway & Pre-Pay Dining Model | Full PayHere sandbox checkout, MD5 hash verification, asynchronous IPN webhook handling, printable PDF tax invoice modal, and automated 30-minute unpaid order expiry. |
+| **SR-218** | Centralized User & Staff Management Dashboard | Admin user directory with multi-role filtering, staff account provisioning, status toggles (`Active`, `Blocked`, `Deactivated`), soft-deletion, and self-demotion protection. |
+| **SR-219** | Customer Feedback Submission & Rating Moderation | 5-star rating system, dining feedback submission, customer edit/delete ownership, admin reply moderation, and luxury confirmation modals. |
+| **SR-220** | Customer Dining & Order Notification Center | Real-time and persistent in-app notifications for reservation updates, order lifecycle milestones, unread counters, and bulk read toggles. |
+| **SR-221** | Admin Operational Dashboard & Analytics | Executive KPI metrics aggregating daily revenue, active reservations, dining load, table occupancy, and kitchen throughput. |
+| **SR-222** | Advanced Reservation & Order Search Engine | Multi-parameter filtering (date ranges, reference keywords, status, table assignments, amount bounds) with paginated result sets. |
+| **SR-223** | Administrative Security Audit Logging & Export | Immutable audit trail capturing administrative mutations, user status changes, and operational overrides, with Excel, CSV, and branded PDF exports. |
+| **SR-224** | Customer Profile Self-Service Management | Customer contact info updates with locked email identity and secure BCrypt self-service password changes with session synchronization. |
+| **SR-225** | Authentication Hardening & Session Governance | Strict backend role-based access control, token expiration validation, unauthorized session invalidation, and blocked user restrictions. |
+| **SR-248** | Executive Styled Excel (.xlsx) & Secure CSV Export | Custom-styled ClosedXML Excel workbooks (charcoal/gold styling, formatted currency, auto-fit columns) and CSV formula injection neutralization (`=`, `+`, `-`, `@`). |
+| **SR-279** | Quality Assurance, Testing Hardening & CI/CD | Comprehensive testing suite across Postman API collections, Selenium WebDriver, Apache JMeter stress testing, SonarQube static analysis, and CI/CD validation. |
+| **SR-294** | UI Consistency & Cross-Viewport Responsiveness | Harmonized typography, custom 6px gold scrollbars, responsive data grids, accessible high-contrast alert boxes, and mobile navigation auto-dismissal across all pages. |
+| **SR-296** | Disposable Email Defense & Registration Validation | Verification pipeline rejecting temporary/disposable email domains and validating DNS MX record deliverability during customer registration. |
+
+### Payment Processing & Pre-Pay Dining (SR-280)
+
+- **Pre-Pay Dining Architecture:** Enforces payment verification prior to kitchen queue acceptance. When an order is placed, it enters `PendingPayment` status until settled, eliminating uncollectable dining debt.
+- **PayHere Sandbox Integration:**
+  - `POST /api/payments/checkout`: Generates payment parameter payload including merchant ID, currency (`LKR`), formatted amount, customer contact details, and cryptographic hash:
+    $$\text{hash} = \text{MD5}\Big(\text{merchant\_id} + \text{order\_id} + \text{amount\_formatted} + \text{currency} + \text{UPPERCASE}(\text{MD5}(\text{merchant\_secret}))\Big)$$
+  - `POST /api/payments/payhere-notify`: Asynchronous Instant Payment Notification (IPN) webhook verifying PayHere signatures, transitioning payment to `Paid`, and releasing order to kitchen queue (`Pending`).
+  - `GET /api/payments/verify/{orderId}`: Polling fallback endpoint allowing frontend order tracking to verify payment completion upon redirect return.
+  - `POST /api/payments/admin/verify`: Administrative manual verification for cash or direct bank transfer settlements.
+- **Automated Order Expiration Worker:** `OrderExpiryBackgroundService` executes periodically every 60 seconds, identifying unpaid orders exceeding the 30-minute checkout window, marking them `Cancelled`, and freeing reserved table capacity.
+- **Printable Tax Invoice / Receipt Modal:** Generates compliant, itemized tax invoices rendered inside an isolated iframe, complete with bistro branding, order references, breakdown of subtotal, taxes, service charges, and browser print triggers.
+
+### Centralized Staff & User Management (SR-218)
+
+- **Administrative User Portal:** `AdminUserManagementPage.jsx` provides an administrative console to manage all registered users (Customers, Staff, and Admins) with keyword search, role dropdown filters, and status badges.
+- **Account Governance & Status Control:**
+  - `PATCH /api/admin/users/{id}/status`: Toggles account status between `Active`, `Blocked`, and `Deactivated`.
+  - Enforces administrative safeguards preventing admins from blocking or demoting their own active accounts.
+  - Soft-deletion architecture (`DELETE /api/admin/users/{id}`) setting `IsDeleted = 1` and `DeletedAtUtc`, preserving historical references in past reservations, orders, and audit logs.
+- **Role Elevation Security:** Staff provisioning (`POST /api/admin/users`) is strictly restricted to authenticated Administrators, preventing privilege escalation.
+
+### Customer Feedback & Rating Moderation (SR-219)
+
+- **Guest Review Engine:** Authenticated customers submit 1-to-5 star ratings and written reviews evaluating their dining experience across food quality, ambiance, and service.
+- **Ownership & Access Controls:** Customers retain full CRUD control over their own submissions (edit comments, update star ratings, or delete reviews) enforced by `CustomerId` claim validation.
+- **Administrative Moderation & Replies:**
+  - Administrators review incoming feedback, approve reviews for public showcase, and publish official restaurant responses (`AdminReply`).
+  - Text wrapping safeguards (`overflow-wrap: break-word`, `word-break: break-word`) preventing UI distortion from long continuous strings.
+  - Reusable luxury `ConfirmationModal` replacing native browser confirm dialogs for destructive actions.
+
+### Customer Dining & Order Notifications (SR-220)
+
+- **Unified In-App Notification Center:** A dedicated notification drawer and bell icon counter keeping customers informed throughout their dining lifecycle.
+- **Automated Lifecycle Triggers:**
+  - Reservation confirmations, modifications, and cancellations.
+  - Real-time kitchen order updates (`Preparing`, `Ready`, `Served`).
+  - Payment settlement receipts and order expiration alerts.
+- **State Management:** Supports individual read status updates (`PATCH /api/notifications/{id}/read`) and bulk read acknowledgments (`PATCH /api/notifications/read-all`).
+
+### Operational Analytics Dashboard (SR-221)
+
+- **Real-Time Operational Indicators:** Aggregates live restaurant performance metrics on `AdminOperationalDashboardPage.jsx`:
+  - Daily gross revenue and average ticket sizes.
+  - Current day reservation volume and guest headcounts.
+  - Real-time table occupancy percentages.
+  - Active kitchen queue order load and preparation wait times.
+- **Executive Decision Support:** Empowers management to identify service bottlenecks, peak seating hours, and menu popularity trends.
+
+### Advanced Search, Multi-Criteria Filtering & Executive Export (SR-222, SR-248)
+
+- **Comprehensive Search Engine:** Empowers administrators to query large volumes of reservations and orders via combined criteria:
+  - Text search: Customer full name, email, phone number, and reservation/order reference.
+  - Temporal filtering: Custom date ranges (`startDate` to `endDate`).
+  - Categorical filters: Status multi-select (`Pending`, `Confirmed`, `Seated`, `Completed`, `Cancelled`).
+  - Table assignments and minimum/maximum transaction amounts.
+- **ClosedXML Executive Excel (.xlsx) Export:**
+  - Generates branded, styled workbooks featuring dark charcoal header rows (`#2A2A2A`), gold accent text (`#D4AF37`), explicit column widths, formatted currency cells (`Rs. #,##0.00`), and formatted ISO timestamps.
+  - Configured without freeze pane artifacts to avoid split-screen presentation issues across standard versions of Microsoft Excel.
+- **Formula-Injection Safe CSV Export:**
+  - Defends against CSV Formula Injection (CWE-1236) by inspecting every string field and prepending a single quote (`'`) to any value starting with `=`, `+`, `-`, or `@`.
+
+### Administrative Security Audit Logging (SR-223)
+
+- **Tamper-Evident Activity Trail:** Captures security-sensitive administrative operations across user management, reservation overrides, table mutations, and payment validations.
+- **Audit Envelope Structure:** Records action type, target entity name, entity ID, actor user ID, actor email, client IP address, UTC timestamp, and a structured JSON payload capturing before/after operational state changes.
+- **Multi-Format Compliance Export:** Administrative audit logs can be exported directly to styled Excel workbooks, formula-safe CSVs, or downloaded as branded PDF audit reports featuring restaurant verification badges and organized key-value summary blocks.
+
+### Profile Governance & Authentication Security Hardening (SR-224, SR-225, SR-296)
+
+- **Locked Email Identity Anchor:** Customer email addresses are locked against direct client modification to preserve identity integrity across payment and reservation history.
+- **Self-Service Password Security:** Customers update account passwords via BCrypt hash verification with real-time strength indicators and synchronized token authentication context.
+- **Disposable Email Prevention (SR-296):** Validates customer registration inputs against a blacklist of known temporary/disposable email domains and performs DNS MX record checks to ensure inbox deliverability.
+- **Blocked Account Session Governance:** Authenticated requests from blocked or deactivated users are rejected with HTTP 403 Forbidden via `AccountDeactivatedException`, presenting clear guidance to contact restaurant administration.
+
+### UI Consistency, Accessibility & Cross-Viewport Responsiveness (SR-294)
+
+- **Luxury Boutique Design System:** Harmonized Playfair Display serif headings, Montserrat sans-serif body copy, dark theme surface hierarchy (`#121212`, `#1A1A1A`), and high-contrast light panels (`#FFFFFF`, `#1A1A1A` text).
+- **Custom 6px Gold Scrollbars:** Elegant gold-themed webkit and Firefox scrollbars (`--gold-primary: #D4AF37`) replacing default browser scrollbars across all tables, drawers, and modal overlays.
+- **Fluid Layouts & Mobile Navigation:** Controlled horizontal overflow wrappers on all data tables, fluid card stacking, high-contrast accessible error banners, and automatic mobile navigation drawer dismissal upon route selection.
+
+### Comprehensive Quality Assurance & Test Automation (SR-279)
+
+- **Automated Unit Test Suites:**
+  - **770+ total passing automated tests** verifying business rules, entity validations, security contracts, and UI components.
+  - Frontend (`Vitest`): 235 tests passing across components, hooks, auth context, and routing guards.
+  - Backend Identity Service (`xUnit`): 113 tests passing across JWT generation, BCrypt verification, disposable email validation, and user management.
+  - Backend Reservation Service (`xUnit`): 422 tests passing across table concurrency, outbox dispatching, cart operations, orders, feedback, payments, and search engines.
+- **Postman API Collections:** Automated contract and functional test suites validating all REST endpoints with environment configurations, JWT authorization chaining, and response schema assertions.
+- **Selenium WebDriver Automation:** Cross-browser end-to-end user journeys validating guest booking, pre-order cart checkout, payment redirection, and administrative approval flows.
+- **Apache JMeter Concurrency & Load Testing:** Multi-threaded stress testing validating pessimistic database row locks under 100+ concurrent reservation requests for the same table slot, confirming zero duplicate bookings.
+- **SonarQube Quality Gate:** Static code analysis ensuring 0 security vulnerabilities, 0 critical bugs, and complete architectural compliance.
+
+### API Endpoints Added in Sprint 4
+
+| Method | Route | Authorized Roles | Description |
+| --- | --- | --- | --- |
+| `GET` | `/api/admin/users` | Admin | Retrieves paginated user list with role, status, and keyword filters (SR-218). |
+| `POST` | `/api/admin/users` | Admin | Provisions new staff or administrative accounts (SR-218). |
+| `PUT` | `/api/admin/users/{id}` | Admin | Updates user profile details, contact information, and role assignments (SR-218). |
+| `PATCH` | `/api/admin/users/{id}/status` | Admin | Toggles account status between Active, Blocked, and Deactivated (SR-218). |
+| `DELETE` | `/api/admin/users/{id}` | Admin | Performs soft deletion of a user account (SR-218). |
+| `GET` | `/api/profile` | Customer, Staff, Admin | Retrieves profile of the authenticated user with locked email (SR-224). |
+| `PUT` | `/api/profile` | Customer | Updates customer contact phone number and address (SR-224). |
+| `POST` | `/api/profile/change-password` | Customer, Staff, Admin | Updates user password with current password verification (SR-224). |
+| `POST` | `/api/payments/checkout` | Customer | Initiates PayHere checkout session and generates MD5 signature (SR-280). |
+| `POST` | `/api/payments/payhere-notify` | Public (Webhook) | Asynchronous IPN webhook verifying PayHere transaction signatures (SR-280). |
+| `GET` | `/api/payments/verify/{orderId}` | Customer | Fallback endpoint to poll payment verification status after checkout (SR-280). |
+| `POST` | `/api/payments/admin/verify` | Admin | Manually verifies cash or bank transfer payment settlements (SR-280). |
+| `GET` | `/api/feedback` | Public, Customer, Admin | Returns approved public feedback or full list for moderation (SR-219). |
+| `POST` | `/api/feedback` | Customer | Submits dining review and 1-5 star rating (SR-219). |
+| `PUT` | `/api/feedback/{id}` | Customer | Updates existing feedback submitted by the authenticated customer (SR-219). |
+| `DELETE` | `/api/feedback/{id}` | Customer | Deletes existing feedback submitted by the authenticated customer (SR-219). |
+| `POST` | `/api/feedback/{id}/reply` | Admin | Posts official restaurant moderation response to a feedback review (SR-219). |
+| `PATCH` | `/api/feedback/{id}/status` | Admin | Toggles feedback public approval visibility status (SR-219). |
+| `GET` | `/api/notifications` | Customer | Retrieves in-app notifications and unread alert counts (SR-220). |
+| `PATCH` | `/api/notifications/{id}/read` | Customer | Marks a specific notification as read (SR-220). |
+| `PATCH` | `/api/notifications/read-all` | Customer | Marks all notifications as read for the authenticated customer (SR-220). |
+| `GET` | `/api/admin/analytics/overview` | Admin | Retrieves live operational analytics and restaurant KPI metrics (SR-221). |
+| `GET` | `/api/admin/audit-logs` | Admin | Queries administrative audit trails with action and date filters (SR-223). |
+| `GET` | `/api/admin/audit-logs/export-excel` | Admin | Exports audit logs as styled ClosedXML Excel workbook (SR-223). |
+| `GET` | `/api/admin/audit-logs/export-csv` | Admin | Exports audit logs as formula-injection-safe CSV file (SR-223). |
+| `GET` | `/api/admin/reservations/export-excel` | Admin | Exports advanced reservation search results as styled Excel workbook (SR-222, SR-248). |
+| `GET` | `/api/admin/reservations/export-csv` | Admin | Exports advanced reservation search results as safe CSV file (SR-222, SR-248). |
+| `GET` | `/api/admin/orders/export-excel` | Admin | Exports advanced order search results as styled Excel workbook (SR-222, SR-248). |
+| `GET` | `/api/admin/orders/export-csv` | Admin | Exports advanced order search results as safe CSV file (SR-222, SR-248). |
+
+### Database Schema & Migrations (Sprint 4)
+
+Sprint 4 database enhancements are versioned via SQL migration scripts in `database/`:
+
+| Migration Script | Service / Database | Scope & Changes Implemented |
+| --- | --- | --- |
+| `02_admin_user_management.sql` | `identity-db` | Adds `AccountStatus` (`Active`, `Blocked`, `Deactivated`), `IsDeleted`, `DeletedAtUtc`, `LastLoginAtUtc`, and `CreatedByAdminId` columns with soft-delete query filtering. |
+| `11_customer_feedback.sql` | `reservation-db` | Creates `CustomerFeedback` table (`Id`, `CustomerId`, `CustomerName`, `Rating`, `Category`, `Comment`, `IsApproved`, `IsRead`, `AdminReply`, `AdminRepliedAtUtc`, timestamps) with check constraint `chk_feedback_rating (Rating BETWEEN 1 AND 5)`. |
+| `12_payments.sql` | `reservation-db` | Creates `Payments` (`PaymentReference`, `OrderId`, `OrderReference`, `CustomerId`, `Amount`, `Currency`, `PaymentMethod`, `PaymentStatus`, `PayHerePaymentId`, timestamps) and `PaymentNotificationEvents` tables for IPN audit logging. |
+| `13_customer_notifications.sql` | `reservation-db` | Creates `CustomerNotifications` table (`Id`, `CustomerId`, `Title`, `Message`, `Type`, `IsRead`, `ReferenceId`, `CreatedAt`) with composite index on customer and read status. |
+| `14_admin_audit_logs.sql` | `reservation-db` | Creates `AdminAuditLogs` table (`Id`, `ActionType`, `EntityName`, `EntityId`, `PerformedByUserId`, `PerformedByEmail`, `IpAddress`, `DetailsJson`, `TimestampUtc`) with indexes on action type and timestamp. |
 
 ---
 
@@ -779,27 +965,46 @@ npm test
 | SR-211 | UI/UX Harmonization & Luxury Boutique Styling | Done |
 | SR-278 | Fix OrderCreated Kafka Lifecycle Event Topic Routing | Done |
 
+
+### Sprint 4 Summary (Completed Work Items)
+
+| Jira Key | Work Item Summary | Status |
+| --- | --- | --- |
+| SR-280 | PayHere Payment Gateway Integration & Pre-Pay Dining Model | Done |
+| SR-218 | Centralized User and Staff Management Dashboard | Done |
+| SR-219 | Customer Feedback Submission, Ratings and Admin Reply Moderation | Done |
+| SR-220 | Real-Time and Stored Customer Dining & Order Notification Center | Done |
+| SR-221 | Administrative Operational Analytics and Real-Time Restaurant KPIs | Done |
+| SR-222 | Advanced Reservation and Order Search Engine with Multi-Criteria Filtering | Done |
+| SR-223 | Comprehensive Administrative Security Audit Logging and Activity Tracking | Done |
+| SR-224 | Customer Profile Self-Service Management and Password Change Security | Done |
+| SR-225 | Authentication Hardening, Role Boundary Enforcement and Session Defense | Done |
+| SR-248 | Executive Styled Excel (.xlsx) and Injection-Neutralized CSV Export | Done |
+| SR-279 | Quality Assurance Hardening (Postman, Selenium, JMeter, SonarQube) | Done |
+| SR-294 | UI Consistency and Cross-Viewport Responsiveness Across Cinnamon Bistro | Done |
+| SR-296 | Disposable Email Domain Defense and Email Deliverability Verification | Done |
+
 ---
 
-## Sprint 4 — Next Scope
+## System Release & Deployment Readiness
 
-Sprint 4 shifts focus to billing, payment processing, final end-to-end integration, performance hardening, and production cloud cutover:
+With all four development sprints successfully completed, Cinnamon Bistro has achieved full feature parity, comprehensive security hardening, enterprise test coverage, and cloud deployment readiness:
 
-1. **Billing & Invoice Generation:** Itemized invoice generation for completed dine-in orders and reservations, applying tax, service charge, and discounts.
-2. **Payment Processing Integration:** Secure payment gateway integration supporting digital card processing, transaction receipts, and payment status synchronization.
-3. **End-to-End Workflow Verification:** Cross-service transaction audits, full customer dining cycle testing (Reservation → Menu → Order → Kitchen → Bill → Payment), and regression validation.
-4. **Performance Hardening & Cloud Cutover:** High-load concurrency stress testing, caching strategies, and production environment cutover on Microsoft Azure.
+1. **End-to-End Operational Lifecycle:** Complete guest dining journey—from landing page atmosphere showcase and table availability reservation, through dietary-filtered menu browsing, persistent cart staging, table-side dine-in and pre-ordering, PayHere sandbox payments, real-time kitchen display queue management (KDS), to customer dining feedback and executive reporting.
+2. **Security & Governance:** JWT-secured microservices, BCrypt password hashing, role-based access control (Admin, Customer, KitchenStaff), disposable email registration guards, locked email identities, administrative user status controls (Active, Blocked, Deactivated), and tamper-evident audit logging.
+3. **High-Performance Architecture:** Optimistic and pessimistic database row-level locking (`SELECT ... FOR UPDATE`), Transactional Outbox pattern with Apache Kafka event streaming, and automated background workers for unpaid order expiration.
+4. **Cloud Infrastructure & CI/CD:** Fully containerized Docker microservices, automated multi-stage GitHub Actions CI testing, and Azure Container Apps continuous delivery pipelines.
 
 ---
 
 ## Team
 
-| Team member | Student ID | Sprint 1 role | Sprint 2 role | Sprint 3 role |
-| --- | --- | --- | --- | --- |
-| D.M.N. Pesanjith | IT24101505 | Business Analytics / Project Management | DevOps | Developer |
-| H. L. P. S. Perera | IT24101848 | QA Engineer | Developer | DevOps |
-| H.R.M.A.A. Bandara | IT24100315 | Developer | Business Analytics | QA Engineer |
-| Wijesinghe K. | IT24102587 | DevOps | QA Engineer | Business Analytics |
+| Team member | Student ID | Sprint 1 role | Sprint 2 role | Sprint 3 role | Sprint 4 role |
+| --- | --- | --- | --- | --- | --- |
+| D.M.N. Pesanjith | IT24101505 | Business Analytics / Project Management | DevOps | Developer | QA Engineer |
+| H. L. P. S. Perera | IT24101848 | QA Engineer | Developer | DevOps | Business Analytics |
+| H.R.M.A.A. Bandara | IT24100315 | Developer | Business Analytics | QA Engineer | DevOps |
+| Wijesinghe K. | IT24102587 | DevOps | QA Engineer | Business Analytics | Developer |
 
 ---
 
@@ -810,4 +1015,3 @@ Git history follows feature branch workflows merged into integration branches th
 - Submit PRs into `develop` with completed pull request templates, user story references, and technical descriptions.
 - Code merges require passing CI workflows (build checks and unit tests).
 - Pushes to `develop` automatically trigger the continuous deployment pipeline to Azure Container Apps.
-- 
