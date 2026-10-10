@@ -348,7 +348,7 @@ export default function ReservationReportsPage() {
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
             gap: '1.25rem'
           }}>
             {/* Total Bookings */}
@@ -708,7 +708,7 @@ export default function ReservationReportsPage() {
 
       {/* Charts & Visualizations */}
       {hasData && (
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
           {/* Daily Trend Chart */}
           <div
             className="bistro-card"
@@ -860,8 +860,8 @@ export default function ReservationReportsPage() {
                 </span>
               </div>
 
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+              <div className="bistro-table-responsive" style={{ border: 'none', borderRadius: 0, marginBottom: 0 }}>
+                <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                   <thead>
                     <tr style={{ background: '#f5efe6', borderBottom: '1px solid #dfd8cb' }}>
                       <th style={{ padding: '0.9rem 1.35rem', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>Date</th>
@@ -961,8 +961,8 @@ export default function ReservationReportsPage() {
                 </div>
               )}
 
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+              <div className="bistro-table-responsive" style={{ border: 'none', borderRadius: 0, marginBottom: 0 }}>
+                <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
                   <thead>
                     <tr style={{ background: '#f5efe6', borderBottom: '1px solid #dfd8cb' }}>
                       <th style={{ padding: '0.9rem 1.35rem', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>Table</th>

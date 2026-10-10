@@ -329,7 +329,7 @@ export default function AvailabilitySearchPage() {
       )}
 
       {state === 'results' && (
-        <section className="availability-results" aria-label="Available tables" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+        <section className="availability-results" aria-label="Available tables" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
           {results.map((table) => (
             <article
               className="active-table-card bistro-card"

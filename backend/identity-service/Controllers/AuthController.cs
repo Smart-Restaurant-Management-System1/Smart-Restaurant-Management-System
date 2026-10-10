@@ -65,6 +65,10 @@ public class AuthController : ControllerBase
             var result = await _authService.LoginAsync(request);
             return Ok(result);
         }
+        catch (AccountDeactivatedException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message, code = "ACCOUNT_DEACTIVATED" });
+        }
         catch (UnauthorizedAccessException)
         {
             return Unauthorized(new { message = "Invalid email or password" });

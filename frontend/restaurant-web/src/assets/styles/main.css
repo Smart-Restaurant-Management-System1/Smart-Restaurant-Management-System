@@ -315,10 +315,12 @@ body {
 .form-row {
   display: flex;
   gap: 1.2rem;
+  flex-wrap: wrap;
 }
 
 .form-row .form-group {
-  flex: 1;
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
 .form-group {
@@ -644,7 +646,8 @@ body {
    ======================================================== */
 
 .fullscreen-auth-container {
-  width: 100vw;
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: row;
@@ -851,6 +854,36 @@ body {
   text-decoration: underline;
 }
 
+.fullscreen-form-pane .alert-danger {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.fullscreen-form-pane .alert-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.fullscreen-form-pane .error-text {
+  color: #dc2626;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.fullscreen-form-pane .strength-bar-track {
+  background: #e5e7eb;
+}
+
 /* Fullscreen Tabs for Registration */
 .fullscreen-tabs {
   display: flex;
@@ -1034,10 +1067,14 @@ body {
   }
 
   .fullscreen-options-row {
+    display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-top: 0.25rem;
     margin-bottom: 1.4rem;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .fullscreen-tabs {

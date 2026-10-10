@@ -803,10 +803,11 @@ export default function AdminAuditLogsPage() {
           </div>
         ) : (
           /* Table Container */
-          <div style={{ overflowX: 'auto' }}>
+          <div className="bistro-table-responsive" style={{ border: 'none', borderRadius: 0, marginBottom: 0 }}>
             <table
               style={{
                 width: '100%',
+                minWidth: '920px',
                 borderCollapse: 'collapse',
                 textAlign: 'left',
                 fontSize: '0.88rem'

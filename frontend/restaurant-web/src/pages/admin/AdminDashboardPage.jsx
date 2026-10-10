@@ -279,7 +279,7 @@ export default function AdminDashboardPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
           gap: '1.25rem',
           marginBottom: '2rem',
         }}
@@ -726,8 +726,8 @@ export default function AdminDashboardPage() {
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <div className="bistro-table-responsive" style={{ border: 'none', borderRadius: 0, marginBottom: 0 }}>
+            <table style={{ width: '100%', minWidth: '650px', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ background: '#f5efe6', borderBottom: '1px solid #dfd8cb' }}>
                   <th style={{ padding: '0.95rem 1.35rem', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#443a2d' }}>

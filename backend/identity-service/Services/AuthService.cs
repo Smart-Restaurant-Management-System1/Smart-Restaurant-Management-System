@@ -110,13 +110,13 @@ public class AuthService : IAuthService
         if (user.Status.Equals("Blocked", StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Login blocked: User {Email} is blocked by administration.", request.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            throw new AccountDeactivatedException("Your account has been blocked by administration. Please contact restaurant management.", "Blocked");
         }
 
         if (!user.IsActive || user.DeletedAt != null || user.Status.Equals("Inactive", StringComparison.OrdinalIgnoreCase))
         {
             _logger.LogWarning("Login failed: User {Email} is inactive or deleted.", request.Email);
-            throw new UnauthorizedAccessException("Invalid email or password.");
+            throw new AccountDeactivatedException("Your account has been deactivated. Please contact restaurant management.", "Inactive");
         }
 
         // 2. Verify password with BCrypt
