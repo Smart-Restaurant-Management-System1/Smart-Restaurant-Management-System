@@ -62,7 +62,7 @@ Customer Portal ──> Pre-Pay Dining Model ──> PayHere Checkout & Webhook 
 
 | Team member | Student ID | Sprint 4 role |
 | --- | --- | --- |
-| **Wijesinghe K. (Group Leader)** | IT24102587 | Developer |
+| Wijesinghe K. | IT24102587 | Developer |
 | D.M.N. Pesanjith | IT24101505 | QA Engineer |
 | H. L. P. S. Perera | IT24101848 | Business Analytics |
 | H.R.M.A.A. Bandara | IT24100315 | DevOps |
@@ -258,7 +258,7 @@ Menu Catalog ──> Order Cart ──> Dine-in / Pre-Order Placement ──> Cu
 
 | Team member | Student ID | Sprint 3 role |
 | --- | --- | --- |
-| **Wijesinghe K. (Group Leader)** | IT24102587 | Business Analytics |
+| Wijesinghe K. | IT24102587 | Business Analytics |
 | D.M.N. Pesanjith | IT24101505 | Developer |
 | H. L. P. S. Perera | IT24101848 | DevOps |
 | H.R.M.A.A. Bandara | IT24100315 | QA Engineer |
@@ -508,7 +508,7 @@ Deliver a resilient, production-ready table reservation workflow encompassing re
 
 | Team member | Student ID | Sprint 2 role |
 | --- | --- | --- |
-| **Wijesinghe K. (Group Leader)** | IT24102587 | QA Engineer |
+| Wijesinghe K. | IT24102587 | QA Engineer |
 | D.M.N. Pesanjith | IT24101505 | DevOps |
 | H. L. P. S. Perera | IT24101848 | Developer |
 | H.R.M.A.A. Bandara | IT24100315 | Business Analytics |
@@ -670,7 +670,7 @@ Deliver secure registration/login, role-based access control, customer profile m
 
 | Team member | Student ID | Sprint 1 role |
 | --- | --- | --- |
-| **Wijesinghe K. (Group Leader)** | IT24102587 | DevOps |
+| Wijesinghe K. | IT24102587 | DevOps |
 | D.M.N. Pesanjith | IT24101505 | Business Analytics / Project Management |
 | H. L. P. S. Perera | IT24101848 | QA Engineer |
 | H.R.M.A.A. Bandara | IT24100315 | Developer |
@@ -1061,7 +1061,7 @@ With all four development sprints successfully completed, Cinnamon Bistro has ac
 
 | Team member | Student ID | Sprint 1 role | Sprint 2 role | Sprint 3 role | Sprint 4 role |
 | --- | --- | --- | --- | --- | --- |
-| **Wijesinghe K. (Group Leader)** | IT24102587 | DevOps | QA Engineer | Business Analytics | Developer |
+| Wijesinghe K. | IT24102587 | DevOps | QA Engineer | Business Analytics | Developer |
 | D.M.N. Pesanjith | IT24101505 | Business Analytics / Project Management | DevOps | Developer | QA Engineer |
 | H. L. P. S. Perera | IT24101848 | QA Engineer | Developer | DevOps | Business Analytics |
 | H.R.M.A.A. Bandara | IT24100315 | Developer | Business Analytics | QA Engineer | DevOps |
