@@ -11,15 +11,15 @@ Cinnamon Bistro is an enterprise-grade smart restaurant management platform engi
 - **Sprint 1 (Completed):** Established Identity & Access Management (JWT authentication, BCrypt hashing, role-based authorization for Customer, Admin, and KitchenStaff), customer profile management, core restaurant dining table configuration, multi-container Docker deployment, and CI/CD pipelines.
 - **Sprint 2 (Completed):** Delivered complete end-to-end table reservation management, real-time availability search with local restaurant operating rules (`Asia/Colombo`), pessimistic row-level concurrency control (`SELECT ... FOR UPDATE`) preventing double-booking, customer reservation maintenance (rescheduling with self-exclusion and soft cancellation), administrative reservation management with controlled status transitions, analytics and reporting (with CSV/XLSX exports and spreadsheet formula injection defense), public landing experience, and asynchronous event publishing via the Transactional Outbox pattern and Apache Kafka (KRaft mode).
 - **Sprint 3 (Completed):** Delivered administrative menu catalog management, hybrid image asset storage (Azure Blob + local fallback), customer menu browsing with dietary preferences, persistent order cart operations, atomic table-side dine-in ordering, reservation-linked pre-ordering, real-time customer order tracking, kitchen queue display system (KDS), serialized kitchen status transitions under pessimistic locks, order lifecycle event streaming to Apache Kafka (`order-lifecycle-events`) via the Transactional Outbox pattern, and luxury boutique UI harmonization.
-- **Sprint 4 (Completed):** Delivered payment gateway integration (PayHere sandbox, MD5 signature hashing, IPN/webhook processing, printable tax invoices, pre-pay dining model), centralized staff and customer user management dashboard (SR-218), customer dining and order notification center (SR-220), customer feedback and star ratings moderation (SR-219), administrative security audit logging with compliance reporting (SR-223), advanced reservation and order search with executive ClosedXML Excel and CSV export (SR-222/SR-248), customer self-service profile and password security (SR-224), disposable email registration prevention and auth hardening (SR-225/SR-296), end-to-end UI consistency and cross-viewport responsiveness (SR-294), and comprehensive QA automation covering Postman, Selenium, JMeter, and SonarQube (SR-279).
+- **Sprint 4 (Completed):** Delivered payment gateway integration (PayHere sandbox, MD5 signature hashing, IPN/webhook processing, printable tax invoices, pre-pay dining model), centralized staff and customer user management dashboard (SR-218), customer dining and order notification center (SR-220), customer feedback and star ratings moderation (SR-219), administrative security audit logging with compliance reporting (SR-223), advanced reservation and order search with executive ClosedXML Excel and CSV export (SR-222/SR-248), customer self-service profile and password security (SR-224), disposable email registration prevention and auth hardening (SR-225/SR-296), and end-to-end UI consistency and cross-viewport responsiveness (SR-294).
 
 ---
 
-## Sprint 4 — Quality Assurance, Administration & Final Release
+## Sprint 4 — Payments, Administration & System Operations
 
 ### Sprint 4 Overview
 
-Sprint 4 delivers the final milestone of the Cinnamon Bistro system, focusing on financial settlements, enterprise administration, customer communications, operational reporting, security hardening, cross-viewport UI responsiveness, and end-to-end quality assurance. It transitions the platform from a functional dining application into a hardened, production-ready enterprise solution.
+Sprint 4 delivers the core developer implementation for Cinnamon Bistro's operational and financial capabilities. It encompasses payment gateway integration, centralized staff and user administration, customer communication and feedback loops, advanced multi-criteria querying, executive Excel and PDF reporting, authentication hardening, and end-to-end visual and responsive harmonization.
 
 **End-to-End Administrative & Payment Lifecycle:**
 $$\text{Customer Portal} \longrightarrow \text{Pre-Pay Dining Model} \longrightarrow \text{PayHere Checkout \& Webhook} \longrightarrow \text{Kitchen KDS Release} \longrightarrow \text{Customer Feedback / Alerts} \longrightarrow \text{Admin Audit \& Executive Reporting}$$
@@ -32,7 +32,6 @@ $$\text{Customer Portal} \longrightarrow \text{Pre-Pay Dining Model} \longrighta
 6. **Advanced Operations Search & Executive Export:** High-performance multi-criteria search for reservations and orders, accompanied by ClosedXML-styled executive Excel workbooks and CSV exports with spreadsheet formula injection defense.
 7. **Security Hardening & Account Governance:** Disposable email domain blacklisting, DNS MX record validation, locked email identifiers, self-service password updates, and explicit feedback for blocked accounts.
 8. **UI Consistency & Responsive Design:** Comprehensive visual harmonization across 25+ views, custom 6px gold scrollbars, table responsive overflow wrappers, WCAG AA alert contrast, and mobile navigation auto-dismissal.
-9. **Quality Assurance Automation:** Full-spectrum automated verification combining Postman API collections, Selenium WebDriver end-to-end journeys, Apache JMeter concurrency stress tests, SonarQube zero-vulnerability code gates, and 770+ automated unit tests.
 
 ### Sprint 4 Team Members
 
@@ -57,7 +56,6 @@ $$\text{Customer Portal} \longrightarrow \text{Pre-Pay Dining Model} \longrighta
 | **SR-224** | Customer Profile Self-Service Management | Customer contact info updates with locked email identity and secure BCrypt self-service password changes with session synchronization. |
 | **SR-225** | Authentication Hardening & Session Governance | Strict backend role-based access control, token expiration validation, unauthorized session invalidation, and blocked user restrictions. |
 | **SR-248** | Executive Styled Excel (.xlsx) & Secure CSV Export | Custom-styled ClosedXML Excel workbooks (charcoal/gold styling, formatted currency, auto-fit columns) and CSV formula injection neutralization (`=`, `+`, `-`, `@`). |
-| **SR-279** | Quality Assurance, Testing Hardening & CI/CD | Comprehensive testing suite across Postman API collections, Selenium WebDriver, Apache JMeter stress testing, SonarQube static analysis, and CI/CD validation. |
 | **SR-294** | UI Consistency & Cross-Viewport Responsiveness | Harmonized typography, custom 6px gold scrollbars, responsive data grids, accessible high-contrast alert boxes, and mobile navigation auto-dismissal across all pages. |
 | **SR-296** | Disposable Email Defense & Registration Validation | Verification pipeline rejecting temporary/disposable email domains and validating DNS MX record deliverability during customer registration. |
 
@@ -141,17 +139,27 @@ $$\text{Customer Portal} \longrightarrow \text{Pre-Pay Dining Model} \longrighta
 - **Custom 6px Gold Scrollbars:** Elegant gold-themed webkit and Firefox scrollbars (`--gold-primary: #D4AF37`) replacing default browser scrollbars across all tables, drawers, and modal overlays.
 - **Fluid Layouts & Mobile Navigation:** Controlled horizontal overflow wrappers on all data tables, fluid card stacking, high-contrast accessible error banners, and automatic mobile navigation drawer dismissal upon route selection.
 
-### Comprehensive Quality Assurance & Test Automation (SR-279)
+### Document, Spreadsheet & PDF Generation Architecture
 
-- **Automated Unit Test Suites:**
-  - **770+ total passing automated tests** verifying business rules, entity validations, security contracts, and UI components.
-  - Frontend (`Vitest`): 235 tests passing across components, hooks, auth context, and routing guards.
-  - Backend Identity Service (`xUnit`): 113 tests passing across JWT generation, BCrypt verification, disposable email validation, and user management.
-  - Backend Reservation Service (`xUnit`): 422 tests passing across table concurrency, outbox dispatching, cart operations, orders, feedback, payments, and search engines.
-- **Postman API Collections:** Automated contract and functional test suites validating all REST endpoints with environment configurations, JWT authorization chaining, and response schema assertions.
-- **Selenium WebDriver Automation:** Cross-browser end-to-end user journeys validating guest booking, pre-order cart checkout, payment redirection, and administrative approval flows.
-- **Apache JMeter Concurrency & Load Testing:** Multi-threaded stress testing validating pessimistic database row locks under 100+ concurrent reservation requests for the same table slot, confirming zero duplicate bookings.
-- **SonarQube Quality Gate:** Static code analysis ensuring 0 security vulnerabilities, 0 critical bugs, and complete architectural compliance.
+The system features a multi-tiered document generation architecture supporting enterprise reporting, financial auditing, and customer invoicing:
+
+- **Server-Side Styled Excel (.xlsx) Generation via ClosedXML (`ClosedXML.Excel 0.105.0`):**
+  - Implemented in C# backend (`AdminAuditLogsController.cs`, `AdminReservationsController.cs`, `AdminOrdersController.cs`, and `ReportExportService.cs`).
+  - Constructs OpenXML-compliant binary spreadsheets (`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`) directly in memory as byte streams without COM or external Office dependencies.
+  - Incorporates Cinnamon Bistro's luxury palette: Dark charcoal header background (`#2A2A2A`), gold accent text (`#D4AF37`), bold column labels, and bordered cells.
+  - Enforces explicit cell data types: Currency formatting (`"Rs. " #,##0.00`), ISO 8601 timestamps (`yyyy-MM-dd HH:mm:ss`), dynamic column auto-fitting (`AdjustToContents()`), and un-split viewports free of freeze pane distortions.
+- **Client-Side Spreadsheet Generation via ExcelJS (`exceljs 4.4.0`):**
+  - Integrated in React frontend components for client-side workbook generation, dynamic cell styling, font weighting, and immediate browser Blob downloads.
+- **Executive Vector PDF Audit Reports via jsPDF (`jspdf 4.2.1`) & jsPDF-AutoTable (`jspdf-autotable 5.0.8`):**
+  - Integrated in `AdminAuditLogsPage.jsx` to render downloadable executive PDF audit reports directly in the client browser without backend overhead.
+  - Features official brand header typography, security verification badge, filter criteria summary box, automatic column text wrapping, alternating row shading, and dynamic page numbering (`Page X of Y`).
+- **Isolated Iframe Tax Invoice & Receipt Print Engine:**
+  - Implemented across `PaymentModal.jsx`, `OrderReviewPage.jsx`, and `ReservationConfirmationPage.jsx`.
+  - Dynamically mounts an isolated, sandboxed `<iframe>` to prevent global web styles from interfering with paper formatting.
+  - Injects responsive print styling (`@media print`), itemized dining lines, tax calculations, PayHere transaction IDs, and invokes native `window.print()` for instant PDF saving or physical receipt printing.
+- **Secure CSV Streaming with Formula Injection Defense (CWE-1236):**
+  - Generates UTF-8 encoded text streams with Byte Order Mark (`EF BB BF`) for universal character rendering in Microsoft Excel.
+  - Defends against CSV Injection / Formula Injection by inspecting every text field and prepending an apostrophe (`'`) to any string starting with `=`, `+`, `-`, or `@`.
 
 ### API Endpoints Added in Sprint 4
 
@@ -700,22 +708,42 @@ Nginx routes incoming traffic for containerized deployments. Frontend API client
 
 ## Technology Stack
 
-| Area | Repository implementation |
-| --- | --- |
-| **Frontend** | React 19, Vite, React Router 7, Axios, Recharts (reporting analytics), Lucide React icons |
-| **Backend** | ASP.NET Core Web API, .NET 10 (`net10.0`) |
-| **Microservices** | Identity Service (port 5001), Reservation Service (port 5000) |
-| **Data Access** | ADO.NET direct parameterized SQL through `MySqlConnector 2.4.0` |
-| **Database** | MySQL 8.0 Community Server; separate `restaurant_identity_db` and `restaurant_reservation_db` schemas |
-| **Authentication** | JWT Bearer authentication (`Microsoft.AspNetCore.Authentication.JwtBearer 8.0.13`) and BCrypt password hashing (`BCrypt.Net-Next`) |
-| **Event Streaming** | Apache Kafka 3.9 in KRaft mode (no ZooKeeper), `Confluent.Kafka 2.6.1` .NET client |
-| **Reporting & Export** | `ClosedXML 0.105.0` (Excel .xlsx spreadsheet generation), custom UTF-8 BOM CSV generator with formula injection defense |
-| **API Documentation** | Swagger / OpenAPI (`Swashbuckle.AspNetCore 6.6.2`) in Development mode |
-| **Container Hosting** | Multi-stage Dockerfiles; Nginx serves the React application and reverse-proxies API requests |
-| **Local Orchestration** | Docker Compose with five services (`mysql`, `kafka`, `identity-service`, `reservation-service`, `frontend`) |
-| **CI/CD & Cloud Target** | GitHub Actions, Azure Container Registry, Azure Container Apps, Azure OIDC federated authentication |
-| **Automated Testing** | xUnit, Moq, and FluentAssertions for backend unit/integration tests; Node.js test runner for frontend |
-| **Metrics & Monitoring** | `prometheus-net.AspNetCore 8.2.1` metrics middleware in both microservices |
+The Cinnamon Bistro platform leverages modern enterprise-grade technologies across frontend, backend microservices, data persistence, event streaming, reporting, payment processing, and container infrastructure:
+
+| Architectural Tier | Technology / Library | Version | Role in Cinnamon Bistro |
+| --- | --- | --- | --- |
+| **Frontend Framework** | React | 19.x | Component-based interactive user interface and reactive state management |
+| **Frontend Build Tool** | Vite | 5.x / 6.x | Lightning-fast ES modules development server and optimized production bundler |
+| **Client Routing** | React Router DOM | 7.x | Declarative client-side routing, protected role-based guards, and redirection |
+| **HTTP Client** | Axios | Latest | Promise-based API communication with JWT Bearer injection & 401/403 session interceptors |
+| **Spreadsheet Generation (Frontend)** | `exceljs` | 4.4.0 | Client-side Excel workbook creation, column dimensioning, and Blob file export |
+| **PDF Report Generation (Frontend)** | `jspdf` | 4.2.1 | Client-side vector PDF document rendering for administrative audit reports |
+| **PDF Tabular Layout Engine** | `jspdf-autotable` | 5.0.8 | Structured multi-page PDF tables with custom cell padding, borders, and auto-wrapping |
+| **Invoice / Receipt Print Engine** | Native Iframe + `@media print` | Browser Native | Sandboxed off-screen DOM print rendering for printable customer tax invoices and slips |
+| **Analytics & Data Visualization** | Recharts | Latest | Composable SVG charts for administrative sales analytics and table occupancy trends |
+| **Iconography** | Lucide React | Latest | Lightweight, accessible iconography across customer and staff interfaces |
+| **Styling & Design System** | Custom CSS3 & CSS Variables | Modern Web | Luxury Boutique Design System featuring Playfair Display, Montserrat, and 6px gold scrollbars |
+| **Backend Framework** | ASP.NET Core Web API | .NET 10 (`net10.0`) | High-performance RESTful microservices architecture and dependency injection |
+| **Language & Runtime** | C# | 12 / 13 | Modern type-safe programming language with asynchronous task execution (`async/await`) |
+| **Spreadsheet Generation (Backend)** | `ClosedXML` (`ClosedXML.Excel`) | 0.105.0 | Server-side styled Excel (.xlsx) workbook generation with charcoal/gold branding & auto-fit |
+| **CSV Generation Engine** | Custom UTF-8 BOM Stream | Internal | Fast streaming CSV generator with formula injection defense (`=, +, -, @` neutralization) |
+| **Relational Database** | MySQL Community Server | 8.0 | Primary relational datastore with ACID compliance and InnoDB storage engine |
+| **Data Access Layer** | ADO.NET (`MySqlConnector`) | 2.4.0 | Direct high-throughput parameterized SQL execution with zero ORM overhead |
+| **Concurrency Control** | InnoDB Row-Level Locks | `SELECT ... FOR UPDATE` | Pessimistic locking preventing table double-booking and serializing kitchen transitions |
+| **Event Streaming Backbone** | Apache Kafka | 3.9 (KRaft mode) | Distributed event streaming log operating without ZooKeeper dependencies |
+| **Kafka .NET Client** | `Confluent.Kafka` | 2.6.1 | High-throughput asynchronous Kafka producer with retry and acknowledgment semantics |
+| **Event Outbox Architecture** | Transactional Outbox Pattern | Custom SQL + Worker | Atomic local database transaction staging with background polling publisher |
+| **Payment Gateway** | PayHere Sandbox Gateway | REST + IPN | Digital payment processing with MD5 cryptographic signature verification |
+| **Authentication & Tokens** | JWT (`JwtBearer`) | 8.0.13 | Stateless authentication using HMAC-SHA256 signatures and role claims |
+| **Password Security** | `BCrypt.Net-Next` | Latest | Adaptive work-factor cryptographic password hashing |
+| **Email Deliverability Verification** | `DisposableEmailValidator` | Internal | DNS MX record inspection and disposable email domain blacklist enforcement |
+| **API Documentation** | Swagger / OpenAPI (`Swashbuckle`) | 6.6.2 | Interactive API explorer and contract definition in Development mode |
+| **Observability & Metrics** | `prometheus-net.AspNetCore` | 8.2.1 | Prometheus metrics collection middleware exposing `/metrics` operational endpoints |
+| **Container Hosting** | Docker & Multi-Stage Dockerfiles | Alpine / Debian | Lightweight container packaging for Node build stages, Nginx web server, and .NET runtime |
+| **Local Orchestration** | Docker Compose | Compose v2 | Local multi-service orchestration (`mysql`, `kafka`, `identity`, `reservation`, `frontend`) |
+| **Web Server & Reverse Proxy** | Nginx | 1.25+ Alpine | Reverse proxy, static React hosting, SSL offloading, and 5MB upload size tuning |
+| **CI/CD Pipeline** | GitHub Actions | Workflows | Automated CI build validation, linting, and 770+ automated unit tests on every pull request |
+| **Cloud Hosting Target** | Microsoft Azure | Cloud | Azure Container Apps, Azure Blob Storage (menu assets), Azure Managed MySQL, and ACR |
 
 ---
 
@@ -980,7 +1008,6 @@ npm test
 | SR-224 | Customer Profile Self-Service Management and Password Change Security | Done |
 | SR-225 | Authentication Hardening, Role Boundary Enforcement and Session Defense | Done |
 | SR-248 | Executive Styled Excel (.xlsx) and Injection-Neutralized CSV Export | Done |
-| SR-279 | Quality Assurance Hardening (Postman, Selenium, JMeter, SonarQube) | Done |
 | SR-294 | UI Consistency and Cross-Viewport Responsiveness Across Cinnamon Bistro | Done |
 | SR-296 | Disposable Email Domain Defense and Email Deliverability Verification | Done |
 
