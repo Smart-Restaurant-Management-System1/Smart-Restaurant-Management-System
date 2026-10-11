@@ -681,8 +681,9 @@ export default function ProfilePage() {
                       type="tel"
                       id="profilePhone"
                       name="phoneNumber"
+                      maxLength={10}
                       className={`profile-input-field with-icon ${fieldErrors.phoneNumber ? 'is-invalid' : ''}`}
-                      placeholder="+1 555-0199"
+                      placeholder="0771234567"
                       value={formData.phoneNumber}
                       onChange={handleChange}
                       disabled={isSaving}

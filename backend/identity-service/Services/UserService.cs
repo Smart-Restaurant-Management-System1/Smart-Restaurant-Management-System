@@ -37,6 +37,28 @@ public class UserService : IUserService
 
     public async Task<UserResponseDto> UpdateProfileAsync(int userId, UpdateProfileRequestDto request)
     {
+        if (request == null) throw new ArgumentNullException(nameof(request));
+
+        // Enforce phone number validation before any database query or write (SR-297)
+        var trimmedPhone = string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim();
+        if (trimmedPhone != null)
+        {
+            if (trimmedPhone.Length > IdentityService.Models.UserValidationRules.MaxPhoneNumberLength)
+            {
+                throw new ArgumentException(IdentityService.Models.UserValidationRules.PhoneLengthErrorMessage);
+            }
+
+            if (trimmedPhone.Length < IdentityService.Models.UserValidationRules.ExactPhoneNumberLength)
+            {
+                throw new ArgumentException(IdentityService.Models.UserValidationRules.PhoneExactLengthErrorMessage);
+            }
+
+            if (!trimmedPhone.All(char.IsDigit))
+            {
+                throw new ArgumentException(IdentityService.Models.UserValidationRules.PhoneFormatErrorMessage);
+            }
+        }
+
         var existingUser = await _userRepository.GetByIdAsync(userId);
         if (existingUser == null)
         {
@@ -57,7 +79,7 @@ public class UserService : IUserService
             userId,
             request.FullName.Trim(),
             normalizedNewEmail,
-            string.IsNullOrWhiteSpace(request.PhoneNumber) ? null : request.PhoneNumber.Trim());
+            trimmedPhone);
 
         if (!updated)
         {

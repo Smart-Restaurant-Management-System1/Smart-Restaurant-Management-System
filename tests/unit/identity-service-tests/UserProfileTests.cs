@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Security.Claims;
 using IdentityService.Controllers;
@@ -161,12 +162,12 @@ public class UserProfileTests
         {
             FullName = "New Updated Name",
             Email = "new@example.com",
-            PhoneNumber = "+94771234567"
+            PhoneNumber = "0779876543"
         };
 
         _userRepoMock.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync(existingUser);
         _userRepoMock.Setup(r => r.GetByEmailAsync("new@example.com")).ReturnsAsync((User?)null);
-        _userRepoMock.Setup(r => r.UpdateUserProfileAsync(userId, "New Updated Name", "new@example.com", "+94771234567"))
+        _userRepoMock.Setup(r => r.UpdateUserProfileAsync(userId, "New Updated Name", "new@example.com", "0779876543"))
             .ReturnsAsync(true);
 
         var updatedUser = new User
@@ -174,7 +175,7 @@ public class UserProfileTests
             UserId = userId,
             FullName = "New Updated Name",
             Email = "new@example.com",
-            PhoneNumber = "+94771234567",
+            PhoneNumber = "0779876543",
             PasswordHash = "hashed_pass",
             Roles = new List<string> { "Customer" }
         };
@@ -191,10 +192,10 @@ public class UserProfileTests
         var profile = Assert.IsType<UserResponseDto>(okResult.Value);
         Assert.Equal("New Updated Name", profile.FullName);
         Assert.Equal("new@example.com", profile.Email);
-        Assert.Equal("+94771234567", profile.PhoneNumber);
+        Assert.Equal("0779876543", profile.PhoneNumber);
 
         // Verify update was called specifically with the authenticated user ID
-        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(userId, "New Updated Name", "new@example.com", "+94771234567"), Times.Once);
+        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(userId, "New Updated Name", "new@example.com", "0779876543"), Times.Once);
     }
 
     [Fact]
@@ -274,6 +275,331 @@ public class UserProfileTests
         Assert.DoesNotContain("IsActive", properties);
         Assert.DoesNotContain("CreatedAt", properties);
     }
+
+    #region SR-297: Phone Number Maximum Length Validation Tests
+
+    [Fact]
+    public async Task UpdateProfile_PhoneExactlyAtMaxLength10_ReturnsOkAndSaves()
+    {
+        // Arrange - phone number is exactly 10 digits
+        const int userId = 10;
+        const string max10Phone = "0771234567"; // exactly 10 digits
+        Assert.Equal(10, max10Phone.Length);
+
+        SetUserContext(userId);
+
+        var existingUser = new User
+        {
+            UserId = userId,
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = "0770000000"
+        };
+
+        var request = new UpdateProfileRequestDto
+        {
+            FullName = "Alice Updated",
+            Email = "alice@example.com",
+            PhoneNumber = max10Phone
+        };
+
+        var updatedUser = new User
+        {
+            UserId = userId,
+            FullName = "Alice Updated",
+            Email = "alice@example.com",
+            PhoneNumber = max10Phone
+        };
+
+        _userRepoMock.SetupSequence(r => r.GetByIdAsync(userId))
+            .ReturnsAsync(existingUser)
+            .ReturnsAsync(updatedUser);
+        _userRepoMock.Setup(r => r.UpdateUserProfileAsync(userId, "Alice Updated", "alice@example.com", max10Phone))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.UpdateProfile(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var profile = Assert.IsType<UserResponseDto>(okResult.Value);
+        Assert.Equal(max10Phone, profile.PhoneNumber);
+
+        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(userId, "Alice Updated", "alice@example.com", max10Phone), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_PhoneOneCharOverMaxLength11_ReturnsBadRequestAndDbUnchanged()
+    {
+        // Arrange - phone number is 11 characters (1 char over maximum 10)
+        const int userId = 10;
+        const string over11Phone = "07712345678"; // 11 chars
+        Assert.Equal(11, over11Phone.Length);
+
+        SetUserContext(userId);
+
+        var request = new UpdateProfileRequestDto
+        {
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = over11Phone
+        };
+
+        // Act
+        var result = await _controller.UpdateProfile(request);
+
+        // Assert - must return 400 Bad Request
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        var messageProp = badRequest.Value?.GetType().GetProperty("message");
+        var message = messageProp?.GetValue(badRequest.Value)?.ToString();
+        Assert.Equal("Phone number must not exceed 10 characters", message);
+
+        // Database write must NEVER be invoked
+        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_PhoneVeryLong500Chars_ReturnsBadRequestAndDbUnchanged()
+    {
+        // Arrange - phone number is excessively long (500 chars)
+        const int userId = 10;
+        var veryLongPhone = new string('9', 500);
+
+        SetUserContext(userId);
+
+        var request = new UpdateProfileRequestDto
+        {
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = veryLongPhone
+        };
+
+        // Act
+        var result = await _controller.UpdateProfile(request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        var messageProp = badRequest.Value?.GetType().GetProperty("message");
+        var message = messageProp?.GetValue(badRequest.Value)?.ToString();
+        Assert.Equal("Phone number must not exceed 10 characters", message);
+
+        // Database write must NEVER be invoked
+        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_PhoneUnder10Digits_ReturnsBadRequestAndDbUnchanged()
+    {
+        // Arrange - phone number has less than 10 digits
+        const int userId = 10;
+        const string under10Phone = "077123456"; // 9 digits
+        Assert.Equal(9, under10Phone.Length);
+
+        SetUserContext(userId);
+
+        var request = new UpdateProfileRequestDto
+        {
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = under10Phone
+        };
+
+        // Act
+        var result = await _controller.UpdateProfile(request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        var messageProp = badRequest.Value?.GetType().GetProperty("message");
+        var message = messageProp?.GetValue(badRequest.Value)?.ToString();
+        Assert.Equal("Phone number must be exactly 10 digits", message);
+
+        // Database write must NEVER be invoked
+        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_PhoneValidLengthInvalidCharacters_ReturnsBadRequest()
+    {
+        // Arrange - phone has valid length (10 chars) but invalid characters
+        const int userId = 10;
+        const string invalidFormatPhone = "077123456a";
+
+        SetUserContext(userId);
+
+        var request = new UpdateProfileRequestDto
+        {
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = invalidFormatPhone
+        };
+
+        // Act
+        var result = await _controller.UpdateProfile(request);
+
+        // Assert
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        var messageProp = badRequest.Value?.GetType().GetProperty("message");
+        var message = messageProp?.GetValue(badRequest.Value)?.ToString();
+        Assert.Equal("Invalid phone number format", message);
+
+        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_EmptyOrNullPhone_PreservesExistingBehaviour()
+    {
+        // Arrange - null or empty phone should be accepted as optional
+        const int userId = 10;
+        SetUserContext(userId);
+
+        var existingUser = new User
+        {
+            UserId = userId,
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = "0771234567"
+        };
+
+        var request = new UpdateProfileRequestDto
+        {
+            FullName = "Alice Updated",
+            Email = "alice@example.com",
+            PhoneNumber = null
+        };
+
+        var updatedUser = new User
+        {
+            UserId = userId,
+            FullName = "Alice Updated",
+            Email = "alice@example.com",
+            PhoneNumber = null
+        };
+
+        _userRepoMock.SetupSequence(r => r.GetByIdAsync(userId))
+            .ReturnsAsync(existingUser)
+            .ReturnsAsync(updatedUser);
+        _userRepoMock.Setup(r => r.UpdateUserProfileAsync(userId, "Alice Updated", "alice@example.com", null))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.UpdateProfile(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
+        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(userId, "Alice Updated", "alice@example.com", null), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_PhoneWithWhitespaceAroundValidNumber_TrimsWhitespaceAndSaves()
+    {
+        // Arrange - 16 characters with whitespace, but 10 digits after trim
+        const int userId = 10;
+        const string paddedPhone = "   0771234567   ";
+        SetUserContext(userId);
+
+        var existingUser = new User
+        {
+            UserId = userId,
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = "0770000000"
+        };
+
+        var request = new UpdateProfileRequestDto
+        {
+            FullName = "Alice Updated",
+            Email = "alice@example.com",
+            PhoneNumber = paddedPhone
+        };
+
+        var updatedUser = new User
+        {
+            UserId = userId,
+            FullName = "Alice Updated",
+            Email = "alice@example.com",
+            PhoneNumber = "0771234567"
+        };
+
+        _userRepoMock.SetupSequence(r => r.GetByIdAsync(userId))
+            .ReturnsAsync(existingUser)
+            .ReturnsAsync(updatedUser);
+        _userRepoMock.Setup(r => r.UpdateUserProfileAsync(userId, "Alice Updated", "alice@example.com", "0771234567"))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _controller.UpdateProfile(request);
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(okResult.Value);
+        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(userId, "Alice Updated", "alice@example.com", "0771234567"), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_UnauthenticatedRequest_ReturnsUnauthorized()
+    {
+        // Arrange - user context is null (unauthenticated)
+        SetUserContext(null);
+
+        var request = new UpdateProfileRequestDto
+        {
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = "0771234567"
+        };
+
+        // Act
+        var result = await _controller.UpdateProfile(request);
+
+        // Assert
+        Assert.IsType<UnauthorizedObjectResult>(result);
+        _userRepoMock.Verify(r => r.UpdateUserProfileAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public void UpdateProfileRequestDto_ValidationAttributes_EnforceMax10Characters()
+    {
+        // Validate exactly 10 digits
+        var validDto = new UpdateProfileRequestDto
+        {
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = "0771234567"
+        };
+        var validContext = new ValidationContext(validDto);
+        var validResults = new List<ValidationResult>();
+        var isValid = Validator.TryValidateObject(validDto, validContext, validResults, true);
+        Assert.True(isValid);
+
+        // Validate 11 characters fails with exact message
+        var over11Dto = new UpdateProfileRequestDto
+        {
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = "07712345678"
+        };
+        var invalidContext = new ValidationContext(over11Dto);
+        var invalidResults = new List<ValidationResult>();
+        var isInvalid = Validator.TryValidateObject(over11Dto, invalidContext, invalidResults, true);
+        Assert.False(isInvalid);
+        Assert.Contains(invalidResults, r => r.ErrorMessage == "Phone number must not exceed 10 characters");
+
+        // Validate 9 digits fails with exact message
+        var under10Dto = new UpdateProfileRequestDto
+        {
+            FullName = "Alice",
+            Email = "alice@example.com",
+            PhoneNumber = "077123456"
+        };
+        var underContext = new ValidationContext(under10Dto);
+        var underResults = new List<ValidationResult>();
+        var isUnderInvalid = Validator.TryValidateObject(under10Dto, underContext, underResults, true);
+        Assert.False(isUnderInvalid);
+        Assert.Contains(underResults, r => r.ErrorMessage == "Phone number must be exactly 10 digits");
+    }
+
+    #endregion
 
     #endregion
 
