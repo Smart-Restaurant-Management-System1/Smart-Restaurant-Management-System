@@ -273,6 +273,7 @@ builder.Services.AddScoped<
 >();
 
 // Payment configuration and services (SR-280 / SR-283 / SR-284)
+builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<
     ReservationService.Models.PayHereOptions
 >(

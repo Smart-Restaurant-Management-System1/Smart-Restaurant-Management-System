@@ -45,7 +45,7 @@ function PaymentStatusBadge({ paymentStatus, paymentMethod }) {
   );
 }
 
-function OrderCard({ order, onPay, onViewInvoice, onSimulatePay }) {
+function OrderCard({ order, onPay, onViewInvoice }) {
   const status = normalizeStatus(order.status);
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.id === status);
   const isPreOrder = order.orderType === 'ReservationPreOrder';
@@ -357,22 +357,6 @@ function OrderCard({ order, onPay, onViewInvoice, onSimulatePay }) {
             >
               💳 Pay Now ({formatOrderCurrency(order.totalAmount)})
             </button>
-            {order.paymentStatus === 'Pending' && order.paymentMethod === 'PayHere' && onSimulatePay && (
-              <button
-                type="button"
-                className="order-pay-now-btn"
-                style={{
-                  background: 'linear-gradient(135deg, #f7e096 0%, #ddbb78 100%)',
-                  color: '#282115',
-                  borderColor: '#c5a059',
-                  fontWeight: 700,
-                }}
-                onClick={() => onSimulatePay(order)}
-                title="If you approved payment on PayHere sandbox, click here to confirm instantly"
-              >
-                ⚡ Confirm Sandbox Payment
-              </button>
-            )}
           </div>
         )}
 
@@ -447,31 +431,6 @@ export default function OrderTrackingPage() {
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
-
-  const handleSimulatePay = async (order) => {
-    try {
-      setLoading(true);
-      await simulatePayHereSandboxPayment({
-        orderType: order.orderType,
-        orderId: order.orderId,
-      });
-      setPaymentNotice({
-        type: 'success',
-        message: `Payment confirmed for ${order.orderReference || `order #${order.orderId}`}! Kitchen and receipts are now active.`,
-      });
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('notifications:updated'));
-      }
-      await loadOrders();
-    } catch (err) {
-      setPaymentNotice({
-        type: 'error',
-        message: err.response?.data?.message || 'Failed to confirm sandbox payment.',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Handle PayHere return_url and cancel_url query parameters
   useEffect(() => {
@@ -953,7 +912,6 @@ export default function OrderTrackingPage() {
               order={order}
               onPay={(selected) => setSelectedOrderForPayment(selected)}
               onViewInvoice={(selected) => setSelectedOrderForInvoice(selected)}
-              onSimulatePay={handleSimulatePay}
             />
           ))}
         </div>

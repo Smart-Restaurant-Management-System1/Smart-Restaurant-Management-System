@@ -108,16 +108,35 @@ export const launchPayHereHostedCheckout = (checkoutData) => {
     return;
   }
 
+  const currentOrigin =
+    typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : '';
+
+  const returnUrl =
+    currentOrigin && checkoutData.returnUrl
+      ? (currentOrigin.includes('azurecontainerapps.io')
+          ? checkoutData.returnUrl.replace(/http:\/\/localhost(:\d+)?/, currentOrigin)
+          : checkoutData.returnUrl.replace(/https:\/\/[^/]+azurecontainerapps\.io/, currentOrigin))
+      : (checkoutData.returnUrl || 'http://localhost/orders/track?payment=returned');
+
+  const cancelUrl =
+    currentOrigin && checkoutData.cancelUrl
+      ? (currentOrigin.includes('azurecontainerapps.io')
+          ? checkoutData.cancelUrl.replace(/http:\/\/localhost(:\d+)?/, currentOrigin)
+          : checkoutData.cancelUrl.replace(/https:\/\/[^/]+azurecontainerapps\.io/, currentOrigin))
+      : (checkoutData.cancelUrl || 'http://localhost/orders/track?payment=cancelled');
+
   const form = document.createElement('form');
   form.method = 'POST';
   form.action = checkoutData.checkoutUrl;
-  form.target = '_blank';
+  form.target = '_self';
   form.style.display = 'none';
 
   const fields = {
     merchant_id: checkoutData.merchantId,
-    return_url: checkoutData.returnUrl,
-    cancel_url: checkoutData.cancelUrl,
+    return_url: returnUrl,
+    cancel_url: cancelUrl,
     notify_url: checkoutData.notifyUrl,
     order_id: checkoutData.merchantOrderReference,
     items: `${checkoutData.orderType} Order #${checkoutData.orderId}`,
