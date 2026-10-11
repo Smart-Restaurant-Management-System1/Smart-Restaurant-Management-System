@@ -13,9 +13,15 @@ public class RegisterRequestDto
     [StringLength(150, ErrorMessage = "Email cannot exceed 150 characters")]
     public string Email { get; set; } = string.Empty;
 
-    [Phone(ErrorMessage = "Invalid phone number format")]
-    [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters")]
-    public string? PhoneNumber { get; set; }
+    private string? _phoneNumber;
+
+    [RegularExpression(@"^\d{10}$", ErrorMessage = IdentityService.Models.UserValidationRules.PhoneExactLengthErrorMessage)]
+    [StringLength(IdentityService.Models.UserValidationRules.MaxPhoneNumberLength, ErrorMessage = IdentityService.Models.UserValidationRules.PhoneLengthErrorMessage)]
+    public string? PhoneNumber
+    {
+        get => _phoneNumber;
+        set => _phoneNumber = value?.Trim();
+    }
 
     [Required(ErrorMessage = "Password is required")]
     [MinLength(6, ErrorMessage = "Password must be at least 6 characters long")]
