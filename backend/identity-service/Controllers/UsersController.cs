@@ -66,9 +66,19 @@ public class UsersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequestDto request)
     {
+        if (request == null)
+        {
+            return BadRequest(new { message = "Request body cannot be empty." });
+        }
+
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            var firstError = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .FirstOrDefault(msg => !string.IsNullOrWhiteSpace(msg))
+                ?? "Invalid profile data.";
+            return BadRequest(new { message = firstError });
         }
 
         var userId = GetCurrentUserId();
@@ -81,6 +91,10 @@ public class UsersController : ControllerBase
         {
             var updatedProfile = await _userService.UpdateProfileAsync(userId.Value, request);
             return Ok(updatedProfile);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (KeyNotFoundException ex)
         {
