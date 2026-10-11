@@ -4,7 +4,7 @@
 export function validateProfileForm(formData) {
   const errors = {};
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]{6,15}$/;
+  const phoneRegex = /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]{5,18}$/;
 
   const fullName = (formData.fullName || '').trim();
   if (!fullName) {
@@ -24,10 +24,12 @@ export function validateProfileForm(formData) {
 
   const phone = (formData.phoneNumber || '').trim();
   if (phone) {
-    if (!phoneRegex.test(phone)) {
+    if (phone.length > 10) {
+      errors.phoneNumber = 'Phone number must not exceed 10 characters';
+    } else if (phone.length < 10) {
+      errors.phoneNumber = 'Phone number must be exactly 10 digits';
+    } else if (!/^\d{10}$/.test(phone)) {
       errors.phoneNumber = 'Please enter a valid phone number format';
-    } else if (phone.length > 20) {
-      errors.phoneNumber = 'Phone number cannot exceed 20 characters';
     }
   }
 
