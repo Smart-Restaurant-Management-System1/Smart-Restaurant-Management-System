@@ -11,7 +11,7 @@ test('validateProfileForm succeeds with valid customer profile data', () => {
   const data = {
     fullName: 'Jane Doe',
     email: 'jane@bistro.com',
-    phoneNumber: '+1-555-123456',
+    phoneNumber: '0771234567',
   };
 
   const result = validateProfileForm(data);
@@ -48,13 +48,50 @@ test('validateProfileForm catches invalid phone number format', () => {
   const data = {
     fullName: 'Jane Doe',
     email: 'jane@bistro.com',
-    phoneNumber: 'abc-def-invalid',
+    phoneNumber: '077123456a',
   };
 
   const result = validateProfileForm(data);
   assert.equal(result.isValid, false);
   assert.equal(result.errors.phoneNumber, 'Please enter a valid phone number format');
 });
+
+test('validateProfileForm accepts phone number at exactly 10 digits', () => {
+  const data = {
+    fullName: 'Jane Doe',
+    email: 'jane@bistro.com',
+    phoneNumber: '0771234567', // exactly 10 digits
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, true);
+  assert.equal(result.errors.phoneNumber, undefined);
+});
+
+test('validateProfileForm flags phone number exceeding 10 characters', () => {
+  const data = {
+    fullName: 'Jane Doe',
+    email: 'jane@bistro.com',
+    phoneNumber: '07712345678', // 11 characters
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.phoneNumber, 'Phone number must not exceed 10 characters');
+});
+
+test('validateProfileForm flags phone number under 10 digits', () => {
+  const data = {
+    fullName: 'Jane Doe',
+    email: 'jane@bistro.com',
+    phoneNumber: '077123456', // 9 digits
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.phoneNumber, 'Phone number must be exactly 10 digits');
+});
+
 
 test('sanitizeProfilePayload strips all protected fields and trims values', () => {
   const unvalidatedInput = {
@@ -67,7 +104,7 @@ test('sanitizeProfilePayload strips all protected fields and trims values', () =
     createdAt: '2020-01-01',
     fullName: '  Jane Doe  ',
     email: '  Jane.Doe@Bistro.COM  ',
-    phoneNumber: '  +1234567890  ',
+    phoneNumber: '  0771234567  ',
   };
 
   const sanitized = sanitizeProfilePayload(unvalidatedInput);
@@ -75,7 +112,7 @@ test('sanitizeProfilePayload strips all protected fields and trims values', () =
   assert.deepEqual(sanitized, {
     fullName: 'Jane Doe',
     email: 'jane.doe@bistro.com',
-    phoneNumber: '+1234567890',
+    phoneNumber: '0771234567',
   });
 
   // Verify protected fields are completely stripped
