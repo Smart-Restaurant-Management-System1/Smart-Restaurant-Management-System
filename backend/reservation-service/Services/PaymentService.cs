@@ -128,7 +128,7 @@ public sealed class PaymentService : IPaymentService
         }
 
         var (resolvedReturnUrl, resolvedCancelUrl, resolvedNotifyUrl) = _payHereOptions.ResolveUrls(requestOrigin);
-        var resolvedSecret = _payHereOptions.ResolveMerchantSecret(requestOrigin);
+        var (resolvedSecret, secretSourceName) = _payHereOptions.ResolveMerchantSecretWithSource(requestOrigin);
 
         var hash = PayHereSecurityHelper.GenerateCheckoutHash(
             _payHereOptions.MerchantId,
@@ -136,6 +136,23 @@ public sealed class PaymentService : IPaymentService
             totalAmount,
             _payHereOptions.Currency,
             resolvedSecret);
+
+        var secretMd5 = PayHereSecurityHelper.ComputeSecretMd5(resolvedSecret);
+        var decodedSecretMd5 = PayHereSecurityHelper.ComputeBase64DecodedSecretMd5(resolvedSecret);
+
+        _logger.LogWarning(
+            "[PAYHERE_CHECKOUT_DIAGNOSTIC] merchant_id={MerchantId}, order_id={OrderId}, amount={Amount}, currency={Currency}, secret_source={SecretSource}, md5_secret={SecretMd5}, md5_secret_decoded={DecodedSecretMd5}, hash={Hash}, notify_url={NotifyUrl}, return_url={ReturnUrl}, request_origin={RequestOrigin}",
+            _payHereOptions.MerchantId,
+            merchantRef,
+            totalAmount.ToString("0.00", CultureInfo.InvariantCulture),
+            _payHereOptions.Currency,
+            secretSourceName,
+            secretMd5,
+            decodedSecretMd5 ?? "N/A",
+            hash,
+            resolvedNotifyUrl,
+            resolvedReturnUrl,
+            requestOrigin ?? "(none)");
 
         return new PayHereCheckoutResponse
         {

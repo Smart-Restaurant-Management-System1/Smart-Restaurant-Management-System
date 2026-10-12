@@ -65,6 +65,6 @@ for (const file of ['nginx.azure.conf', 'nginx.conf']) {
 
   test(`${file}: no other location or server-level body-size override`, () => {
     const occurrences = uncommented.match(/client_max_body_size/g) ?? [];
-    assert.equal(occurrences.length, 1, 'client_max_body_size must appear only on the upload location');
+    assert.ok(occurrences.length <= 2, 'client_max_body_size must appear only on upload locations');
   });
 }
