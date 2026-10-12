@@ -24,6 +24,8 @@ public sealed class PayHereOptions
     // --- 2. Azure Deployed Cloud Environment URLs (3 URLs) ---
     public string AzureReturnUrl { get; set; } = "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/orders/track?payment=returned";
     public string AzureCancelUrl { get; set; } = "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/orders/track?payment=cancelled";
+    // notify_url MUST use the frontend-web domain (the PayHere registered app domain).
+    // The nginx proxy at frontend-web forwards /reservation-api/api/* -> reservation-api:5000/api/*
     public string AzureNotifyUrl { get; set; } = "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify";
 
     // Backward-compatible fallback properties:
