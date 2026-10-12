@@ -88,6 +88,10 @@ jobs:
           PAYHERE_MERCHANT_SECRET: ${{ secrets.PAYHERE_MERCHANT_SECRET }}
           PAYHERE_AZURE_MERCHANT_SECRET: ${{ secrets.PAYHERE_AZURE_MERCHANT_SECRET }}
           PAYHERE_LOCAL_MERCHANT_SECRET: ${{ secrets.PAYHERE_LOCAL_MERCHANT_SECRET }}
+          # PayHere Azure URLs: always deploy explicitly so stale portal values cannot persist (SR-280)
+          PAYHERE_AZURE_NOTIFY_URL: "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify"
+          PAYHERE_AZURE_RETURN_URL: "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/orders/track?payment=returned"
+          PAYHERE_AZURE_CANCEL_URL: "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/orders/track?payment=cancelled"
         run: |
           set -euo pipefail
 
@@ -125,6 +129,9 @@ jobs:
               "Storage__BlobContainerName=$BLOB_CONTAINER_NAME" \
               "PayHere__MerchantId=$PAYHERE_MERCHANT_ID" \
               "PayHere__IsSandbox=$PAYHERE_IS_SANDBOX" \
+              "PayHere__AzureNotifyUrl=$PAYHERE_AZURE_NOTIFY_URL" \
+              "PayHere__AzureReturnUrl=$PAYHERE_AZURE_RETURN_URL" \
+              "PayHere__AzureCancelUrl=$PAYHERE_AZURE_CANCEL_URL" \
               ${payhere_vars[@]+"${payhere_vars[@]}"}
 
       - name: Verify Reservation Service configuration (names and references only)
@@ -157,6 +164,9 @@ jobs:
             "$BLOB_CONTAINER_NAME" "$(env_field Storage__BlobContainerName value)"
           check "ASPNETCORE_ENVIRONMENT" \
             "Production" "$(env_field ASPNETCORE_ENVIRONMENT value)"
+          check "PayHere__AzureNotifyUrl uses frontend-web domain" \
+            "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify" \
+            "$(env_field PayHere__AzureNotifyUrl value)"
 
           if [ "$fail" -ne 0 ]; then exit 1; fi
 

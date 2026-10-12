@@ -102,8 +102,38 @@ public sealed class DeploymentConfigurationTests
         Assert.Contains("PayHere__AzureMerchantSecret", step);
         Assert.Contains("PayHere__LocalMerchantSecret", step);
 
+        // URL vars must also be deployed explicitly to prevent stale Azure Portal values persisting (SR-280)
+        Assert.Contains("PayHere__AzureNotifyUrl", step);
+        Assert.Contains("PayHere__AzureReturnUrl", step);
+        Assert.Contains("PayHere__AzureCancelUrl", step);
+
         // Never bind with legacy flat variables
         Assert.DoesNotContain("PAYHERE_MERCHANT_SECRET=", step);
         Assert.DoesNotContain("PAYHERE_AZURE_MERCHANT_SECRET=", step);
+    }
+
+    [Fact]
+    public void Workflow_AzureNotifyUrl_UsesFrontendWebDomain_NotReservationApiDomain()
+    {
+        var step = Step(Cd(), "Deploy Reservation Service");
+
+        // The notify_url MUST use the frontend-web domain (the PayHere registered Sandbox app domain).
+        // The nginx proxy at frontend-web forwards /reservation-api/api/* to reservation-api:5000/api/*.
+        // Sending reservation-api.* domain to PayHere causes "Unauthorized payment request" (SR-280).
+        Assert.Contains(
+            "frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify",
+            step);
+        Assert.DoesNotContain(
+            "reservation-api.purpledesert-2900c071.eastasia.azurecontainerapps.io/api/payments/payhere/notify",
+            step);
+    }
+
+    [Fact]
+    public void Workflow_VerifyStep_ChecksPayHereAzureNotifyUrl()
+    {
+        var verify = Step(Cd(), "Verify Reservation Service configuration");
+
+        Assert.Contains("PayHere__AzureNotifyUrl", verify);
+        Assert.Contains("frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify", verify);
     }
 }
