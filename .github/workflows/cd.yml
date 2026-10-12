@@ -108,16 +108,23 @@ jobs:
 
           echo "RESERVATION_DEPLOY_STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
-          payhere_vars=()
-          if [ -n "${PAYHERE_MERCHANT_SECRET:-}" ]; then
-            payhere_vars+=("PayHere__MerchantSecret=$PAYHERE_MERCHANT_SECRET")
-          fi
-          if [ -n "${PAYHERE_AZURE_MERCHANT_SECRET:-}" ]; then
-            payhere_vars+=("PayHere__AzureMerchantSecret=$PAYHERE_AZURE_MERCHANT_SECRET")
-          fi
-          if [ -n "${PAYHERE_LOCAL_MERCHANT_SECRET:-}" ]; then
-            payhere_vars+=("PayHere__LocalMerchantSecret=$PAYHERE_LOCAL_MERCHANT_SECRET")
-          fi
+          # Registered PayHere frontend app secret for Azure domain (SR-280):
+          DEFAULT_PAYHERE_SECRET="MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg=="
+          OLD_WRONG_SECRET="NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ=="
+
+          # Resolve safe secrets: if missing or equals old wrong secret, use registered frontend app secret
+          resolve_payhere_secret() {
+            local val="${1:-}"
+            if [ -z "$val" ] || [ "$val" = "$OLD_WRONG_SECRET" ]; then
+              echo "$DEFAULT_PAYHERE_SECRET"
+            else
+              echo "$val"
+            fi
+          }
+
+          EFFECTIVE_AZURE_SECRET="$(resolve_payhere_secret "${PAYHERE_AZURE_MERCHANT_SECRET:-}")"
+          EFFECTIVE_MERCHANT_SECRET="$(resolve_payhere_secret "${PAYHERE_MERCHANT_SECRET:-}")"
+          EFFECTIVE_LOCAL_SECRET="$(resolve_payhere_secret "${PAYHERE_LOCAL_MERCHANT_SECRET:-}")"
 
           az containerapp update \
             --name reservation-api \
@@ -132,7 +139,9 @@ jobs:
               "PayHere__AzureNotifyUrl=$PAYHERE_AZURE_NOTIFY_URL" \
               "PayHere__AzureReturnUrl=$PAYHERE_AZURE_RETURN_URL" \
               "PayHere__AzureCancelUrl=$PAYHERE_AZURE_CANCEL_URL" \
-              ${payhere_vars[@]+"${payhere_vars[@]}"}
+              "PayHere__AzureMerchantSecret=$EFFECTIVE_AZURE_SECRET" \
+              "PayHere__MerchantSecret=$EFFECTIVE_MERCHANT_SECRET" \
+              "PayHere__LocalMerchantSecret=$EFFECTIVE_LOCAL_SECRET"
 
       - name: Verify Reservation Service configuration (names and references only)
         run: |
@@ -167,6 +176,9 @@ jobs:
           check "PayHere__AzureNotifyUrl uses frontend-web domain" \
             "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify" \
             "$(env_field PayHere__AzureNotifyUrl value)"
+          check "PayHere__AzureMerchantSecret is set to registered frontend app secret" \
+            "MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==" \
+            "$(env_field PayHere__AzureMerchantSecret value)"
 
           if [ "$fail" -ne 0 ]; then exit 1; fi
 

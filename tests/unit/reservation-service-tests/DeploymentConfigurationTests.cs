@@ -136,4 +136,25 @@ public sealed class DeploymentConfigurationTests
         Assert.Contains("PayHere__AzureNotifyUrl", verify);
         Assert.Contains("frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify", verify);
     }
+
+    [Fact]
+    public void Workflow_PayHereSecrets_FallBackToRegisteredFrontendAppSecret()
+    {
+        var step = Step(Cd(), "Deploy Reservation Service");
+
+        // Safe fallback must use the registered frontend app secret (MzQ4...)
+        Assert.Contains("DEFAULT_PAYHERE_SECRET=\"MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==\"", step);
+        // Stale wrong secret (NDIw...) must be recognized and overridden
+        Assert.Contains("OLD_WRONG_SECRET=\"NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==\"", step);
+        Assert.Contains("PayHere__AzureMerchantSecret=$EFFECTIVE_AZURE_SECRET", step);
+    }
+
+    [Fact]
+    public void Workflow_VerifyStep_ChecksPayHereAzureMerchantSecret()
+    {
+        var verify = Step(Cd(), "Verify Reservation Service configuration");
+
+        Assert.Contains("PayHere__AzureMerchantSecret is set to registered frontend app secret", verify);
+        Assert.Contains("MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==", verify);
+    }
 }
