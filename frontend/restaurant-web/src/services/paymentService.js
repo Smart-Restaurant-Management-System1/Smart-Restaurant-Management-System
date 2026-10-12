@@ -152,6 +152,17 @@ export const launchPayHereHostedCheckout = (checkoutData) => {
     hash: checkoutData.hash,
   };
 
+  console.log('[PAYHERE_CHECKOUT_LAUNCH]', {
+    merchant_id: fields.merchant_id,
+    order_id: fields.order_id,
+    amount: fields.amount,
+    currency: fields.currency,
+    hash: fields.hash,
+    notify_url: fields.notify_url,
+    return_url: fields.return_url,
+    cancel_url: fields.cancel_url,
+  });
+
   Object.entries(fields).forEach(([name, value]) => {
     if (value !== undefined && value !== null) {
       const input = document.createElement('input');

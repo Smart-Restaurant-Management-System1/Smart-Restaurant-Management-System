@@ -65,7 +65,7 @@ public sealed class PayHereOptions
     /// Priority for Azure requests: AzureMerchantSecret -> MerchantSecret -> LocalMerchantSecret
     /// Priority for Local requests: LocalMerchantSecret -> MerchantSecret -> AzureMerchantSecret
     /// </summary>
-    public string ResolveMerchantSecret(string? requestOrigin)
+    public (string Secret, string SourceName) ResolveMerchantSecretWithSource(string? requestOrigin)
     {
         bool isAzure = !string.IsNullOrWhiteSpace(requestOrigin) &&
                        (requestOrigin.Contains("azurecontainerapps.io", StringComparison.OrdinalIgnoreCase) ||
@@ -75,27 +75,32 @@ public sealed class PayHereOptions
         {
             if (!string.IsNullOrWhiteSpace(AzureMerchantSecret))
             {
-                return AzureMerchantSecret;
+                return (AzureMerchantSecret, nameof(AzureMerchantSecret));
             }
 
             if (!string.IsNullOrWhiteSpace(MerchantSecret))
             {
-                return MerchantSecret;
+                return (MerchantSecret, nameof(MerchantSecret));
             }
 
-            return LocalMerchantSecret;
+            return (LocalMerchantSecret, nameof(LocalMerchantSecret));
         }
 
         if (!string.IsNullOrWhiteSpace(LocalMerchantSecret))
         {
-            return LocalMerchantSecret;
+            return (LocalMerchantSecret, nameof(LocalMerchantSecret));
         }
 
         if (!string.IsNullOrWhiteSpace(MerchantSecret))
         {
-            return MerchantSecret;
+            return (MerchantSecret, nameof(MerchantSecret));
         }
 
-        return AzureMerchantSecret;
+        return (AzureMerchantSecret, nameof(AzureMerchantSecret));
+    }
+
+    public string ResolveMerchantSecret(string? requestOrigin)
+    {
+        return ResolveMerchantSecretWithSource(requestOrigin).Secret;
     }
 }
