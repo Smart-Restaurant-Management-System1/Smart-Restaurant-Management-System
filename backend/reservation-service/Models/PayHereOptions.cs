@@ -9,9 +9,9 @@ public sealed class PayHereOptions
     public const string SectionName = "PayHere";
 
     public string MerchantId { get; set; } = "1238640";
-    public string LocalMerchantSecret { get; set; } = "MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==";
-    public string AzureMerchantSecret { get; set; } = "MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==";
-    public string MerchantSecret { get; set; } = "MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==";
+    public string LocalMerchantSecret { get; set; } = "MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=";
+    public string AzureMerchantSecret { get; set; } = "MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=";
+    public string MerchantSecret { get; set; } = "MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=";
     public bool IsSandbox { get; set; } = true;
     public string SandboxCheckoutUrl { get; set; } = "https://sandbox.payhere.lk/pay/checkout";
     public string LiveCheckoutUrl { get; set; } = "https://www.payhere.lk/pay/checkout";

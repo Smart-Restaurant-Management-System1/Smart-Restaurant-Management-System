@@ -109,7 +109,7 @@ jobs:
           echo "RESERVATION_DEPLOY_STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
           # Registered PayHere frontend app secret for Azure domain (SR-280):
-          DEFAULT_PAYHERE_SECRET="MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg=="
+          DEFAULT_PAYHERE_SECRET="MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI="
           OLD_WRONG_SECRET="NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ=="
 
           # Resolve safe secrets: if missing or equals old wrong secret, use registered frontend app secret
@@ -177,7 +177,7 @@ jobs:
             "https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io/reservation-api/api/payments/payhere/notify" \
             "$(env_field PayHere__AzureNotifyUrl value)"
           check "PayHere__AzureMerchantSecret is set to registered frontend app secret" \
-            "MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==" \
+            "MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=" \
             "$(env_field PayHere__AzureMerchantSecret value)"
 
           if [ "$fail" -ne 0 ]; then exit 1; fi

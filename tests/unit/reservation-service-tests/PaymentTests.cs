@@ -335,7 +335,7 @@ public sealed class PaymentTests
     {
         var options = new PayHereOptions();
         var (secret, source) = options.ResolveMerchantSecretWithSource(origin);
-        Assert.Equal("MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==", secret);
+        Assert.Equal("MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=", secret);
         if (origin != null && origin.Contains("azurecontainerapps.io"))
         {
             Assert.Equal("AzureMerchantSecret", source);
@@ -343,61 +343,44 @@ public sealed class PaymentTests
     }
 
     [Fact]
-    public void NormalizeMerchantSecret_DecodesBase64AndPreservesPlainText()
+    public void NormalizeMerchantSecret_TrimsWhitespaceAndPreservesRawSecret()
     {
-        const string base64Secret = "MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==";
-        const string plainSecret = "3482350964255679228219048574263840066806";
-        const string prevBase64 = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==";
-        const string prevPlain = "4201912197270709904530343769852211283351";
+        const string secret = "MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=";
 
-        // Base64 decoded secret matches expected plain value
-        Assert.Equal(plainSecret, PayHereSecurityHelper.NormalizeMerchantSecret(base64Secret));
-        Assert.Equal(prevPlain, PayHereSecurityHelper.NormalizeMerchantSecret(prevBase64));
-
-        // Plain text secret is preserved directly
-        Assert.Equal(plainSecret, PayHereSecurityHelper.NormalizeMerchantSecret(plainSecret));
-        Assert.Equal(TestMerchantSecret, PayHereSecurityHelper.NormalizeMerchantSecret(TestMerchantSecret));
+        // Raw merchant secret must be preserved exactly without Base64 decoding
+        Assert.Equal(secret, PayHereSecurityHelper.NormalizeMerchantSecret(secret));
+        Assert.Equal(secret, PayHereSecurityHelper.NormalizeMerchantSecret($"  {secret}  "));
+        Assert.Equal(string.Empty, PayHereSecurityHelper.NormalizeMerchantSecret("   "));
+        Assert.Equal(string.Empty, PayHereSecurityHelper.NormalizeMerchantSecret(null!));
     }
 
     [Fact]
-    public void ComputeSecretMd5_ProducesExactExpectedMd5_ForBothBase64AndPlainText()
+    public void ComputeSecretMd5_ProducesExactExpectedMd5OfRawSecret()
     {
-        const string base64Secret = "MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==";
-        const string plainSecret = "3482350964255679228219048574263840066806";
-        const string expectedMd5 = "873289A6100C03D6C008164FEBDC3901";
+        const string secret = "MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=";
+        const string expectedMd5 = "953FC5101CAF94F36048DEFBFEDDC78B";
 
-        // Both Base64 and Plain secret must produce 873289A6100C03D6C008164FEBDC3901
-        Assert.Equal(expectedMd5, PayHereSecurityHelper.ComputeSecretMd5(base64Secret));
-        Assert.Equal(expectedMd5, PayHereSecurityHelper.ComputeSecretMd5(plainSecret));
+        // Must calculate MD5 of the raw secret string directly
+        Assert.Equal(expectedMd5, PayHereSecurityHelper.ComputeSecretMd5(secret));
     }
 
     [Fact]
-    public void GenerateCheckoutHash_ProducesIdenticalHash_ForBase64AndPlainTextSecrets()
+    public void GenerateCheckoutHash_ComputesHashUsingRawSecret()
     {
         const string merchantId = "1238640";
         const string orderId = "PAY-DIN-000001-A1B2C3";
         const decimal amount = 1500.00m;
         const string currency = "LKR";
-        const string base64Secret = "MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==";
-        const string plainSecret = "3482350964255679228219048574263840066806";
-        const string expectedHash = "F32CBDF8CAD6A1C6E73E2EB25B80F24D";
+        const string secret = "MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=";
+        const string expectedHash = "A55AAC5E4384D683A2AA656A6470C01E";
 
-        var hashFromBase64 = PayHereSecurityHelper.GenerateCheckoutHash(
+        var hash = PayHereSecurityHelper.GenerateCheckoutHash(
             merchantId,
             orderId,
             amount,
             currency,
-            base64Secret);
+            secret);
 
-        var hashFromPlain = PayHereSecurityHelper.GenerateCheckoutHash(
-            merchantId,
-            orderId,
-            amount,
-            currency,
-            plainSecret);
-
-        Assert.Equal(expectedHash, hashFromBase64);
-        Assert.Equal(expectedHash, hashFromPlain);
-        Assert.Equal(hashFromBase64, hashFromPlain);
+        Assert.Equal(expectedHash, hash);
     }
 }

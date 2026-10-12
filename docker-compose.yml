@@ -123,9 +123,9 @@ services:
       - Kafka__PublisherEnabled=true
       # SR-280: PayHere Sandbox payments
       - PayHere__MerchantId=${PAYHERE_MERCHANT_ID:-1238640}
-      - PayHere__LocalMerchantSecret=${PAYHERE_LOCAL_MERCHANT_SECRET:-MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==}
-      - PayHere__AzureMerchantSecret=${PAYHERE_AZURE_MERCHANT_SECRET:-MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==}
-      - PayHere__MerchantSecret=${PAYHERE_MERCHANT_SECRET:-MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==}
+      - PayHere__LocalMerchantSecret=${PAYHERE_LOCAL_MERCHANT_SECRET:-MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=}
+      - PayHere__AzureMerchantSecret=${PAYHERE_AZURE_MERCHANT_SECRET:-MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=}
+      - PayHere__MerchantSecret=${PAYHERE_MERCHANT_SECRET:-MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=}
       - PayHere__LocalReturnUrl=${PAYHERE_LOCAL_RETURN_URL:-http://localhost/orders/track?payment=returned}
       - PayHere__LocalCancelUrl=${PAYHERE_LOCAL_CANCEL_URL:-http://localhost/orders/track?payment=cancelled}
       - PayHere__LocalNotifyUrl=${PAYHERE_LOCAL_NOTIFY_URL:-http://localhost:5000/api/payments/payhere/notify}
