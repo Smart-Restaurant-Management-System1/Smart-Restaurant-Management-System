@@ -335,6 +335,6 @@ public sealed class PaymentTests
     {
         var options = new PayHereOptions();
         var resolved = options.ResolveMerchantSecret(origin);
-        Assert.Equal("NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==", resolved);
+        Assert.Equal("MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==", resolved);
     }
 }
