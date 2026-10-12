@@ -307,4 +307,34 @@ public sealed class PaymentTests
             Assert.Equal(options.LocalMerchantSecret, secret);
         }
     }
+
+    [Theory]
+    [InlineData("https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io")]
+    [InlineData("http://localhost:5173")]
+    [InlineData(null)]
+    public void PayHereOptions_ResolveMerchantSecret_FallsBackToMerchantSecret_WhenSpecificSecretEmpty(string? origin)
+    {
+        var fallbackSecret = "FALLBACK_SECRET_OVERRIDE";
+        var options = new PayHereOptions
+        {
+            LocalMerchantSecret = "",
+            AzureMerchantSecret = "",
+            MerchantSecret = fallbackSecret
+        };
+
+        var resolved = options.ResolveMerchantSecret(origin);
+
+        Assert.Equal(fallbackSecret, resolved);
+    }
+
+    [Theory]
+    [InlineData("https://frontend-web.purpledesert-2900c071.eastasia.azurecontainerapps.io")]
+    [InlineData("http://localhost:5173")]
+    [InlineData(null)]
+    public void PayHereOptions_DefaultInstance_ResolvesValidWorkingSandboxSecret(string? origin)
+    {
+        var options = new PayHereOptions();
+        var resolved = options.ResolveMerchantSecret(origin);
+        Assert.Equal("NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==", resolved);
+    }
 }
