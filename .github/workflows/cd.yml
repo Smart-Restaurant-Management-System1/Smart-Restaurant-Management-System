@@ -82,6 +82,12 @@ jobs:
             --image "$ACR_LOGIN_SERVER/identity-service:${{ github.sha }}"
 
       - name: Deploy Reservation Service
+        env:
+          PAYHERE_MERCHANT_ID: ${{ vars.PAYHERE_MERCHANT_ID || '1238640' }}
+          PAYHERE_IS_SANDBOX: ${{ vars.PAYHERE_IS_SANDBOX || 'true' }}
+          PAYHERE_MERCHANT_SECRET: ${{ secrets.PAYHERE_MERCHANT_SECRET }}
+          PAYHERE_AZURE_MERCHANT_SECRET: ${{ secrets.PAYHERE_AZURE_MERCHANT_SECRET }}
+          PAYHERE_LOCAL_MERCHANT_SECRET: ${{ secrets.PAYHERE_LOCAL_MERCHANT_SECRET }}
         run: |
           set -euo pipefail
 
@@ -98,6 +104,17 @@ jobs:
 
           echo "RESERVATION_DEPLOY_STARTED=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
 
+          payhere_vars=()
+          if [ -n "${PAYHERE_MERCHANT_SECRET:-}" ]; then
+            payhere_vars+=("PayHere__MerchantSecret=$PAYHERE_MERCHANT_SECRET")
+          fi
+          if [ -n "${PAYHERE_AZURE_MERCHANT_SECRET:-}" ]; then
+            payhere_vars+=("PayHere__AzureMerchantSecret=$PAYHERE_AZURE_MERCHANT_SECRET")
+          fi
+          if [ -n "${PAYHERE_LOCAL_MERCHANT_SECRET:-}" ]; then
+            payhere_vars+=("PayHere__LocalMerchantSecret=$PAYHERE_LOCAL_MERCHANT_SECRET")
+          fi
+
           az containerapp update \
             --name reservation-api \
             --resource-group "$RESOURCE_GROUP" \
@@ -105,7 +122,10 @@ jobs:
             --set-env-vars \
               "ASPNETCORE_ENVIRONMENT=Production" \
               "AZURE_STORAGE_CONNECTION_STRING=secretref:$BLOB_SECRET_NAME" \
-              "Storage__BlobContainerName=$BLOB_CONTAINER_NAME"
+              "Storage__BlobContainerName=$BLOB_CONTAINER_NAME" \
+              "PayHere__MerchantId=$PAYHERE_MERCHANT_ID" \
+              "PayHere__IsSandbox=$PAYHERE_IS_SANDBOX" \
+              ${payhere_vars[@]+"${payhere_vars[@]}"}
 
       - name: Verify Reservation Service configuration (names and references only)
         run: |

@@ -10,7 +10,7 @@ public sealed class PayHereOptions
 
     public string MerchantId { get; set; } = "1238640";
     public string LocalMerchantSecret { get; set; } = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==";
-    public string AzureMerchantSecret { get; set; } = "OTg3MzY4NjE2MjQ1NDMzMjEzOTQxNzY0NDQwOTMxNTM4Mzg5OTY5";
+    public string AzureMerchantSecret { get; set; } = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==";
     public string MerchantSecret { get; set; } = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==";
     public bool IsSandbox { get; set; } = true;
     public string SandboxCheckoutUrl { get; set; } = "https://sandbox.payhere.lk/pay/checkout";
@@ -60,6 +60,8 @@ public sealed class PayHereOptions
 
     /// <summary>
     /// Intelligently resolves the appropriate Merchant Secret based on client origin / environment.
+    /// Priority for Azure requests: AzureMerchantSecret -> MerchantSecret -> LocalMerchantSecret
+    /// Priority for Local requests: LocalMerchantSecret -> MerchantSecret -> AzureMerchantSecret
     /// </summary>
     public string ResolveMerchantSecret(string? requestOrigin)
     {
@@ -69,9 +71,29 @@ public sealed class PayHereOptions
 
         if (isAzure)
         {
-            return string.IsNullOrWhiteSpace(AzureMerchantSecret) ? MerchantSecret : AzureMerchantSecret;
+            if (!string.IsNullOrWhiteSpace(AzureMerchantSecret))
+            {
+                return AzureMerchantSecret;
+            }
+
+            if (!string.IsNullOrWhiteSpace(MerchantSecret))
+            {
+                return MerchantSecret;
+            }
+
+            return LocalMerchantSecret;
         }
 
-        return string.IsNullOrWhiteSpace(LocalMerchantSecret) ? MerchantSecret : LocalMerchantSecret;
+        if (!string.IsNullOrWhiteSpace(LocalMerchantSecret))
+        {
+            return LocalMerchantSecret;
+        }
+
+        if (!string.IsNullOrWhiteSpace(MerchantSecret))
+        {
+            return MerchantSecret;
+        }
+
+        return AzureMerchantSecret;
     }
 }

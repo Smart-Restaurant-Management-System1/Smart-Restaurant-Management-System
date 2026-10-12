@@ -89,4 +89,21 @@ public sealed class DeploymentConfigurationTests
         Assert.DoesNotContain("--set-env-vars", Step(cd, "Deploy Identity Service"));
         Assert.DoesNotContain("--set-env-vars", Step(cd, "Deploy Frontend"));
     }
+
+    [Fact]
+    public void Workflow_ConfiguresPayHereEnvironmentVariables_UsingHierarchicalDoubleUnderscores()
+    {
+        var step = Step(Cd(), "Deploy Reservation Service");
+
+        // Hierarchy PayHere:<Property> must use PayHere__<Property> for ASP.NET Core environment variable mapping
+        Assert.Contains("PayHere__MerchantId", step);
+        Assert.Contains("PayHere__IsSandbox", step);
+        Assert.Contains("PayHere__MerchantSecret", step);
+        Assert.Contains("PayHere__AzureMerchantSecret", step);
+        Assert.Contains("PayHere__LocalMerchantSecret", step);
+
+        // Never bind with legacy flat variables
+        Assert.DoesNotContain("PAYHERE_MERCHANT_SECRET=", step);
+        Assert.DoesNotContain("PAYHERE_AZURE_MERCHANT_SECRET=", step);
+    }
 }
