@@ -142,8 +142,8 @@ public sealed class DeploymentConfigurationTests
     {
         var step = Step(Cd(), "Deploy Reservation Service");
 
-        // Safe fallback must use the registered frontend app secret (MzQ4...)
-        Assert.Contains("DEFAULT_PAYHERE_SECRET=\"MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==\"", step);
+        // Safe fallback must use the registered frontend app secret (MzQ1...)
+        Assert.Contains("DEFAULT_PAYHERE_SECRET=\"MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=\"", step);
         // Stale wrong secret (NDIw...) must be recognized and overridden
         Assert.Contains("OLD_WRONG_SECRET=\"NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==\"", step);
         Assert.Contains("PayHere__AzureMerchantSecret=$EFFECTIVE_AZURE_SECRET", step);
@@ -155,6 +155,6 @@ public sealed class DeploymentConfigurationTests
         var verify = Step(Cd(), "Verify Reservation Service configuration");
 
         Assert.Contains("PayHere__AzureMerchantSecret is set to registered frontend app secret", verify);
-        Assert.Contains("MzQ4MjM1MDk2NDI1NTY3OTIyODIxOTA0ODU3NDI2Mzg0MDA2NjgwNg==", verify);
+        Assert.Contains("MzQ1MTU2MDU1MzM1MjQzMDA5MTQxNjQwMzE4ODIxNzU2NDE0MTI=", verify);
     }
 }
