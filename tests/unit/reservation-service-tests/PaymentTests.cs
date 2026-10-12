@@ -291,9 +291,9 @@ public sealed class PaymentTests
     {
         var options = new PayHereOptions
         {
-            LocalMerchantSecret = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ==",
-            AzureMerchantSecret = "OTg3MzY4NjE2MjQ1NDMzMjEzOTQxNzY0NDQwOTMxNTM4Mzg5OTY5",
-            MerchantSecret = "NDIwMTkxMjE5NzI3MDcwOTkwNDUzMDM0Mzc2OTg1MjIxMTI4MzM1MQ=="
+            LocalMerchantSecret = "test_local_secret_value_123456",
+            AzureMerchantSecret = "test_azure_secret_value_654321",
+            MerchantSecret = "test_merchant_secret_fallback_value"
         };
 
         var secret = options.ResolveMerchantSecret(origin);
