@@ -20,7 +20,7 @@ export default function AppLayout({ children }) {
   };
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       {/* Mobile Drawer Backdrop */}
       <div
         className={`sidebar-backdrop ${isMobileOpen ? 'active' : ''}`}
