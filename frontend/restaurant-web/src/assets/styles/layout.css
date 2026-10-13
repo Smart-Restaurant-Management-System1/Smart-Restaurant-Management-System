@@ -55,6 +55,27 @@
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   color: var(--bistro-ink);
   line-height: 1.6;
+  position: relative;
+}
+
+/* Background Rail for full-page screenshot & tall content persistence */
+.app-shell::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  z-index: 0;
+  pointer-events: none;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-shell.sidebar-collapsed::before,
+.app-shell:has(.app-sidebar.collapsed)::before {
+  width: var(--sidebar-collapsed-width);
 }
 
 /* ========================================================
@@ -1176,6 +1197,10 @@ tbody tr:hover {
    ======================================================== */
 
 @media (max-width: 1024px) {
+  .app-shell::before {
+    display: none !important;
+  }
+
   .app-sidebar {
     transform: translateX(-100%);
   }
