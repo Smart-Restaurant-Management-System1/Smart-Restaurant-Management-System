@@ -1,0 +1,2 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1789332624357,296,JMETER_SMOKE_001,200,OK,JMETER_SMOKE_001 1-1,text,true,,436,817,1,1,http://localhost:5000/api/Reservations/availability?date=2026-10-25&startTime=18%3A00&durationMinutes=60&guestCount=2,285,0,72

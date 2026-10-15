@@ -1,0 +1,47 @@
+﻿<!doctype html><html lang="en"><meta charset="utf-8"><title>JMeter terminal execution</title><style>body{background:#111;color:#ddd;font:14px monospace;white-space:pre-wrap}.ok{color:#71d98b}.bad{color:#ff7070}.warn{color:#ffb454}.cmd{color:#64d8ee}pre{margin:0}</style>
+<pre class="">============================================================</pre>
+<pre class="">TEST: JMETER_SMOKE_001</pre>
+<pre class="">UTC: 2026-09-13T20:50:15.4265413Z</pre>
+<pre class="">============================================================</pre>
+<pre class="">Setup: disposable CUSTOMER registration succeeded (not a measured sample).</pre>
+<pre class="">Setup: login succeeded; bearer token retained only in process environment.</pre>
+<pre class="">Search: date=2026-10-25 startTime=18:00 durationMinutes=60 guestCount=2</pre>
+<pre class="cmd">&gt; &amp; &quot;C:\Tools\apache-jmeter-5.6.3\bin\jmeter.bat&quot; -n -t &quot;.\tests\jmeter\Sprint2_Reservation_Performance_Test.jmx&quot; -q &quot;.\tests\jmeter\smoke-results.properties&quot; -l &quot;F:\Year 3 Semester 1\CSP\Project\Develop\Smart-Restaurant-Management-System\QA_Evidence\Sprint2\JMeter/Results/JMETER_SMOKE_001_20260914_022015_088.jtl&quot; -j &quot;F:\Year 3 Semester 1\CSP\Project\Develop\Smart-Restaurant-Management-System\QA_Evidence\Sprint2\JMeter/Logs/JMETER_SMOKE_001_20260914_022015_088.engine.log&quot;</pre>
+<pre class="warn">WARN StatusConsoleListener The use of package scanning to locate plugins is deprecated and will be removed in a future release</pre>
+<pre class="warn">WARN StatusConsoleListener The use of package scanning to locate plugins is deprecated and will be removed in a future release</pre>
+<pre class="warn">WARN StatusConsoleListener The use of package scanning to locate plugins is deprecated and will be removed in a future release</pre>
+<pre class="warn">WARN StatusConsoleListener The use of package scanning to locate plugins is deprecated and will be removed in a future release</pre>
+<pre class="">Creating summariser &lt;summary&gt;</pre>
+<pre class="ok">Created the tree successfully using .\tests\jmeter\Sprint2_Reservation_Performance_Test.jmx</pre>
+<pre class="">Starting standalone test @ 2026 Sep 14 02:20:20 IST (1789332620649)</pre>
+<pre class="">Waiting for possible Shutdown/StopTestNow/HeapDump/ThreadDump message on port 4445</pre>
+<pre class="">summary =      1 in 00:00:04 =    0.3/s Avg:   296 Min:   296 Max:   296 Err:     0 (0.00%)</pre>
+<pre class="">Tidying up ...    @ 2026 Sep 14 02:20:25 IST (1789332625253)</pre>
+<pre class="">... end of run</pre>
+<pre class="">Threads: 1</pre>
+<pre class="">Iterations: 1</pre>
+<pre class="">Total requests: 1</pre>
+<pre class="ok">Passed requests: 1</pre>
+<pre class="bad">Failed requests: 0</pre>
+<pre class="">HTTP 200: 1</pre>
+<pre class="">Average response time: 296.00 ms</pre>
+<pre class="">Minimum response time: 296.00 ms</pre>
+<pre class="">Maximum response time: 296.00 ms</pre>
+<pre class="">Throughput: 3.38 requests/sec (sample window)</pre>
+<pre class="bad">Error percentage: 0.00%</pre>
+<pre class="ok">PASS: JMETER_SMOKE_001</pre>
+<pre class="">RESULT FILE: F:\Year 3 Semester 1\CSP\Project\Develop\Smart-Restaurant-Management-System\QA_Evidence\Sprint2\JMeter/Results/JMETER_SMOKE_001_20260914_022015_088.jtl</pre>
+<pre class="">LOG: F:\Year 3 Semester 1\CSP\Project\Develop\Smart-Restaurant-Management-System\QA_Evidence\Sprint2\JMeter/Logs/JMETER_SMOKE_001.log</pre>
+<pre class="">NEXT: JMETER_SR62_001 (requires confirmation; not executed)</pre>
+<pre class="">============================================================</pre>
+<pre class="">============================================================</pre>
+<pre class="">TEST: JMETER_SR62_001</pre>
+<pre class="">UTC: 2026-09-13T20:58:23.2033211Z</pre>
+<pre class="">============================================================</pre>
+<pre class="">Setup: disposable CUSTOMER registration succeeded (not a measured sample).</pre>
+<pre class="">Setup: login succeeded; bearer token retained only in process environment.</pre>
+<pre class="bad">BLOCKED: JMETER_SR62_001; stage=availability precondition; HTTP=unavailable. Environment/service or test setup issue.</pre>
+<pre class="ok">No successful concurrency result is claimed.</pre>
+<pre class="">LOG: F:\Year 3 Semester 1\CSP\Project\Develop\Smart-Restaurant-Management-System\QA_Evidence\Sprint2\JMeter/Logs/JMETER_SR62_001_ConcurrentBooking.log</pre>
+<pre class="">NEXT: JMETER_SR62_002 (requires confirmation; not executed)</pre>
+<pre class="">============================================================</pre>

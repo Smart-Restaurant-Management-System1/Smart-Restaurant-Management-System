@@ -1,0 +1,213 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  validateProfileForm,
+  sanitizeProfilePayload,
+  formatProfileForForm,
+  validatePasswordChangeForm,
+} from './profileValidation.js';
+
+test('validateProfileForm succeeds with valid customer profile data', () => {
+  const data = {
+    fullName: 'Jane Doe',
+    email: 'jane@bistro.com',
+    phoneNumber: '0771234567',
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, true);
+  assert.deepEqual(result.errors, {});
+});
+
+test('validateProfileForm flags missing or empty required fields', () => {
+  const data = {
+    fullName: '   ',
+    email: '',
+    phoneNumber: '',
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.fullName, 'Full name is required');
+  assert.equal(result.errors.email, 'Email address is required');
+});
+
+test('validateProfileForm catches invalid email format', () => {
+  const data = {
+    fullName: 'Jane Doe',
+    email: 'not-an-email',
+    phoneNumber: '',
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.email, 'Please enter a valid email address');
+});
+
+test('validateProfileForm catches invalid phone number format', () => {
+  const data = {
+    fullName: 'Jane Doe',
+    email: 'jane@bistro.com',
+    phoneNumber: '077123456a',
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.phoneNumber, 'Please enter a valid phone number format');
+});
+
+test('validateProfileForm accepts phone number at exactly 10 digits', () => {
+  const data = {
+    fullName: 'Jane Doe',
+    email: 'jane@bistro.com',
+    phoneNumber: '0771234567', // exactly 10 digits
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, true);
+  assert.equal(result.errors.phoneNumber, undefined);
+});
+
+test('validateProfileForm flags phone number exceeding 10 characters', () => {
+  const data = {
+    fullName: 'Jane Doe',
+    email: 'jane@bistro.com',
+    phoneNumber: '07712345678', // 11 characters
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.phoneNumber, 'Phone number must not exceed 10 characters');
+});
+
+test('validateProfileForm flags phone number under 10 digits', () => {
+  const data = {
+    fullName: 'Jane Doe',
+    email: 'jane@bistro.com',
+    phoneNumber: '077123456', // 9 digits
+  };
+
+  const result = validateProfileForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.phoneNumber, 'Phone number must be exactly 10 digits');
+});
+
+
+test('sanitizeProfilePayload strips all protected fields and trims values', () => {
+  const unvalidatedInput = {
+    userId: 123,
+    role: 'Admin',
+    roles: ['Admin', 'SuperUser'],
+    password: 'MaliciousPasswordChange',
+    passwordHash: 'hash',
+    isActive: false,
+    createdAt: '2020-01-01',
+    fullName: '  Jane Doe  ',
+    email: '  Jane.Doe@Bistro.COM  ',
+    phoneNumber: '  0771234567  ',
+  };
+
+  const sanitized = sanitizeProfilePayload(unvalidatedInput);
+
+  assert.deepEqual(sanitized, {
+    fullName: 'Jane Doe',
+    email: 'jane.doe@bistro.com',
+    phoneNumber: '0771234567',
+  });
+
+  // Verify protected fields are completely stripped
+  assert.equal(sanitized.userId, undefined);
+  assert.equal(sanitized.role, undefined);
+  assert.equal(sanitized.roles, undefined);
+  assert.equal(sanitized.password, undefined);
+  assert.equal(sanitized.isActive, undefined);
+  assert.equal(sanitized.createdAt, undefined);
+});
+
+test('formatProfileForForm pre-fills form correctly from backend response and handles nulls', () => {
+  const backendResponse = {
+    userId: 42,
+    fullName: 'John Customer',
+    email: 'john@example.com',
+    phoneNumber: null,
+    isActive: true,
+    roles: ['Customer'],
+  };
+
+  const formState = formatProfileForForm(backendResponse);
+
+  assert.equal(formState.fullName, 'John Customer');
+  assert.equal(formState.email, 'john@example.com');
+  assert.equal(formState.phoneNumber, '');
+});
+
+test('formatProfileForForm handles null backend payload safely', () => {
+  const formState = formatProfileForForm(null);
+
+  assert.equal(formState.fullName, '');
+  assert.equal(formState.email, '');
+  assert.equal(formState.phoneNumber, '');
+});
+
+test('validatePasswordChangeForm succeeds with valid new password and matching confirmation', () => {
+  const data = {
+    currentPassword: 'CurrentPass123!',
+    newPassword: 'NewSecurePass456!',
+    confirmPassword: 'NewSecurePass456!',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, true);
+  assert.deepEqual(result.errors, {});
+});
+
+test('validatePasswordChangeForm flags missing required fields', () => {
+  const data = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.currentPassword, 'Current password is required');
+  assert.equal(result.errors.newPassword, 'New password is required');
+  assert.equal(result.errors.confirmPassword, 'Confirmation password is required');
+});
+
+test('validatePasswordChangeForm catches new password under 6 characters', () => {
+  const data = {
+    currentPassword: 'CurrentPass123!',
+    newPassword: '12345',
+    confirmPassword: '12345',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.newPassword, 'New password must be at least 6 characters long');
+});
+
+test('validatePasswordChangeForm catches new password identical to current password', () => {
+  const data = {
+    currentPassword: 'SamePassword123!',
+    newPassword: 'SamePassword123!',
+    confirmPassword: 'SamePassword123!',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.newPassword, 'New password cannot be the same as the current password');
+});
+
+test('validatePasswordChangeForm catches confirmation mismatch', () => {
+  const data = {
+    currentPassword: 'CurrentPass123!',
+    newPassword: 'NewSecurePass456!',
+    confirmPassword: 'DifferentPass789!',
+  };
+
+  const result = validatePasswordChangeForm(data);
+  assert.equal(result.isValid, false);
+  assert.equal(result.errors.confirmPassword, 'Passwords do not match');
+});
+

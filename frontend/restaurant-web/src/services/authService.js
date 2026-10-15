@@ -1,0 +1,20 @@
+import api from './api';
+
+export const registerUser = async (userData) => {
+  const response = await api.post('/auth/register', userData);
+  return response.data;
+};
+
+export const loginUser = async (credentials) => {
+  const response = await api.post('/auth/login', credentials);
+  return response.data;
+};
+
+export const logoutUser = async () => {
+  try {
+    await api.post('/auth/logout');
+  } catch {
+    // Non-blocking: network error or expired token should not prevent client-side session cleanup
+  }
+};
+

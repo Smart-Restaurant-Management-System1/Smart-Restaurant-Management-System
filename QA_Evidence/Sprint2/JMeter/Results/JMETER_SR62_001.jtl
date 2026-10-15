@@ -1,0 +1,6 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1789487022295,149,JMETER_SR62_001,409,Conflict,JMETER_SR62_001 1-3,text,true,,293,827,5,5,http://localhost:5000/api/Reservations,134,0,63
+1789487022295,149,JMETER_SR62_001,409,Conflict,JMETER_SR62_001 1-1,text,true,,293,827,5,5,http://localhost:5000/api/Reservations,134,0,62
+1789487022296,148,JMETER_SR62_001,201,Created,JMETER_SR62_001 1-5,text,true,,402,827,5,5,http://localhost:5000/api/Reservations,133,0,61
+1789487022296,148,JMETER_SR62_001,409,Conflict,JMETER_SR62_001 1-4,text,true,,293,827,5,5,http://localhost:5000/api/Reservations,133,0,61
+1789487022295,149,JMETER_SR62_001,409,Conflict,JMETER_SR62_001 1-2,text,true,,293,827,5,5,http://localhost:5000/api/Reservations,135,0,64
